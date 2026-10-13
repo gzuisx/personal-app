@@ -1,6 +1,7 @@
 "use client";
 
-import { Check, ChevronRight, Trophy } from "lucide-react";
+import { Check, ChevronRight } from "lucide-react";
+import { IconeBola } from "@/components/ui/icone-bola";
 import { GlassCard } from "@/components/ui/glass-card";
 import { TagChip } from "@/components/features/tag-chip";
 import type { RotuloCarga } from "@/lib/carga";
@@ -46,18 +47,18 @@ export function DiaCard({ dia, hoje, rotuloCarga, sessoes, indice }: Props) {
             <p className="t-rotulo flex items-center gap-2 text-texto2">
               {dia.nome}, {numero}
               {ehHoje && (
-                <span className="rounded-full bg-primario px-2.5 py-1 text-[13px] leading-none font-semibold text-white">
+                <span className="rounded-full bg-primario px-2.5 py-1 text-[0.8125rem] leading-none font-semibold text-white">
                   Hoje
                 </span>
               )}
               {concluido && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-ok px-2.5 py-1 text-[13px] leading-none font-semibold text-sobre">
+                <span className="inline-flex items-center gap-1 rounded-full bg-ok px-2.5 py-1 text-[0.8125rem] leading-none font-semibold text-sobre">
                   <Check className="size-3.5" aria-hidden="true" />
                   Concluído
                 </span>
               )}
               {folga && (
-                <span className="rounded-full border border-borda px-2.5 py-1 text-[13px] leading-none">
+                <span className="rounded-full border border-borda px-2.5 py-1 text-[0.8125rem] leading-none">
                   Folga
                 </span>
               )}
@@ -73,7 +74,7 @@ export function DiaCard({ dia, hoje, rotuloCarga, sessoes, indice }: Props) {
               <span className="t-pq w-[84px] shrink-0 text-texto2">
                 {b.periodo === "jogo" ? (
                   <span className="inline-flex items-center gap-1 text-aviso-t">
-                    <Trophy className="size-4" aria-hidden="true" />
+                    <IconeBola className="size-4" />
                     {dia.jogo ? horaTexto(dia.jogo.hora, dia.jogo.min) : "Jogo"}
                   </span>
                 ) : (

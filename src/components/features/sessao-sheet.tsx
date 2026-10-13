@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Check, Minus, X } from "lucide-react";
 import { useDados } from "@/components/dados-provider";
 import { Button } from "@/components/ui/button";
-import { ChipGroup } from "@/components/ui/chip";
+import { Segmentado } from "@/components/ui/segmentado";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { EscalaDor } from "@/components/ui/escala-dor";
 import { useToast } from "@/components/ui/toast";
@@ -80,7 +80,7 @@ export function SessaoSheet({ aberto, onFechar, data, bloco, inicial, resultadoP
 
       <section className="space-y-2">
         <h3 className="t-h3">Como foi?</h3>
-        <ChipGroup rotuloAria="Resultado" opcoes={opcoes} valor={resultado} onChange={setResultado} />
+        <Segmentado rotuloAria="Resultado" opcoes={opcoes} valor={resultado} onChange={setResultado} />
       </section>
 
       {resultado !== "nao_fiz" && (
@@ -128,7 +128,7 @@ export function SessaoSheet({ aberto, onFechar, data, bloco, inicial, resultadoP
           maxLength={300}
           rows={3}
           onChange={(e) => setNotas(e.target.value)}
-          className="w-full rounded-[16px] border border-borda bg-vidro-forte p-3 text-[15px] text-texto outline-none placeholder:text-texto3 focus:border-realce"
+          className="w-full rounded-[16px] border border-borda bg-vidro-forte p-3 text-[0.9375rem] text-texto outline-none placeholder:text-texto3 focus:border-realce"
           placeholder="Escreva só se quiser"
         />
       </section>

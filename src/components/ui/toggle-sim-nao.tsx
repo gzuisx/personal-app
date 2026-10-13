@@ -1,7 +1,8 @@
 "use client";
 
-import { cn } from "@/lib/cn";
+import { Segmentado } from "@/components/ui/segmentado";
 
+/** Sim / Não: dois botões grandes, a opção ativa em azul com check. */
 export function ToggleSimNao({
   valor,
   onChange,
@@ -11,24 +12,15 @@ export function ToggleSimNao({
   onChange: (v: boolean) => void;
   rotuloAria?: string;
 }) {
-  const item = (v: boolean, rotulo: string) => (
-    <button
-      type="button"
-      aria-pressed={valor === v}
-      onClick={() => onChange(v)}
-      className={cn(
-        "h-14 flex-1 select-none rounded-full border text-[17px] font-semibold transition-[transform,background-color] duration-100 ease-out active:scale-[0.97]",
-        valor === v ? "border-primario bg-primario text-white" : "border-borda bg-vidro-forte text-texto2",
-      )}
-    >
-      {rotulo}
-    </button>
-  );
-
   return (
-    <div role="group" aria-label={rotuloAria} className="flex gap-3">
-      {item(false, "Não")}
-      {item(true, "Sim")}
-    </div>
+    <Segmentado
+      rotuloAria={rotuloAria}
+      valor={valor}
+      onChange={onChange}
+      opcoes={[
+        { valor: false, rotulo: "Não" },
+        { valor: true, rotulo: "Sim" },
+      ]}
+    />
   );
 }

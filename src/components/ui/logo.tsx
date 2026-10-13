@@ -28,7 +28,9 @@ export function Logo({ tamanho = 64, comTexto = true }: { tamanho?: number; comT
   return (
     <div className="flex items-center gap-3">
       <LogoMarca tamanho={tamanho} />
-      {comTexto && <span className="text-[26px] leading-8 font-semibold tracking-tight">Meu Personal</span>}
+      {comTexto && (
+        <span className="text-[1.625rem] leading-8 font-semibold tracking-tight">Meu Personal</span>
+      )}
     </div>
   );
 }

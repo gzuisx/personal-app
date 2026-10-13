@@ -1,10 +1,18 @@
 // Plano de treino (dados de seed). Fonte: seção 12 da ESPECIFICACAO-APP.txt.
 // Sem importações com alias: o script scripts/gerar-seed-sql.ts também lê este arquivo.
 import { DIAS_SEMANA, JOGOS_SEMANAIS, diaSemanaISO, type JogoSlot } from "../tempo";
-import { faseDoPlano, intensidadeVelocidade } from "./fase";
+import { faseDoPlano, intensidadeVelocidade, type FaseNumero } from "./fase";
 
 export type Tag =
-  "Tornozelo" | "Força" | "Velocidade" | "Funcional" | "Jogo" | "Recuperação" | "Folga" | "Mobilidade";
+  | "Tornozelo"
+  | "Força"
+  | "Velocidade"
+  | "Arranque"
+  | "Funcional"
+  | "Jogo"
+  | "Recuperação"
+  | "Folga"
+  | "Mobilidade";
 
 export type TipoExercicio = "tornozelo" | "forca" | "velocidade" | "mobilidade" | "funcional";
 
@@ -198,7 +206,7 @@ const noBloco = (
 // ------------------------------------------------------------ rotinas
 
 /** Rotina de tornozelo da fase. Séries e repetições para a fase 2 e 3 são decisões nossas (a especificação não as define). */
-export function rotinaTornozelo(fase: 1 | 2 | 3): ExercicioNoBloco[] {
+export function rotinaTornozelo(fase: 1 | 2 | 3 | 4): ExercicioNoBloco[] {
   if (fase === 1) {
     return [
       noBloco("eq-um-pe", "30 s", "3"),
@@ -284,12 +292,33 @@ function bloco(
   return { id: `${SIGLAS[dia]}-${idSufixo ?? periodo}`, periodo, ...resto };
 }
 
-export function diaDoPlano(iso: string): DiaPlano {
+export type FaseTornozeloNum = FaseNumero;
+
+/** Ids antigos (etapas 1 a 5), quando a manhã era um bloco só. Sessões antigas valem para os blocos novos. */
+export const BLOCO_LEGADO: Record<string, string[]> = {
+  "seg-manha": ["seg-tornozelo", "seg-forca"],
+  "ter-manha": ["ter-tornozelo", "ter-mobilidade"],
+  "qua-manha": ["qua-tornozelo", "qua-forca"],
+  "qui-manha": ["qui-tornozelo"],
+  "sex-manha": ["sex-tornozelo", "sex-mobilidade"],
+};
+
+export function diaDoPlano(iso: string, opcoes: { fase?: FaseTornozeloNum } = {}): DiaPlano {
   const dia = diaSemanaISO(iso);
-  const { fase, semanaPlano } = faseDoPlano(iso);
+  const { semanaPlano, fase: faseData } = faseDoPlano(iso);
+  const fase = opcoes.fase ?? faseData;
   const tornozelo = rotinaTornozelo(fase);
   const jogo = JOGOS_SEMANAIS.find((j) => j.diaSemana === dia) ?? null;
   const base = { iso, diaSemana: dia, nome: NOMES[dia], jogo };
+
+  const blocoTornozelo = (d: number, duracaoMin: number, titulo = "Rotina de tornozelo") =>
+    bloco(d, "manha", {
+      idSufixo: "tornozelo",
+      titulo,
+      duracaoMin,
+      tags: ["Tornozelo"],
+      exercicios: tornozelo,
+    });
 
   switch (dia) {
     case 1:
@@ -297,11 +326,13 @@ export function diaDoPlano(iso: string): DiaPlano {
         ...base,
         titulo: "Segunda: superiores e funcional",
         blocos: [
+          blocoTornozelo(1, 10),
           bloco(1, "manha", {
-            titulo: "Tornozelo + superiores e core",
-            duracaoMin: 50,
-            tags: ["Tornozelo", "Força"],
-            exercicios: [...tornozelo, ...superiores()],
+            idSufixo: "forca",
+            titulo: "Superiores e core",
+            duracaoMin: 40,
+            tags: ["Força"],
+            exercicios: superiores(),
           }),
           bloco(1, "noite", {
             titulo: "Funcional leve a moderado, com bola",
@@ -319,11 +350,13 @@ export function diaDoPlano(iso: string): DiaPlano {
         ...base,
         titulo: "Terça: mobilidade e jogo",
         blocos: [
+          blocoTornozelo(2, 10),
           bloco(2, "manha", {
-            titulo: "Tornozelo + mobilidade",
-            duracaoMin: 20,
-            tags: ["Tornozelo", "Mobilidade"],
-            exercicios: [...tornozelo, ...mobilidade()],
+            idSufixo: "mobilidade",
+            titulo: "Mobilidade",
+            duracaoMin: 10,
+            tags: ["Mobilidade"],
+            exercicios: mobilidade(),
           }),
           bloco(2, "jogo", {
             titulo: "Jogo",
@@ -340,11 +373,13 @@ export function diaDoPlano(iso: string): DiaPlano {
         ...base,
         titulo: "Quarta: pernas e funcional leve",
         blocos: [
+          blocoTornozelo(3, 10),
           bloco(3, "manha", {
-            titulo: "Tornozelo + força de pernas",
-            duracaoMin: 55,
-            tags: ["Tornozelo", "Força"],
-            exercicios: [...tornozelo, ...pernas(semanaPlano)],
+            idSufixo: "forca",
+            titulo: "Força de pernas",
+            duracaoMin: 45,
+            tags: ["Força"],
+            exercicios: pernas(semanaPlano),
             observacao: "Se as pernas estiverem muito pesadas do jogo, faça 2 séries.",
           }),
           bloco(3, "noite", {
@@ -363,17 +398,12 @@ export function diaDoPlano(iso: string): DiaPlano {
         ...base,
         titulo: "Quinta: velocidade e arranque",
         blocos: [
-          bloco(4, "manha", {
-            titulo: "Tornozelo antes do trabalho",
-            duracaoMin: 15,
-            tags: ["Tornozelo"],
-            exercicios: tornozelo,
-          }),
+          blocoTornozelo(4, 15, "Tornozelo antes do trabalho"),
           bloco(4, "noite", {
             titulo: "Velocidade e arranque",
             duracaoMin: 35,
             horario: "19h",
-            tags: ["Velocidade"],
+            tags: ["Velocidade", "Arranque"],
             exercicios: velocidade(semanaPlano),
             observacao:
               "Se a dor do tornozelo passar de 3/10, pare a sessão e faça só a rotina do tornozelo.",
@@ -385,11 +415,13 @@ export function diaDoPlano(iso: string): DiaPlano {
         ...base,
         titulo: "Sexta: mobilidade e recuperação ativa",
         blocos: [
+          blocoTornozelo(5, 10),
           bloco(5, "manha", {
-            titulo: "Tornozelo + mobilidade",
-            duracaoMin: 15,
-            tags: ["Tornozelo", "Mobilidade"],
-            exercicios: [...tornozelo, ...mobilidade()],
+            idSufixo: "mobilidade",
+            titulo: "Mobilidade",
+            duracaoMin: 5,
+            tags: ["Mobilidade"],
+            exercicios: mobilidade(),
           }),
           bloco(5, "noite", {
             titulo: "Funcional: recuperação ativa",
@@ -428,15 +460,15 @@ export function diaDoPlano(iso: string): DiaPlano {
     default:
       return {
         ...base,
-        titulo: "Domingo: folga total",
+        titulo: "Domingo: descanso",
         blocos: [
           bloco(0, "dia", {
             idSufixo: "folga",
-            titulo: "Folga total",
+            titulo: "Descanso",
             duracaoMin: 0,
             tags: ["Folga"],
             exercicios: [],
-            observacao: "No máximo uma caminhada e 10 min de mobilidade.",
+            observacao: "Folga total. No máximo uma caminhada e 10 min de mobilidade.",
           }),
         ],
       };
@@ -445,6 +477,13 @@ export function diaDoPlano(iso: string): DiaPlano {
 
 /** Blocos que podem ser marcados como feitos (jogo e folga não entram). */
 export const blocoTreinavel = (b: Bloco) => b.periodo !== "jogo" && !b.tags.includes("Folga");
+
+/** Bloco "principal" do dia (anel TREINOS): força, velocidade ou funcional. */
+export const blocoPrincipal = (b: Bloco) =>
+  blocoTreinavel(b) && b.tags.some((t) => t === "Força" || t === "Velocidade" || t === "Funcional");
+
+/** Bloco de tornozelo (anel TORNOZELO). */
+export const blocoTornozeloTag = (b: Bloco) => blocoTreinavel(b) && b.tags.includes("Tornozelo");
 
 /** Treinos planejados em uma data (para a taxa de treinos feitos). */
 export function treinosPlanejados(iso: string) {

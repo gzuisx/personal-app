@@ -7,3 +7,6 @@ next-env.d.ts
 .vercel
 supabase/.temp
 Ideias UI/
+playwright-report
+test-results
+coverage

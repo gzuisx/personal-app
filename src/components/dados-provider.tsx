@@ -1,10 +1,22 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { criarRepo, type Repo } from "@/lib/repo";
+import { expandirSessoesLegadas } from "@/lib/derivados";
+import { gerarDadosDemo, CHAVE_MODO_DEMO } from "@/lib/demo";
+import { criarRepo, criarRepoDemo, type Repo } from "@/lib/repo";
+import { apagarLocal, CHAVE_DEMO, gravarLocal } from "@/lib/repo/local";
 import type { ConfigSeguranca } from "@/lib/safety";
 import { addDias, dataISO } from "@/lib/tempo";
-import { DADOS_VAZIOS, type Checkin, type DadosApp, type Jogo, type Perfil, type Sessao } from "@/lib/tipos";
+import {
+  DADOS_VAZIOS,
+  type Checkin,
+  type DadosApp,
+  type FaseTornozelo,
+  type Jogo,
+  type Perfil,
+  type PreJogoLog,
+  type Sessao,
+} from "@/lib/tipos";
 
 type Status = "carregando" | "pronto" | "erro";
 
@@ -12,17 +24,24 @@ type Acoes = {
   salvarCheckin: (c: Checkin) => Promise<void>;
   salvarSessao: (s: Sessao) => Promise<void>;
   salvarJogo: (j: Jogo) => Promise<void>;
+  salvarPreJogo: (p: PreJogoLog) => Promise<void>;
   salvarSeguranca: (c: ConfigSeguranca) => Promise<void>;
   salvarPerfil: (p: Perfil) => Promise<void>;
   alternarMarco: (chave: string) => Promise<void>;
+  /** só pode ser chamada ao aceitar uma proposta de fase (C5) */
+  definirFase: (f: FaseTornozelo) => Promise<void>;
   exportar: () => Promise<unknown>;
   recarregar: () => void;
+  ativarDemo: () => void;
+  apagarDemo: () => void;
 };
 
 type Valor = Acoes & {
   status: Status;
   erro: string | null;
   modo: Repo["modo"];
+  /** true enquanto a demonstração (dados fictícios, só neste aparelho) estiver ligada */
+  demo: boolean;
   dados: DadosApp;
 };
 
@@ -39,8 +58,21 @@ function substituir<T>(lista: T[], item: T, mesmo: (a: T, b: T) => boolean) {
   return copia;
 }
 
+function lerFlagDemo() {
+  try {
+    return localStorage.getItem(CHAVE_MODO_DEMO) === "1";
+  } catch {
+    return false;
+  }
+}
+
 export function DadosProvider({ children }: { children: React.ReactNode }) {
-  const repo = useMemo(() => criarRepo(), []);
+  // null = ainda não sabemos (servidor / primeira renderização); depois "real" ou "demo".
+  const [fonte, setFonte] = useState<"real" | "demo" | null>(null);
+  const repoReal = useMemo(() => criarRepo(), []);
+  const repoDemo = useMemo(() => criarRepoDemo(), []);
+  const repo = fonte === "demo" ? repoDemo : repoReal;
+
   const [dados, setDados] = useState<DadosApp>(DADOS_VAZIOS);
   const [status, setStatus] = useState<Status>("carregando");
   const [erro, setErro] = useState<string | null>(null);
@@ -48,14 +80,20 @@ export function DadosProvider({ children }: { children: React.ReactNode }) {
   const ref = useRef(dados);
 
   useEffect(() => {
+    setFonte(lerFlagDemo() ? "demo" : "real");
+  }, []);
+
+  useEffect(() => {
+    if (fonte === null) return;
     let cancelado = false;
     setStatus("carregando");
     repo
       .carregar(addDias(dataISO(new Date()), -DIAS_HISTORICO))
       .then((d) => {
         if (cancelado) return;
-        ref.current = d;
-        setDados(d);
+        const normalizado = { ...d, sessoes: expandirSessoesLegadas(d.sessoes) };
+        ref.current = normalizado;
+        setDados(normalizado);
         setStatus("pronto");
         setErro(null);
       })
@@ -67,7 +105,7 @@ export function DadosProvider({ children }: { children: React.ReactNode }) {
     return () => {
       cancelado = true;
     };
-  }, [repo, tentativa]);
+  }, [repo, fonte, tentativa]);
 
   /** Atualiza a tela na hora e desfaz se a gravação falhar. */
   const aplicar = useCallback(async (proximo: (d: DadosApp) => DadosApp, persistir: () => Promise<void>) => {
@@ -86,16 +124,25 @@ export function DadosProvider({ children }: { children: React.ReactNode }) {
 
   const acoes = useMemo<Acoes>(
     () => ({
-      salvarCheckin: (c) =>
-        aplicar(
+      salvarCheckin: async (c) => {
+        // Check-in do dia seguinte a um jogo fica vinculado a ele (24.4, R17).
+        let checkin = c;
+        if (c.jogoId === undefined || c.jogoId === null) {
+          const jogo = ref.current.jogos.find(
+            (j) => j.id && dataISO(new Date(j.inicio)) === addDias(c.data, -1) && j.dor !== null,
+          );
+          if (jogo?.id) checkin = { ...c, jogoId: jogo.id };
+        }
+        await aplicar(
           (d) => ({
             ...d,
-            checkins: substituir(d.checkins, c, (a, b) => a.data === b.data).sort((a, b) =>
+            checkins: substituir(d.checkins, checkin, (a, b) => a.data === b.data).sort((a, b) =>
               a.data.localeCompare(b.data),
             ),
           }),
-          () => repo.salvarCheckin(c),
-        ),
+          () => repo.salvarCheckin(checkin),
+        );
+      },
       salvarSessao: (s) =>
         aplicar(
           (d) => ({
@@ -104,15 +151,27 @@ export function DadosProvider({ children }: { children: React.ReactNode }) {
           }),
           () => repo.salvarSessao(s),
         ),
-      salvarJogo: (j) =>
-        aplicar(
+      salvarJogo: async (j) => {
+        const existente = ref.current.jogos.find((x) => x.inicio === j.inicio);
+        const jogo: Jogo = {
+          ...j,
+          id: j.id ?? existente?.id ?? crypto.randomUUID(),
+          status: j.status ?? "jogado",
+        };
+        await aplicar(
           (d) => ({
             ...d,
-            jogos: substituir(d.jogos, j, (a, b) => a.inicio === b.inicio).sort((a, b) =>
+            jogos: substituir(d.jogos, jogo, (a, b) => a.inicio === b.inicio).sort((a, b) =>
               a.inicio.localeCompare(b.inicio),
             ),
           }),
-          () => repo.salvarJogo(j),
+          () => repo.salvarJogo(jogo),
+        );
+      },
+      salvarPreJogo: (p) =>
+        aplicar(
+          (d) => ({ ...d, preJogos: substituir(d.preJogos, p, (a, b) => a.jogoData === b.jogoData) }),
+          () => repo.salvarPreJogo(p),
         ),
       salvarSeguranca: (c) =>
         aplicar(
@@ -132,15 +191,38 @@ export function DadosProvider({ children }: { children: React.ReactNode }) {
           () => repo.salvarMarco(novo),
         );
       },
+      definirFase: (f) =>
+        aplicar(
+          (d) => ({ ...d, faseTornozelo: f }),
+          () => repo.salvarFase(f),
+        ),
       exportar: () => repo.exportar(),
       recarregar: () => setTentativa((n) => n + 1),
+      ativarDemo: () => {
+        try {
+          gravarLocal(CHAVE_DEMO, gerarDadosDemo(dataISO(new Date())));
+          localStorage.setItem(CHAVE_MODO_DEMO, "1");
+        } catch {
+          return;
+        }
+        setFonte("demo");
+      },
+      apagarDemo: () => {
+        apagarLocal(CHAVE_DEMO);
+        try {
+          localStorage.removeItem(CHAVE_MODO_DEMO);
+        } catch {
+          // sem armazenamento: nada a limpar
+        }
+        setFonte("real");
+      },
     }),
     [aplicar, repo],
   );
 
   const valor = useMemo<Valor>(
-    () => ({ ...acoes, status, erro, modo: repo.modo, dados }),
-    [acoes, status, erro, repo.modo, dados],
+    () => ({ ...acoes, status, erro, modo: repo.modo, demo: fonte === "demo", dados }),
+    [acoes, status, erro, repo.modo, fonte, dados],
   );
 
   return <Ctx.Provider value={valor}>{children}</Ctx.Provider>;

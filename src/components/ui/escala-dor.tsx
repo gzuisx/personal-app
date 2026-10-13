@@ -1,5 +1,6 @@
 "use client";
 
+import { Check } from "lucide-react";
 import { cn } from "@/lib/cn";
 
 type Props = {
@@ -26,12 +27,13 @@ export function rotuloEsforco(v: number) {
   return "máximo";
 }
 
-function corDor(v: number) {
-  if (v <= 3) return { borda: "border-ok", ativo: "bg-ok border-ok text-sobre" };
-  if (v <= 5) return { borda: "border-aviso", ativo: "bg-aviso border-aviso text-sobre" };
-  return { borda: "border-perigo", ativo: "bg-perigo border-perigo text-sobre" };
+function zona(v: number) {
+  if (v <= 3) return "border-ok bg-ok/10";
+  if (v <= 5) return "border-aviso bg-aviso/10";
+  return "border-perigo bg-perigo/10";
 }
 
+/** Escala de 0 a 10: borda verde (0-3), amarela (4-5) e vermelha (6-10); o selecionado ganha anel ciano e check. */
 export function EscalaDor({ valor, onChange, variante = "dor", rotuloAria }: Props) {
   const valores = Array.from({ length: 11 }, (_, i) => i);
   return (
@@ -39,10 +41,6 @@ export function EscalaDor({ valor, onChange, variante = "dor", rotuloAria }: Pro
       <div role="group" aria-label={rotuloAria} className="grid grid-cols-6 gap-2">
         {valores.map((v) => {
           const ativo = valor === v;
-          const cor =
-            variante === "dor"
-              ? corDor(v)
-              : { borda: "border-borda", ativo: "bg-primario border-primario text-white" };
           return (
             <button
               key={v}
@@ -51,11 +49,20 @@ export function EscalaDor({ valor, onChange, variante = "dor", rotuloAria }: Pro
               aria-label={`${variante === "dor" ? "Dor" : "Esforço"} ${v} de 10`}
               onClick={() => onChange(v)}
               className={cn(
-                "num h-12 select-none rounded-full border-2 bg-vidro-forte text-[17px] font-semibold transition-[transform,background-color] duration-100 ease-out active:scale-[0.95]",
-                ativo ? cor.ativo : cn(cor.borda, "text-texto"),
+                "num relative h-12 select-none rounded-full border-2 text-[1.0625rem] font-semibold text-texto transition-[transform,background-color] duration-100 ease-out active:scale-[0.95]",
+                variante === "dor" ? zona(v) : "border-borda bg-vidro-forte",
+                ativo && "ring-2 ring-realce-t ring-offset-2 ring-offset-bg1",
               )}
             >
               {v}
+              {ativo && (
+                <span
+                  className="absolute -top-1.5 -right-1 flex size-5 items-center justify-center rounded-full bg-realce-t text-sobre"
+                  aria-hidden="true"
+                >
+                  <Check className="size-3.5" strokeWidth={3} />
+                </span>
+              )}
             </button>
           );
         })}

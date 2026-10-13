@@ -17,10 +17,10 @@ import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/cn";
 import { dorMedia, esforcoMedio, media, sessoesNoPeriodo, sonoMedio } from "@/lib/derivados";
 import { diasVerdesSeguidos } from "@/lib/safety";
-import { faseDoPlano } from "@/lib/seed/fase";
+import { faseGuardada } from "@/lib/seed/fase";
 import { diaDoPlano, treinosPlanejados } from "@/lib/seed/plano";
 import { DIAS_SEMANA, addDias, dataExtensoISO, dataISO, diasDaSemana } from "@/lib/tempo";
-import { GATILHO_ROTULO, MARCOS_DEFINICOES, SONO_HORAS, type Jogo } from "@/lib/tipos";
+import { GATILHO_ROTULO, SONO_HORAS, type Jogo } from "@/lib/tipos";
 import { useAgora } from "@/lib/use-agora";
 
 type Filtro = "semana" | "mes";
@@ -60,7 +60,7 @@ export default function EvolucaoPage() {
   }
 
   const hoje = dataISO(agora);
-  const { checkins, sessoes, jogos, seguranca, marcos } = dados;
+  const { checkins, sessoes, jogos, seguranca, marcos, marcosDefs } = dados;
   const semana = diasDaSemana(hoje);
   const dias = filtro === "semana" ? semana : Array.from({ length: 30 }, (_, i) => addDias(hoje, i - 29));
   const de = dias[0];
@@ -123,7 +123,7 @@ export default function EvolucaoPage() {
   const sessoesSel = sessoes.filter((s) => s.data === diaSel && s.resultado !== "nao_fiz");
   const jogoSel = jogosPorDia.get(diaSel);
 
-  const fase = faseDoPlano(hoje);
+  const fase = faseGuardada(dados.faseTornozelo, hoje);
   const verdes = diasVerdesSeguidos(checkins, hoje, seguranca);
   const posJogos = [...jogos]
     .filter((j) => j.dor !== null)
@@ -324,7 +324,7 @@ export default function EvolucaoPage() {
                 >
                   <span
                     className={cn(
-                      "num flex size-10 shrink-0 items-center justify-center rounded-full text-[17px] font-semibold",
+                      "num flex size-10 shrink-0 items-center justify-center rounded-full text-[1.0625rem] font-semibold",
                       corDorTexto(j.dor ?? 0, seguranca.limiteAtencao, seguranca.limiteBloqueio),
                     )}
                     aria-label={`Dor ${j.dor} de 10`}
@@ -350,7 +350,7 @@ export default function EvolucaoPage() {
 
         <h3 className="t-h3 mt-5 mb-2">Jornada</h3>
         <ul className="space-y-2">
-          {MARCOS_DEFINICOES.map((def) => {
+          {marcosDefs.map((def) => {
             const m = marcos.find((x) => x.chave === def.chave);
             const feito = !!m?.concluidoEm;
             return (

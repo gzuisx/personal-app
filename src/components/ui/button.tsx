@@ -18,8 +18,8 @@ const variantes: Record<VarianteBotao, string> = {
 };
 
 const tamanhos: Record<TamanhoBotao, string> = {
-  m: "h-12 min-w-12 px-6 text-[15px]",
-  g: "h-14 min-w-14 px-8 text-[17px]",
+  m: "h-12 min-w-12 px-6 text-[0.9375rem]",
+  g: "h-14 min-w-14 px-8 text-[1.0625rem]",
 };
 
 export function botaoClasses(

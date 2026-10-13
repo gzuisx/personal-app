@@ -1,33 +1,42 @@
 "use client";
 
 import { useState } from "react";
-import { BellOff, Check, ClipboardCheck, Lightbulb, Smartphone } from "lucide-react";
+import { BellOff, Check, ChevronRight, ClipboardCheck, Lightbulb, Play, Smartphone } from "lucide-react";
 import { useDados } from "@/components/dados-provider";
+import { AneisDoDia } from "@/components/features/aneis-do-dia";
 import { CheckinSheet } from "@/components/features/checkin-sheet";
+import { GameCard } from "@/components/features/game-card";
 import { LembretesJogo } from "@/components/features/lembretes-jogo";
 import { MetricasHoje } from "@/components/features/metricas-hoje";
-import { ProximoJogoCard } from "@/components/features/proximo-jogo-card";
 import { SemanaEncerrada } from "@/components/features/semana-encerrada";
 import { TreinoHojeCard } from "@/components/features/treino-hoje-card";
 import { Banner } from "@/components/ui/banner";
+import { BotaoAcao } from "@/components/ui/botao-acao";
+import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { GlassCard } from "@/components/ui/glass-card";
 import { Header } from "@/components/ui/header";
+import { IconeBola } from "@/components/ui/icone-bola";
 import { SemaforoCard } from "@/components/ui/semaforo-card";
 import { SkeletonTela } from "@/components/ui/skeleton";
 import { rotuloCarga } from "@/lib/carga";
 import { checkinDoDia } from "@/lib/derivados";
-import { avaliarSeguranca } from "@/lib/safety";
-import { dicaDoDia, diaDoPlano } from "@/lib/seed/plano";
+import { proximaMelhorAcao, proximoBlocoPendente } from "@/lib/hoje";
+import { jogoEmFoco } from "@/lib/jogo";
+import { hrefDoBloco } from "@/lib/rotas";
+import { ALERTA_SEGURANCA, avaliarSeguranca } from "@/lib/safety";
+import { dicaDoDia, diaDoPlano, type Bloco } from "@/lib/seed/plano";
 import { avaliarSemaforo } from "@/lib/semaforo";
-import { dataExtensoISO, dataISO, partesSP, saudacao } from "@/lib/tempo";
+import { dataExtensoISO, dataISO, diasDaSemana, partesSP, saudacao } from "@/lib/tempo";
 import { useAgora } from "@/lib/use-agora";
 
 export default function HojePage() {
   const agora = useAgora();
-  const { status, erro, recarregar, dados, modo } = useDados();
+  const { status, erro, recarregar, dados, modo, demo } = useDados();
   const [checkinAberto, setCheckinAberto] = useState(false);
+  const [dicaAberta, setDicaAberta] = useState(false);
+  const [editar, setEditar] = useState<Bloco | null>(null);
 
   if (!agora || status === "carregando") {
     return (
@@ -51,7 +60,9 @@ export default function HojePage() {
 
   const hoje = dataISO(agora);
   const { hora, diaSemana } = partesSP(agora);
-  const dia = diaDoPlano(hoje);
+  const fase = dados.faseTornozelo.fase;
+  const dia = diaDoPlano(hoje, { fase });
+  const semana = diasDaSemana(hoje).map((d) => diaDoPlano(d, { fase }));
   const checkinHoje = checkinDoDia(dados.checkins, hoje);
 
   const seg = avaliarSeguranca({
@@ -69,7 +80,24 @@ export default function HojePage() {
     config: dados.seguranca,
   });
 
-  const mostrarPendente = hora >= 6 && !checkinHoje;
+  const jogo = jogoEmFoco(agora, dados);
+  const acao = proximaMelhorAcao({ agora, dia, checkins: dados.checkins, sessoes: dados.sessoes, jogo });
+  const proximoBloco = proximoBlocoPendente(dia, dados.sessoes, hora);
+  const dica = dicaDoDia(hoje);
+
+  function executarAcao() {
+    if (!acao) return;
+    if (acao.id === "checkin" || acao.id === "checkin_jogo") setCheckinAberto(true);
+  }
+
+  const acaoHref =
+    acao?.id === "aquecer"
+      ? `/jogo/pre?jogo=${acao.jogoData}`
+      : acao?.id === "registrar_jogo"
+        ? `/jogo/pos?jogo=${acao.jogoData}`
+        : acao?.id === "treino" && acao.blocoId
+          ? hrefDoBloco(hoje, acao.blocoId)
+          : undefined;
 
   return (
     <main className="pagina space-y-4">
@@ -89,7 +117,7 @@ export default function HojePage() {
         }
       />
 
-      {modo === "local" && (
+      {modo === "local" && !demo && (
         <Banner variante="info">
           <span className="flex items-center gap-2">
             <Smartphone className="size-4 shrink-0" aria-hidden="true" />
@@ -100,8 +128,8 @@ export default function HojePage() {
 
       {seg.nivel === "bloqueio" && (
         <Banner variante="alerta">
-          <strong>Hoje não aumente a carga.</strong> Se a dor persistir, procure ortopedista ou
-          fisioterapeuta.
+          <strong>{ALERTA_SEGURANCA.split(". ")[0]}.</strong>{" "}
+          {ALERTA_SEGURANCA.split(". ").slice(1).join(". ")}
         </Banner>
       )}
       {seg.dorPersistente && seg.nivel !== "bloqueio" && (
@@ -109,14 +137,14 @@ export default function HojePage() {
           A dor está persistindo em 3 check-ins seguidos. Procure ortopedista ou fisioterapeuta.
         </Banner>
       )}
+      {seg.restricaoAtiva && seg.nivel !== "bloqueio" && seg.falta.length > 0 && (
+        <Banner variante="info">
+          <strong>Progressão ainda travada.</strong> {seg.falta[0]}
+        </Banner>
+      )}
 
-      <SemaforoCard
-        indice={0}
-        cor={semaforo.cor}
-        motivo={semaforo.motivo}
-        aviso={mostrarPendente ? (semaforo.avisoCheckin ?? undefined) : undefined}
-      >
-        {checkinHoje ? (
+      {checkinHoje ? (
+        <SemaforoCard indice={0} cor={semaforo.cor} motivo={semaforo.motivo}>
           <div className="flex items-center gap-3">
             <span className="t-h3 flex flex-1 items-center gap-2 text-ok-t">
               <Check className="size-5" aria-hidden="true" />
@@ -126,48 +154,109 @@ export default function HojePage() {
               Editar
             </Button>
           </div>
-        ) : (
-          <Button
-            tamanho="g"
-            className="w-full"
+        </SemaforoCard>
+      ) : (
+        <GlassCard indice={0} variante="destaque">
+          <h2 className="t-h2">Como está seu tornozelo?</h2>
+          <p className="t-corpo mt-1 text-texto2">Registre como você está hoje. Leva 30 segundos.</p>
+          {semaforo.cor !== "neutro" && (
+            <p className="t-pq mt-2 text-texto2">
+              Último registro: {semaforo.motivo.replace(/\.$/, "").toLowerCase()}.
+            </p>
+          )}
+          <BotaoAcao
+            className="mt-4"
+            rotulo="Fazer check-in"
             icone={<ClipboardCheck className="size-5" />}
             onClick={() => setCheckinAberto(true)}
-          >
-            Fazer check-in
-          </Button>
-        )}
-      </SemaforoCard>
+          />
+        </GlassCard>
+      )}
 
-      <LembretesJogo agora={agora} indice={1} />
+      {checkinHoje && acao && (
+        <GlassCard indice={1} variante="leve">
+          <p className="t-rotulo mb-2 text-texto2">Próxima melhor ação</p>
+          <BotaoAcao
+            rotulo={acao.rotulo}
+            href={acaoHref}
+            onClick={acaoHref ? undefined : executarAcao}
+            icone={
+              acao.id === "treino" ? (
+                <Play className="size-5" />
+              ) : acao.id === "checkin_jogo" ? (
+                <ClipboardCheck className="size-5" />
+              ) : (
+                <IconeBola className="size-5" />
+              )
+            }
+          />
+        </GlassCard>
+      )}
 
-      <ProximoJogoCard agora={agora} jogos={dados.jogos} indice={2} />
+      <AneisDoDia
+        indice={2}
+        dia={dia}
+        semana={semana}
+        sessoes={dados.sessoes}
+        checkins={dados.checkins}
+        onCheckin={() => setCheckinAberto(true)}
+        hrefBloco={(id) => hrefDoBloco(hoje, id)}
+        onEditarSessao={setEditar}
+      />
+
+      <LembretesJogo agora={agora} indice={3} />
 
       {diaSemana === 0 && hora >= 18 && (
         <SemanaEncerrada hoje={hoje} checkins={dados.checkins} sessoes={dados.sessoes} indice={3} />
       )}
 
       <TreinoHojeCard
-        indice={3}
+        indice={4}
         dia={dia}
         rotuloCarga={rotuloCarga(hoje)}
         sessoes={dados.sessoes}
         semProgressao={!seg.podeProgredir && seg.nivel !== "sem_dados"}
+        proximoBloco={proximoBloco}
+        hrefIniciar={proximoBloco ? hrefDoBloco(hoje, proximoBloco.id) : undefined}
+        blocoParaEditar={editar}
+        onFecharEdicao={() => setEditar(null)}
       />
+
+      <GameCard indice={5} estado={jogo} agora={agora} onCheckinSeguinte={() => setCheckinAberto(true)} />
 
       <MetricasHoje checkins={dados.checkins} sessoes={dados.sessoes} hoje={hoje} />
 
-      <GlassCard variante="leve" indice={4}>
+      <GlassCard
+        variante="leve"
+        indice={6}
+        onClick={() => setDicaAberta(true)}
+        aria-label="Dica do dia. Toque para ler inteira."
+      >
         <p className="t-corpo flex gap-3">
           <Lightbulb className="mt-0.5 size-5 shrink-0 text-aviso-t" aria-hidden="true" />
-          <span className="line-clamp-2">{dicaDoDia(hoje)}</span>
+          <span className="line-clamp-2 flex-1">{dica}</span>
+          <ChevronRight className="mt-0.5 size-5 shrink-0 text-texto3" aria-hidden="true" />
         </p>
+        <p className="t-pq mt-1 pl-8 text-realce-t">Ver mais</p>
       </GlassCard>
+
+      <BottomSheet aberto={dicaAberta} onFechar={() => setDicaAberta(false)} titulo="Dica do dia">
+        <p className="t-h3 flex gap-3 font-normal leading-relaxed">
+          <Lightbulb className="mt-1 size-5 shrink-0 text-aviso-t" aria-hidden="true" />
+          {dica}
+        </p>
+      </BottomSheet>
 
       <CheckinSheet
         aberto={checkinAberto}
         onFechar={() => setCheckinAberto(false)}
         data={hoje}
         existente={checkinHoje}
+        contexto={
+          jogo.passos[2].estado === "ativo" && jogo.registro?.dor != null
+            ? `Dor depois do jogo: ${jogo.registro.dor}`
+            : undefined
+        }
       />
     </main>
   );

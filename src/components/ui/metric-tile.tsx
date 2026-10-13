@@ -48,12 +48,12 @@ export function MetricTile({
       <div className="mt-2">
         <p className="flex items-baseline gap-1 leading-none">
           {vazio ? (
-            <span className="text-[32px] font-bold text-texto3">—</span>
+            <span className="text-[2rem] font-bold text-texto3">—</span>
           ) : texto ? (
-            <span className="text-[22px] leading-7 font-bold">{texto}</span>
+            <span className="text-[1.375rem] leading-7 font-bold">{texto}</span>
           ) : (
             <>
-              <span className="text-[32px] leading-10 font-bold">
+              <span className="text-[2rem] leading-10 font-bold">
                 <CountUp valor={valor ?? 0} casas={casas} />
               </span>
               {unidade && <span className="t-pq text-texto2">{unidade}</span>}

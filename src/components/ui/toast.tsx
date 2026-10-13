@@ -44,7 +44,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                   exit={{ opacity: 0, y: -16 }}
                   transition={{ duration: 0.25 }}
                   className={cn(
-                    "flex max-w-[420px] items-center gap-2 rounded-full border px-4 py-3 text-[15px] font-medium shadow-cartao",
+                    "flex max-w-[420px] items-center gap-2 rounded-full border px-4 py-3 text-[0.9375rem] font-medium shadow-cartao",
                     i.tipo === "sucesso" && "border-ok bg-ok text-sobre",
                     i.tipo === "aviso" && "border-aviso bg-aviso text-sobre",
                     i.tipo === "erro" && "border-perigo bg-perigo text-sobre",

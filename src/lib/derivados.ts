@@ -1,4 +1,5 @@
 // Cálculos sobre os dados salvos (métricas da Hoje e da Evolução).
+import { BLOCO_LEGADO } from "./seed/plano";
 import { addDias } from "./tempo";
 import { SONO_HORAS, type Checkin, type Sessao } from "./tipos";
 
@@ -54,4 +55,23 @@ export function sonoMedio(checkins: Checkin[], de: string, ate: string) {
 
 export function dorMedia(checkins: Checkin[], de: string, ate: string) {
   return media(checkins.filter((c) => c.data >= de && c.data <= ate).map((c) => c.dor));
+}
+
+/**
+ * Sessões gravadas com os ids antigos (etapas 1 a 5, manhã em um bloco só) passam a valer
+ * para os blocos novos (tornozelo, força, mobilidade), sem apagar nada do banco.
+ */
+export function expandirSessoesLegadas(sessoes: Sessao[]): Sessao[] {
+  const saida: Sessao[] = [];
+  for (const s of sessoes) {
+    const novos = BLOCO_LEGADO[s.bloco];
+    if (!novos) {
+      saida.push(s);
+      continue;
+    }
+    for (const id of novos) {
+      if (!sessoes.some((x) => x.data === s.data && x.bloco === id)) saida.push({ ...s, bloco: id });
+    }
+  }
+  return saida;
 }

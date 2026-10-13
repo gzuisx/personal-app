@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { AnimatePresence, motion } from "motion/react";
+import { motion } from "motion/react";
 import { BarChart3, CalendarDays, Home, Sparkles, User } from "lucide-react";
 import { cn } from "@/lib/cn";
 
@@ -14,9 +14,10 @@ const abas = [
   { href: "/perfil", rotulo: "Perfil", Icone: User },
 ] as const;
 
-// Telas de fluxo escondem a barra (secao 8.1 da especificação).
-const rotasSemBarra = ["/jogo/pre", "/login"];
+// Telas de fluxo escondem a barra (seção 8.1 da especificação).
+const rotasSemBarra = ["/jogo/pre", "/login", "/treino"];
 
+/** Barra flutuante em pílula: rótulo visível em todas as abas; a ativa leva o círculo branco. */
 export function BottomNav() {
   const pathname = usePathname();
   if (rotasSemBarra.some((r) => pathname.startsWith(r))) return null;
@@ -27,18 +28,17 @@ export function BottomNav() {
       className="fixed inset-x-0 z-40 flex justify-center px-4"
       style={{ bottom: "calc(env(safe-area-inset-bottom) + 12px)" }}
     >
-      <ul className="vidro-blur flex h-16 w-full max-w-[420px] items-center justify-between rounded-full border border-borda px-2 shadow-cartao">
+      <ul className="vidro-blur grid h-[4.5rem] w-full max-w-[420px] grid-cols-5 items-center rounded-full border border-borda px-1.5 shadow-cartao">
         {abas.map(({ href, rotulo, Icone }) => {
           const ativa = pathname === href || pathname.startsWith(`${href}/`);
           return (
             <li key={href}>
               <Link
                 href={href}
-                aria-label={rotulo}
                 aria-current={ativa ? "page" : undefined}
-                className="flex h-12 items-center rounded-full"
+                className="flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-full"
               >
-                <span className="relative flex size-11 items-center justify-center">
+                <span className="relative flex size-9 items-center justify-center">
                   {ativa && (
                     <motion.span
                       layoutId="nav-ativo"
@@ -54,19 +54,14 @@ export function BottomNav() {
                     aria-hidden="true"
                   />
                 </span>
-                <AnimatePresence initial={false}>
-                  {ativa && (
-                    <motion.span
-                      initial={{ width: 0, opacity: 0 }}
-                      animate={{ width: "auto", opacity: 1 }}
-                      exit={{ width: 0, opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="overflow-hidden whitespace-nowrap pr-3 pl-1 text-[13px] font-semibold text-texto"
-                    >
-                      {rotulo}
-                    </motion.span>
+                <span
+                  className={cn(
+                    "text-[0.8125rem] leading-4 font-medium",
+                    ativa ? "text-texto" : "text-texto2",
                   )}
-                </AnimatePresence>
+                >
+                  {rotulo}
+                </span>
               </Link>
             </li>
           );

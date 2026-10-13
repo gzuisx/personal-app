@@ -16,7 +16,7 @@ const SEMANA = [
   "2026-10-18",
 ];
 
-const dias = SEMANA.map(diaDoPlano);
+const dias = SEMANA.map((i) => diaDoPlano(i));
 
 const exerciciosUsados = new Map<string, (typeof EXERCICIOS)[string]>();
 for (const slug of Object.keys(EXERCICIOS)) exerciciosUsados.set(slug, EXERCICIOS[slug]);

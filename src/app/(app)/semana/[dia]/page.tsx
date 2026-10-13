@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { notFound, useParams } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
-import { ChevronDown, Clock, Trophy } from "lucide-react";
+import { ChevronDown, Clock } from "lucide-react";
+import { IconeBola } from "@/components/ui/icone-bola";
+import { useToast } from "@/components/ui/toast";
 import { useDados } from "@/components/dados-provider";
 import { SessaoSheet } from "@/components/features/sessao-sheet";
 import { StatusBloco } from "@/components/features/status-bloco";
@@ -15,6 +17,7 @@ import { MidiaPlaceholder } from "@/components/ui/midia-placeholder";
 import { SkeletonTela } from "@/components/ui/skeleton";
 import { cn } from "@/lib/cn";
 import { rotuloCarga } from "@/lib/carga";
+import type { Sessao } from "@/lib/tipos";
 import { sessaoDoBloco } from "@/lib/derivados";
 import { avaliarSeguranca } from "@/lib/safety";
 import {
@@ -72,12 +75,66 @@ function Exercicio({ e }: { e: ExercicioNoBloco }) {
   );
 }
 
+function NotaFuncional({ data, bloco, sessao }: { data: string; bloco: Bloco; sessao: Sessao | null }) {
+  const { salvarSessao } = useDados();
+  const toast = useToast();
+  const [nota, setNota] = useState(sessao?.notas ?? "");
+  const [salvando, setSalvando] = useState(false);
+
+  async function salvar() {
+    setSalvando(true);
+    try {
+      await salvarSessao({
+        data,
+        bloco: bloco.id,
+        resultado: sessao?.resultado ?? "feito",
+        esforco: sessao?.esforco ?? null,
+        duracaoMin: sessao?.duracaoMin ?? bloco.duracaoMin,
+        notas: nota.trim() || null,
+      });
+      toast.mostrar(sessao ? "Anotação salva" : "Anotação salva e bloco marcado como feito");
+    } catch {
+      toast.mostrar("Não foi possível salvar. Tente de novo.", "erro");
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  return (
+    <div className="mt-4 space-y-2">
+      <label htmlFor={"nota-" + bloco.id} className="t-h3 block">
+        O que foi feito
+      </label>
+      <textarea
+        id={"nota-" + bloco.id}
+        value={nota}
+        maxLength={300}
+        rows={3}
+        onChange={(e) => setNota(e.target.value)}
+        placeholder="Anote o que o instrutor passou hoje"
+        className="w-full rounded-[16px] border border-borda bg-vidro-forte p-3 text-[0.9375rem] text-texto outline-none placeholder:text-texto3 focus:border-realce-t"
+      />
+      <Button variante="secundario" className="w-full" carregando={salvando} onClick={salvar}>
+        {sessao ? "Salvar anotação" : "Salvar e marcar como feito"}
+      </Button>
+    </div>
+  );
+}
+
 export default function DetalheDiaPage() {
   const { dia: iso } = useParams<{ dia: string }>();
   const agora = useAgora();
   const { status, dados } = useDados();
   const [sheetAberto, setSheetAberto] = useState(false);
   const [blocoSheet, setBlocoSheet] = useState<Bloco | null>(null);
+  const pronto = !!agora && status === "pronto";
+
+  // Links dos anéis e de "Iniciar treino" chegam com #id-do-bloco: rola até ele.
+  useEffect(() => {
+    if (!pronto) return;
+    const alvo = window.location.hash.slice(1);
+    if (alvo) document.getElementById(alvo)?.scrollIntoView({ block: "start" });
+  }, [pronto]);
 
   if (!/^\d{4}-\d{2}-\d{2}$/.test(iso) || Number.isNaN(Date.parse(iso))) notFound();
 
@@ -90,7 +147,7 @@ export default function DetalheDiaPage() {
   }
 
   const hoje = dataISO(agora);
-  const dia = diaDoPlano(iso);
+  const dia = diaDoPlano(iso, { fase: dados.faseTornozelo.fase });
   const seg = avaliarSeguranca({
     checkins: dados.checkins,
     jogos: dados.jogos,
@@ -119,54 +176,58 @@ export default function DetalheDiaPage() {
       {dia.blocos.map((b, i) => {
         const sessao = sessaoDoBloco(dados.sessoes, iso, b.id);
         return (
-          <GlassCard key={b.id} indice={i}>
-            <p className="t-rotulo text-texto2">
-              {ROTULO_PERIODO[b.periodo]}
-              {b.horario ? ` · ${b.horario}` : ""}
-            </p>
-            <h2 className="t-h2 mt-0.5">{b.instrutor ? "Sessão do instrutor" : b.titulo}</h2>
-            {b.instrutor && <p className="t-corpo text-texto2">{b.titulo}</p>}
-            <div className="mt-2 flex flex-wrap items-center gap-2">
-              {b.duracaoMin > 0 && (
-                <span className="t-pq inline-flex items-center gap-1 text-texto2">
-                  <Clock className="size-4" aria-hidden="true" />
-                  {b.duracaoMin} min
-                </span>
-              )}
-              {b.tags.map((t) => (
-                <TagChip key={t} tag={t} />
-              ))}
-            </div>
-            {b.observacao && <p className="t-corpo mt-3 text-texto2">{b.observacao}</p>}
-
-            {b.tags.includes("Jogo") && dia.jogo && (
-              <p className="t-h3 mt-3 flex items-center gap-2 text-aviso-t">
-                <Trophy className="size-5" aria-hidden="true" />
-                Jogo às {horaTexto(dia.jogo.hora, dia.jogo.min)}
+          <div key={b.id} id={b.id} className="scroll-mt-24">
+            <GlassCard indice={i}>
+              <p className="t-rotulo text-texto2">
+                {ROTULO_PERIODO[b.periodo]}
+                {b.horario ? ` · ${b.horario}` : ""}
               </p>
-            )}
-
-            {b.exercicios.length > 0 && (
-              <ul className="mt-4 space-y-2">
-                {b.exercicios.map((e) => (
-                  <Exercicio key={`${b.id}-${e.slug}`} e={e} />
-                ))}
-              </ul>
-            )}
-
-            {blocoTreinavel(b) && (
-              <div className="mt-4 flex items-center gap-3">
-                {sessao ? (
-                  <StatusBloco sessao={sessao} nome={b.titulo} onClick={() => abrir(b)} />
-                ) : (
-                  <Button className="w-full" onClick={() => abrir(b)}>
-                    Marcar bloco como feito
-                  </Button>
+              <h2 className="t-h2 mt-0.5">{b.instrutor ? "Sessão do instrutor" : b.titulo}</h2>
+              {b.instrutor && <p className="t-corpo text-texto2">{b.titulo}</p>}
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                {b.duracaoMin > 0 && (
+                  <span className="t-pq inline-flex items-center gap-1 text-texto2">
+                    <Clock className="size-4" aria-hidden="true" />
+                    {b.duracaoMin} min
+                  </span>
                 )}
-                {sessao?.notas && <p className="t-pq min-w-0 flex-1 text-texto2">{sessao.notas}</p>}
+                {b.tags.map((t) => (
+                  <TagChip key={t} tag={t} />
+                ))}
               </div>
-            )}
-          </GlassCard>
+              {b.observacao && <p className="t-corpo mt-3 text-texto2">{b.observacao}</p>}
+
+              {b.instrutor && <NotaFuncional data={iso} bloco={b} sessao={sessao} />}
+
+              {b.tags.includes("Jogo") && dia.jogo && (
+                <p className="t-h3 mt-3 flex items-center gap-2 text-aviso-t">
+                  <IconeBola className="size-5" />
+                  Jogo às {horaTexto(dia.jogo.hora, dia.jogo.min)}
+                </p>
+              )}
+
+              {b.exercicios.length > 0 && (
+                <ul className="mt-4 space-y-2">
+                  {b.exercicios.map((e) => (
+                    <Exercicio key={`${b.id}-${e.slug}`} e={e} />
+                  ))}
+                </ul>
+              )}
+
+              {blocoTreinavel(b) && (
+                <div className="mt-4 flex items-center gap-3">
+                  {sessao ? (
+                    <StatusBloco sessao={sessao} nome={b.titulo} onClick={() => abrir(b)} />
+                  ) : (
+                    <Button className="w-full" onClick={() => abrir(b)}>
+                      Marcar bloco como feito
+                    </Button>
+                  )}
+                  {sessao?.notas && <p className="t-pq min-w-0 flex-1 text-texto2">{sessao.notas}</p>}
+                </div>
+              )}
+            </GlassCard>
+          </div>
         );
       })}
 

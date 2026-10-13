@@ -4,6 +4,28 @@ Entradas mais recentes no topo. Fonte de verdade: `ESPECIFICACAO-APP.txt`. Plano
 
 <!-- ENTRADAS -->
 
+## 2026-10-13 12:40 - Etapa 6: correções, decisões e visual alvo (noite 2)
+
+- Feito:
+  - C2 segurança adaptativa: depois de um bloqueio, a progressão só volta com 3 dias + 2 check-ins bons em dias diferentes (ou 7 dias com o check-in mais recente bom). 4 cenários + extras testados. O texto de alerta é o da seção 19.3.
+  - C3 rótulos de carga por dias corridos, tabela fixa por dia da semana e recálculo com jogo extra/cancelado.
+  - C4 modo demonstração opt-in (Perfil), 30 dias fictícios, faixa "DEMONSTRAÇÃO" em todas as telas, botão para apagar. Fica em chave separada do aparelho e nunca grava no Supabase.
+  - C5 fase do tornozelo no banco (`profiles.fase_tornozelo` e `fase_inicio`). O plano usa a fase guardada; ela só deve mudar por proposta aceita (etapa 8). Fases 1 a 4 e calendário de 8.3 no código.
+  - C6 restrições na tabela `restrictions` (JSON antigo migrado) e marcos com título e critério na tabela `milestone_defs` (8 marcos).
+  - C7/C8: cartão de jogo de 3 etapas (antes, depois, dia seguinte) na Hoje, na Semana e em `/jogo/[id]` com linha do tempo; check-in do dia seguinte vinculado ao jogo (`checkins.jogo_id`); aquecimento gravado em `pre_game_logs` (completo ou parcial, duração, tornozeleira); check-in pendente como cartão próprio ("Como está seu tornozelo?"); campo "O que foi feito" dentro do cartão do funcional.
+  - C9 dica do dia com 2 linhas e "Ver mais" em folha.
+  - C10 acessibilidade: axe-core (WCAG 2 AA) sem violações em 9 telas nos dois temas; fontes em rem; texto a 130% sem estourar a largura.
+  - C11 qualidade: ESLint, Prettier, Playwright (13 fluxos + 23 de acessibilidade), testes do supabaseRepo com mocks (9) e GitHub Actions (`.github/workflows/ci.yml`).
+  - C12 visual alvo (pasta "Ideias UI"): barra inferior com rótulo em todas as abas, cartão "Como está seu tornozelo?", botões em pílula larga com ícone e seta, controle segmentado (Feito/Parcial/Não fiz, Sim/Não) com check, escala de dor com anel ciano e check, ícone de bola próprio, estados do botão (carregando, "Em breve" com cadeado).
+  - C16 anéis do plano (Treinos, Tornozelo, Check-in), com alternância Dia/Semana, "Falta: ..." e botão; cada anel abre a pendência certa; anel completo abre o resumo com Editar; domingo e modo Folga mostram "Descanso"; terça e sábado mostram o ícone do jogo e abrem o card de jogo.
+  - Plano: a manhã foi dividida em blocos próprios (tornozelo, força, mobilidade), para os anéis e a Sequência do dia. Sessões antigas (ids `seg-manha` etc.) valem para os blocos novos sem apagar nada.
+  - Migração 0005 aplicada no Supabase.
+- Arquivos: `src/lib/safety`, `src/lib/carga`, `src/lib/jogo`, `src/lib/coach/aneis.ts`, `src/lib/hoje.ts`, `src/lib/demo.ts`, `src/lib/repo/*`, `src/components/features/{aneis-do-dia,game-card,jogo-dia-card,faixa-demo}.tsx`, `src/components/ui/{segmentado,botao-acao,icone-bola,escala-dor,bottom-nav}.tsx`, `e2e/*`, `playwright.config.ts`, `eslint.config.mjs`, `.prettierrc.json`, `.github/workflows/ci.yml`, `supabase/migrations/0005_correcoes_fase2.sql`.
+- Como testar: Perfil > "Carregar dados de exemplo"; volte à Hoje e toque nos anéis; abra `/jogo/AAAA-MM-DD`; veja a Semana (cartão de jogo nos dias de jogo).
+- Decisões tomadas: o modo demonstração pode ser ligado também com login (é isolado do Supabase), em vez de só em modo local; o id da rota `/jogo/[id]` é a data do jogo (AAAA-MM-DD); `ESPECIFICACAO-APP.txt` estava apagada do disco e foi restaurada do git; o arquivo `Meu_Personal_Ideias_Funcionais_Apple_Fitness.txt` não existe na pasta (usei a seção 24 da especificação); o botão "Iniciar treino" leva ao detalhe do dia até a etapa 7 criar o treino guiado.
+- Pendências: o CLAUDE.md não ganhou os blocos de resumo/caveman (você respondeu que não queria); o axe não consegue medir contraste sobre degradê em todos os pontos, então vale um olhar seu no iPhone.
+- Próximo passo: etapa 7 (treino guiado e registro de séries).
+
 ## FINAL DA NOITE (2026-10-13 02:45)
 
 ### O que foi concluído por etapa

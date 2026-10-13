@@ -25,7 +25,7 @@ export function StatusBloco({
       onClick={onClick}
       aria-label={`${nome}: ${rotulo}. Toque para registrar.`}
       className={cn(
-        "inline-flex h-11 min-w-[88px] shrink-0 items-center justify-center gap-1.5 rounded-full border px-4 text-[15px] font-semibold transition-transform duration-100 active:scale-[0.97]",
+        "inline-flex h-11 min-w-[88px] shrink-0 items-center justify-center gap-1.5 rounded-full border px-4 text-[0.9375rem] font-semibold transition-transform duration-100 active:scale-[0.97]",
         !r && "border-primario bg-primario text-white",
         r === "feito" && "border-ok bg-ok text-sobre",
         r === "parcial" && "border-aviso bg-aviso text-sobre",

@@ -23,7 +23,7 @@ import { FOCOS, type Perfil, type Restricao } from "@/lib/tipos";
 import { createClient } from "@/lib/supabase/client";
 
 const campo =
-  "h-12 w-full rounded-[16px] border border-borda bg-vidro-forte px-4 text-[15px] text-texto outline-none placeholder:text-texto3 focus:border-realce";
+  "h-12 w-full rounded-[16px] border border-borda bg-vidro-forte px-4 text-[0.9375rem] text-texto outline-none placeholder:text-texto3 focus:border-realce";
 
 function Campo({ rotulo, children }: { rotulo: string; children: React.ReactNode }) {
   return (
@@ -88,7 +88,19 @@ function Stepper({
 }
 
 export default function PerfilPage() {
-  const { status, erro, recarregar, dados, modo, salvarPerfil, salvarSeguranca, exportar } = useDados();
+  const {
+    status,
+    erro,
+    recarregar,
+    dados,
+    modo,
+    demo,
+    ativarDemo,
+    apagarDemo,
+    salvarPerfil,
+    salvarSeguranca,
+    exportar,
+  } = useDados();
   const { tema, setTema, reduzirAnimacoes, setReduzirAnimacoes } = usePreferencias();
   const toast = useToast();
 
@@ -229,7 +241,7 @@ export default function PerfilPage() {
       <GlassCard indice={0}>
         <div className="flex items-center gap-4">
           <div
-            className="flex size-16 shrink-0 items-center justify-center rounded-full bg-primario text-[22px] font-semibold text-white"
+            className="flex size-16 shrink-0 items-center justify-center rounded-full bg-primario text-[1.375rem] font-semibold text-white"
             aria-hidden="true"
           >
             {iniciais(perfil.nome) || "?"}
@@ -442,6 +454,22 @@ export default function PerfilPage() {
             />
           </div>
         </div>
+      </GlassCard>
+
+      <GlassCard indice={5} titulo="Modo demonstração">
+        <p className="t-corpo text-texto2">
+          Carrega 30 dias de dados fictícios para você ver os gráficos, o coach e os insights funcionando. Os
+          dados de exemplo ficam só neste aparelho e nunca se misturam com os seus dados reais.
+        </p>
+        {demo ? (
+          <Button variante="perigo" className="mt-3 w-full" onClick={apagarDemo}>
+            Apagar dados de exemplo
+          </Button>
+        ) : (
+          <Button variante="secundario" className="mt-3 w-full" onClick={ativarDemo}>
+            Carregar dados de exemplo
+          </Button>
+        )}
       </GlassCard>
 
       <GlassCard indice={6} titulo="Dados">

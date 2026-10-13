@@ -2,14 +2,16 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ChevronRight, Clock, Trophy } from "lucide-react";
-import { GlassCard } from "@/components/ui/glass-card";
+import { ChevronRight, Clock, Play } from "lucide-react";
 import { SessaoSheet } from "@/components/features/sessao-sheet";
 import { StatusBloco } from "@/components/features/status-bloco";
 import { TagChip } from "@/components/features/tag-chip";
+import { BotaoAcao } from "@/components/ui/botao-acao";
+import { GlassCard } from "@/components/ui/glass-card";
+import { IconeBola } from "@/components/ui/icone-bola";
+import type { RotuloCarga } from "@/lib/carga";
 import { sessaoDoBloco } from "@/lib/derivados";
 import { ROTULO_PERIODO, blocoTreinavel, type Bloco, type DiaPlano } from "@/lib/seed/plano";
-import type { RotuloCarga } from "@/lib/carga";
 import type { Sessao } from "@/lib/tipos";
 
 type Props = {
@@ -19,9 +21,25 @@ type Props = {
   indice?: number;
   /** aviso de segurança: não aumentar a carga */
   semProgressao?: boolean;
+  /** próximo bloco pendente e para onde "Iniciar treino" leva */
+  proximoBloco?: Bloco | null;
+  hrefIniciar?: string;
+  /** bloco aberto de fora (ex.: anel TREINOS completo pedindo para editar) */
+  blocoParaEditar?: Bloco | null;
+  onFecharEdicao?: () => void;
 };
 
-export function TreinoHojeCard({ dia, rotuloCarga, sessoes, indice, semProgressao }: Props) {
+export function TreinoHojeCard({
+  dia,
+  rotuloCarga,
+  sessoes,
+  indice,
+  semProgressao,
+  proximoBloco,
+  hrefIniciar,
+  blocoParaEditar,
+  onFecharEdicao,
+}: Props) {
   const [sheetAberto, setSheetAberto] = useState(false);
   const [blocoSheet, setBlocoSheet] = useState<Bloco>(dia.blocos[0]);
 
@@ -30,17 +48,13 @@ export function TreinoHojeCard({ dia, rotuloCarga, sessoes, indice, semProgressa
     setSheetAberto(true);
   }
 
+  const editando = blocoParaEditar ?? blocoSheet;
+  const aberto = sheetAberto || !!blocoParaEditar;
+
   return (
-    <GlassCard
-      indice={indice}
-      titulo="Treino de hoje"
-      acao={
-        <span className="t-rotulo rounded-full border border-borda bg-vidro px-3 py-1.5 text-texto2">
-          {rotuloCarga}
-        </span>
-      }
-    >
+    <GlassCard indice={indice} titulo="Treino de hoje">
       <p className="t-h2">{dia.titulo}</p>
+      <p className="t-pq mt-1 text-texto2">Carga: {rotuloCarga}</p>
       {semProgressao && (
         <p className="t-pq mt-1 text-aviso-t">Hoje não aumente a carga. Mantenha o que você já faz.</p>
       )}
@@ -72,7 +86,7 @@ export function TreinoHojeCard({ dia, rotuloCarga, sessoes, indice, semProgressa
               {treinavel ? (
                 <StatusBloco sessao={sessao} nome={b.titulo} onClick={() => abrir(b)} />
               ) : b.tags.includes("Jogo") ? (
-                <Trophy className="mr-2 size-6 shrink-0 text-aviso-t" aria-label="Jogo" />
+                <IconeBola className="mr-2 size-7 shrink-0 text-aviso-t" />
               ) : (
                 <ChevronRight className="size-5 shrink-0 text-texto3" aria-hidden="true" />
               )}
@@ -81,12 +95,24 @@ export function TreinoHojeCard({ dia, rotuloCarga, sessoes, indice, semProgressa
         })}
       </ul>
 
+      {proximoBloco && hrefIniciar && (
+        <BotaoAcao
+          className="mt-4"
+          rotulo="Iniciar treino"
+          icone={<Play className="size-5" />}
+          href={hrefIniciar}
+        />
+      )}
+
       <SessaoSheet
-        aberto={sheetAberto}
-        onFechar={() => setSheetAberto(false)}
+        aberto={aberto}
+        onFechar={() => {
+          setSheetAberto(false);
+          onFecharEdicao?.();
+        }}
         data={dia.iso}
-        bloco={blocoSheet}
-        inicial={sessaoDoBloco(sessoes, dia.iso, blocoSheet.id)}
+        bloco={editando}
+        inicial={sessaoDoBloco(sessoes, dia.iso, editando.id)}
         resultadoPadrao="feito"
       />
     </GlassCard>

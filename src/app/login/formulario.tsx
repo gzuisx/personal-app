@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 type Etapa = "email" | "codigo";
 
 const campo =
-  "h-14 w-full rounded-[16px] border border-borda bg-vidro-forte px-4 text-[17px] text-texto outline-none placeholder:text-texto3 focus:border-realce";
+  "h-14 w-full rounded-[16px] border border-borda bg-vidro-forte px-4 text-[1.0625rem] text-texto outline-none placeholder:text-texto3 focus:border-realce";
 
 export function FormularioLogin() {
   const router = useRouter();

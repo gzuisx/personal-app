@@ -53,7 +53,7 @@ export function SplashGate() {
             className="relative flex flex-col items-center gap-4 text-white"
           >
             <LogoMarca tamanho={96} />
-            <span className="text-[26px] leading-8 font-semibold">Meu Personal</span>
+            <span className="text-[1.625rem] leading-8 font-semibold">Meu Personal</span>
             <span className="t-corpo text-[#B8C7E6]">Seu treino. Seu tornozelo. Seu ritmo.</span>
           </motion.div>
         </motion.div>

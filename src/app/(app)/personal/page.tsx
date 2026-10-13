@@ -42,7 +42,7 @@ export default function PersonalPage() {
             disabled
             placeholder="Escreva uma mensagem (em breve)"
             aria-label="Mensagem para o personal (indisponível)"
-            className="h-14 min-w-0 flex-1 rounded-full border border-borda bg-vidro-forte px-5 text-[15px] text-texto placeholder:text-texto3 disabled:opacity-60"
+            className="h-14 min-w-0 flex-1 rounded-full border border-borda bg-vidro-forte px-5 text-[0.9375rem] text-texto placeholder:text-texto3 disabled:opacity-60"
           />
         </div>
       </div>

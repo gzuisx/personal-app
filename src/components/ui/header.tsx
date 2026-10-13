@@ -19,7 +19,7 @@ export function Header({ titulo, sobretitulo, voltarPara, acao, destaque }: Prop
         {voltarPara && (
           <Link
             href={voltarPara}
-            className="-ml-2 mb-1 inline-flex h-11 items-center gap-1 rounded-full px-2 text-[15px] text-texto2"
+            className="-ml-2 mb-1 inline-flex h-11 items-center gap-1 rounded-full px-2 text-[0.9375rem] text-texto2"
           >
             <ChevronLeft className="size-5" aria-hidden="true" />
             Voltar

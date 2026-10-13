@@ -32,7 +32,7 @@ export function DayStrip({ dias, onSelect }: { dias: DiaFaixa[]; onSelect?: (iso
           )}
         >
           <span className="t-rotulo">{d.letra}</span>
-          <span className="num text-[17px] leading-6 font-semibold">{d.numero}</span>
+          <span className="num text-[1.0625rem] leading-6 font-semibold">{d.numero}</span>
           <span className="flex h-2 items-center gap-1" aria-hidden="true">
             {d.jogo && <span className="size-1.5 rounded-full bg-aviso" />}
             {d.feito && <span className="size-1.5 rounded-full bg-ok" />}

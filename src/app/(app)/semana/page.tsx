@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useDados } from "@/components/dados-provider";
 import { DiaCard, diaConcluido } from "@/components/features/dia-card";
+import { JogoDiaCard } from "@/components/features/jogo-dia-card";
 import { Button } from "@/components/ui/button";
 import { DayStrip, type DiaFaixa } from "@/components/ui/day-strip";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -11,7 +12,7 @@ import { GlassCard } from "@/components/ui/glass-card";
 import { Header } from "@/components/ui/header";
 import { SkeletonTela } from "@/components/ui/skeleton";
 import { rotuloCarga } from "@/lib/carga";
-import { faseDoPlano } from "@/lib/seed/fase";
+import { faseGuardada } from "@/lib/seed/fase";
 import { diaDoPlano } from "@/lib/seed/plano";
 import { DIAS_SEMANA, addDias, dataISO, diasDaSemana } from "@/lib/tempo";
 import { useAgora } from "@/lib/use-agora";
@@ -45,8 +46,8 @@ export default function SemanaPage() {
 
   const hoje = dataISO(agora);
   const dias = diasDaSemana(addDias(hoje, offset * 7));
-  const planos = dias.map(diaDoPlano);
-  const fase = faseDoPlano(dias[0] > hoje ? dias[0] : dias[6] < hoje ? dias[6] : hoje);
+  const planos = dias.map((d) => diaDoPlano(d, { fase: dados.faseTornozelo.fase }));
+  const fase = faseGuardada(dados.faseTornozelo, dias[0] > hoje ? dias[0] : dias[6] < hoje ? dias[6] : hoje);
   const titulo =
     offset === 0
       ? "Esta semana"
@@ -116,14 +117,16 @@ export default function SemanaPage() {
 
       <div className="space-y-3">
         {planos.map((p, i) => (
-          <DiaCard
-            key={p.iso}
-            dia={p}
-            hoje={hoje}
-            rotuloCarga={rotuloCarga(p.iso)}
-            sessoes={dados.sessoes}
-            indice={i}
-          />
+          <div key={p.iso} className="space-y-3">
+            <DiaCard
+              dia={p}
+              hoje={hoje}
+              rotuloCarga={rotuloCarga(p.iso)}
+              sessoes={dados.sessoes}
+              indice={i}
+            />
+            {p.jogo && <JogoDiaCard data={p.iso} agora={agora} dados={dados} indice={i} />}
+          </div>
         ))}
       </div>
 

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { BatteryFull, BatteryLow, BatteryMedium } from "lucide-react";
 import { useDados } from "@/components/dados-provider";
 import { Button } from "@/components/ui/button";
+import { Banner } from "@/components/ui/banner";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { CheckAnimado } from "@/components/ui/check-animado";
 import { ChipGroup } from "@/components/ui/chip";
@@ -19,6 +20,8 @@ type Props = {
   data: string;
   /** check-in já salvo no dia: abre preenchido e salvar atualiza */
   existente?: Checkin | null;
+  /** linha de contexto no topo (ex.: "Dor depois do jogo: 3") */
+  contexto?: string;
 };
 
 const icone = (n: number) => {
@@ -33,7 +36,7 @@ const gatilhos = (Object.keys(GATILHO_ROTULO) as Gatilho[]).map((k) => ({
   rotulo: GATILHO_ROTULO[k],
 }));
 
-export function CheckinSheet({ aberto, onFechar, data, existente }: Props) {
+export function CheckinSheet({ aberto, onFechar, data, existente, contexto }: Props) {
   const { salvarCheckin } = useDados();
   const toast = useToast();
   const [dor, setDor] = useState<number | null>(null);
@@ -108,6 +111,7 @@ export function CheckinSheet({ aberto, onFechar, data, existente }: Props) {
         </div>
       ) : (
         <>
+          {contexto && <Banner variante="info">{contexto}</Banner>}
           <section className="space-y-2">
             <h3 className="t-h3">Dor no tornozelo direito</h3>
             <EscalaDor
@@ -174,7 +178,7 @@ export function CheckinSheet({ aberto, onFechar, data, existente }: Props) {
                   maxLength={200}
                   rows={3}
                   onChange={(e) => setNota(e.target.value)}
-                  className="w-full rounded-[16px] border border-borda bg-vidro-forte p-3 text-[15px] text-texto outline-none placeholder:text-texto3 focus:border-realce"
+                  className="w-full rounded-[16px] border border-borda bg-vidro-forte p-3 text-[0.9375rem] text-texto outline-none placeholder:text-texto3 focus:border-realce"
                   placeholder="Até 200 caracteres"
                 />
               </>
