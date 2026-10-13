@@ -28,6 +28,7 @@ Entradas mais recentes no topo. Fonte de verdade: `ESPECIFICACAO-APP.txt`. Plano
   - Prancha lateral, rotação de abdominal e alguns giros com bola ficam aproximados (2D não mostra rotação); clamshell usa o modelo da abdução com elástico.
 - Pendências: demonstrações conferidas só em quadros parados e em 390 px (falta ver no iPhone em movimento); o critério de fase do posterior e da panturrilha precisa de calibração com um fisioterapeuta; "Meu foco" na biblioteca mostra os exercícios das 3 fases do protocolo; P5 e P6 seguem só descritos.
 - Teste automático: 476 testes de lógica (inclui troca de foco com e sem bloqueio, protocolos, todas as poses válidas a cada quadro, 30 s com repetições inteiras e biblioteca) e 92 de interface (inclui biblioteca, Reduzir animações, detalhe do dia, troca de foco e axe nas telas novas, nos dois temas) passando; ESLint, Prettier, tsc e build limpos.
+- Publicação (20h08): merge na main (fe3ccfb), migração 0009 aplicada no Supabase com `supabase db push` (0001 a 0009 aplicadas), CI da main verde e deploy de produção na Vercel Ready.
 - Próximo passo: o Gabriel testar no iPhone; depois, etapa 10 (lembretes).
 
 ### Para testar no iPhone (etapa 11)
