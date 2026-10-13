@@ -7,11 +7,23 @@ import { Button } from "@/components/ui/button";
 import { Banner } from "@/components/ui/banner";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { CheckAnimado } from "@/components/ui/check-animado";
-import { ChipGroup } from "@/components/ui/chip";
+import { ChipGroup, ChipGroupMulti } from "@/components/ui/chip";
 import { EscalaDor } from "@/components/ui/escala-dor";
 import { ToggleSimNao } from "@/components/ui/toggle-sim-nao";
 import { useToast } from "@/components/ui/toast";
-import { GATILHO_ROTULO, SONO_ROTULO, type Checkin, type Gatilho, type SonoFaixa } from "@/lib/tipos";
+import {
+  DURACAO_DOR_ROTULO,
+  GATILHO_ROTULO,
+  MOVIMENTO_ROTULO,
+  REGIAO_ROTULO,
+  SONO_ROTULO,
+  type Checkin,
+  type DuracaoDor,
+  type Gatilho,
+  type MovimentoDor,
+  type RegiaoDor,
+  type SonoFaixa,
+} from "@/lib/tipos";
 
 type Props = {
   aberto: boolean;
@@ -36,6 +48,19 @@ const gatilhos = (Object.keys(GATILHO_ROTULO) as Gatilho[]).map((k) => ({
   rotulo: GATILHO_ROTULO[k],
 }));
 
+const regioes = (Object.keys(REGIAO_ROTULO) as RegiaoDor[]).map((k) => ({
+  valor: k,
+  rotulo: REGIAO_ROTULO[k],
+}));
+const movimentos = (Object.keys(MOVIMENTO_ROTULO) as MovimentoDor[]).map((k) => ({
+  valor: k,
+  rotulo: MOVIMENTO_ROTULO[k],
+}));
+const duracoes = (Object.keys(DURACAO_DOR_ROTULO) as DuracaoDor[]).map((k) => ({
+  valor: k,
+  rotulo: DURACAO_DOR_ROTULO[k],
+}));
+
 export function CheckinSheet({ aberto, onFechar, data, existente, contexto }: Props) {
   const { salvarCheckin } = useDados();
   const toast = useToast();
@@ -45,6 +70,10 @@ export function CheckinSheet({ aberto, onFechar, data, existente, contexto }: Pr
   const [energia, setEnergia] = useState<number | null>(null);
   const [sono, setSono] = useState<SonoFaixa | null>(null);
   const [gatilho, setGatilho] = useState<Gatilho | null>(null);
+  const [regs, setRegs] = useState<RegiaoDor[]>([]);
+  const [movs, setMovs] = useState<MovimentoDor[]>([]);
+  const [duracao, setDuracao] = useState<DuracaoDor | null>(null);
+  const [posterior, setPosterior] = useState(false);
   const [nota, setNota] = useState("");
   const [notaAberta, setNotaAberta] = useState(false);
   const [salvando, setSalvando] = useState(false);
@@ -59,6 +88,10 @@ export function CheckinSheet({ aberto, onFechar, data, existente, contexto }: Pr
     setEnergia(existente?.energia ?? null);
     setSono(existente?.sonoFaixa ?? null);
     setGatilho(existente?.gatilho ?? null);
+    setRegs(existente?.regioes ?? []);
+    setMovs(existente?.movimentos ?? []);
+    setDuracao(existente?.duracaoDor ?? null);
+    setPosterior(existente?.posteriorApertou ?? false);
     setNota(existente?.observacao ?? "");
     setNotaAberta(!!existente?.observacao);
     setSalvo(false);
@@ -81,6 +114,10 @@ export function CheckinSheet({ aberto, onFechar, data, existente, contexto }: Pr
         energia,
         sonoFaixa: sono,
         gatilho: dor >= 1 ? gatilho : null,
+        regioes: dor >= 1 ? regs : [],
+        movimentos: dor >= 1 ? movs : [],
+        duracaoDor: dor >= 1 ? duracao : null,
+        posteriorApertou: posterior,
         observacao: nota.trim() || null,
       });
       setSalvo(true);
@@ -165,6 +202,38 @@ export function CheckinSheet({ aberto, onFechar, data, existente, contexto }: Pr
               />
             </section>
           )}
+
+          {dor !== null && dor >= 1 && (
+            <>
+              <section className="space-y-2">
+                <h3 className="t-h3">Onde doeu</h3>
+                <ChipGroupMulti rotuloAria="Onde doeu" opcoes={regioes} valores={regs} onChange={setRegs} />
+              </section>
+              <section className="space-y-2">
+                <h3 className="t-h3">Movimento que doeu</h3>
+                <ChipGroupMulti
+                  rotuloAria="Movimento que doeu"
+                  opcoes={movimentos}
+                  valores={movs}
+                  onChange={setMovs}
+                />
+              </section>
+              <section className="space-y-2">
+                <h3 className="t-h3">Quanto tempo durou</h3>
+                <ChipGroup
+                  rotuloAria="Duração da dor"
+                  opcoes={duracoes}
+                  valor={duracao}
+                  onChange={setDuracao}
+                />
+              </section>
+            </>
+          )}
+
+          <section className="space-y-2">
+            <h3 className="t-h3">Posterior apertou?</h3>
+            <ToggleSimNao valor={posterior} onChange={setPosterior} rotuloAria="Posterior apertou" />
+          </section>
 
           <section className="space-y-2">
             {notaAberta ? (

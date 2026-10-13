@@ -1,5 +1,6 @@
 // CoachContext (seção 3.2): tudo que o motor "sabe" a cada instante. Telas e regras usam o MESMO contexto.
 import { avaliarSeguranca, diasVerdesSeguidos } from "../safety";
+import { resumirTestes } from "../testes";
 import { diaPlanejado } from "./dia";
 import { faseGuardada } from "../seed/fase";
 import { avaliarSemaforo } from "../semaforo";
@@ -16,7 +17,11 @@ const MS_HORA = 3_600_000;
 /** Testes de campo do app, no formato que o motor usa. A etapa 9 preenche; até lá a lista vai vazia. */
 export type FonteDeTestes = TesteCampoResumo[];
 
-export function buildCoachContext(agora: Date, dados: DadosApp, testes: FonteDeTestes = []): CoachContext {
+export function buildCoachContext(
+  agora: Date,
+  dados: DadosApp,
+  testes: FonteDeTestes = resumirTestes(dados.testes ?? []),
+): CoachContext {
   const hoje = dataISO(agora);
   const desde = addDias(hoje, -(JANELA_DIAS - 1));
   const config = dados.seguranca;

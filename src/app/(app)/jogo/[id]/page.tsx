@@ -6,7 +6,9 @@ import { notFound, useParams } from "next/navigation";
 import { Check, Circle, Minus } from "lucide-react";
 import { useDados } from "@/components/dados-provider";
 import { CheckinSheet } from "@/components/features/checkin-sheet";
+import { DiarioSheet } from "@/components/features/diario-sheet";
 import { GameCard } from "@/components/features/game-card";
+import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { GlassCard } from "@/components/ui/glass-card";
 import { Header } from "@/components/ui/header";
@@ -24,6 +26,7 @@ export default function JogoPage() {
   const agora = useAgora();
   const { status, dados } = useDados();
   const [checkinAberto, setCheckinAberto] = useState(false);
+  const [diarioAberto, setDiarioAberto] = useState(false);
 
   if (!/^\d{4}-\d{2}-\d{2}$/.test(id)) notFound();
 
@@ -130,6 +133,21 @@ export default function JogoPage() {
           ))}
         </ol>
       </GlassCard>
+
+      {registro && registro.dor !== null && (
+        <GlassCard titulo="Diário do centroavante" indice={2}>
+          <p className="t-corpo text-texto2">
+            {dados.diarios.some((d) => d.jogoData === estado.data)
+              ? "Diário preenchido. Você pode editar."
+              : "Leva uns 20 segundos: finalizações, gols, notas de 1 a 5 e duas coisas boas."}
+          </p>
+          <Button className="mt-3" variante="secundario" onClick={() => setDiarioAberto(true)}>
+            {dados.diarios.some((d) => d.jogoData === estado.data) ? "Editar diário" : "Preencher diário"}
+          </Button>
+        </GlassCard>
+      )}
+
+      <DiarioSheet jogoData={estado.data} aberto={diarioAberto} onFechar={() => setDiarioAberto(false)} />
 
       <CheckinSheet
         aberto={checkinAberto}

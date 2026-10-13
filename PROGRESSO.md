@@ -4,6 +4,62 @@ Entradas mais recentes no topo. Fonte de verdade: `ESPECIFICACAO-APP.txt`. Plano
 
 <!-- ENTRADAS -->
 
+## FINAL DA NOITE 2 (etapas 6 a 9)
+
+### O que foi feito, por etapa
+
+- **Etapa 6 (correções e visual)**: segurança adaptativa (3 dias + 2 check-ins bons, ou 7 dias), rótulos de carga por dia da semana, modo demonstração isolado do banco, fase do tornozelo no banco, restrições e marcos em tabelas, cartão de jogo em 3 etapas, anéis acionáveis, visual novo (barra inferior com rótulos, botões em pílula, escala de dor, segmentado), ESLint, Prettier, Playwright, axe e CI. Migração 0005.
+- **Etapa 7 (treino guiado)**: `/treino/[bloco]` com botão principal único, descanso, "Doeu", pular e trocar, retomada, Sequência do dia, catálogo de 77 exercícios, progressão sugerida. Migração 0006.
+- **Etapa 8 (coach)**: 18 regras, prontidão interna, carga da semana, decisão do dia (Completo, Reduzido, Recuperação, Folga) com "Por que?" e "Ajustar treino", "Só tenho X min", propostas com validador, versões de plano e auditoria, modelos P1 a P7 (P1 a P4 e P7 funcionam), Ajustar semana, Sugestões para você, Rotina no Perfil. Migração 0007.
+- **Etapa 9 (testes, metas, diário e Evolução)**: check-in com onde doeu, movimento, duração e "posterior apertou"; testes de campo T1 a T6 em `/evolucao/testes` (cronômetro, melhor de 3, simetria entre pés, gráfico, T5 só na fase 3 com semáforo verde); metas de 2027 sugeridas a partir do primeiro teste; diário do centroavante com média móvel de 5 jogos; 10 insights (I1 a I10) com mínimo de 10 registros; Evolução em 8 abas (Resumo, Calendário, Carga, Tornozelo, Força, Testes, Insights, Jogos); carga da semana tocável com "O que compôs o dia" e "Como calculamos"; calendário "Planejado x realizado"; evolução por exercício e "Comparar sessões". Migração 0008 (`field_tests`, `goals`, `game_stats`).
+
+### O que não foi possível ou foi decisão minha
+
+- Não implementei, por regra do prompt: IA do Claude (etapa 12), biblioteca de mídia (etapa 11), lembretes e push (etapa 10).
+- Não testei com o Supabase real e login: só modo local, demonstração e o build de produção. A gravação das tabelas novas (0007 e 0008) foi aplicada no banco, mas nunca exercitada por você logado.
+- O GitHub Actions (CI) não foi conferido: a CLI `gh` não está instalada.
+- P5 (foco posterior) e P6 (arranque e potência) estão só descritos; não alteram o dia ainda.
+- "Comparar períodos" e "comparar dois dias" (18.4 e 24.5) ficaram de fora.
+- `getDiaResumo` é usado no Calendário e na Carga; Hoje e Semana usam a mesma base (`diaPlanejado`), mas não chamam a função diretamente.
+- Sem check-in de hoje, a pontuação é só estimativa: o treino e o cartão seguem a segurança e o cartão "Decisão do dia" só aparece depois do check-in.
+- A escolha de "Ajustar treino" fica no aparelho (localStorage), não no banco.
+- Os testes de campo e o diário de exemplo só existem no modo demonstração.
+- O `CLAUDE.md` continua sem os blocos de resumo (você recusou antes).
+
+### Para testar no iPhone de manhã (nesta ordem)
+
+1. Abra o app instalado (ou o link da Vercel), entre com seu e-mail e confira que a Hoje carrega sem faixa de demonstração.
+2. Faça o check-in com dor 3: confira "Onde doeu", "Movimento que doeu", "Quanto tempo durou" e "Posterior apertou?". Salve.
+3. Na Hoje, veja o cartão "Decisão do dia": o modo, a frase, "Por que?" (regra, dados e o que mudaria, sem porcentagem) e "Ajustar treino".
+4. Toque em "Ajustar treino" > "20 min" e inicie o treino: ele deve mostrar "Só 20 min" e registrar como parcial.
+5. Faça um treino guiado inteiro (tornozelo): botão principal, descanso, "Doeu" com 4 e com 7, feche o app no meio e volte para ver "Continuar treino".
+6. Semana > "Ajustar semana": marque "Funcional cancelado" num dia e veja o dia mudar; remova depois.
+7. Semana > "Sugestões para você": toque em "Adicionar" e veja o exercício no dia.
+8. Perfil > Rotina: mude um horário, salve, recarregue.
+9. Evolução > Testes > "Fazer ou ver os testes": faça o T1 com o cronômetro (ou digitando), salve e veja o último resultado e a meta sugerida.
+10. Evolução > Calendário: toque numa data passada e numa futura. Evolução > Carga: toque num dia e em "Como calculamos".
+11. Evolução > Jogos: preencha o diário de um jogo registrado.
+12. Veja a barra inferior e as folhas (sheets) com a área segura do iPhone, o tema claro e o texto grande.
+13. Anote aqui o que falhar. Se algo da Vercel ou do Supabase pedir ajuste (Site URL, cadastro de novos usuários desligado), isso é com você.
+
+## 2026-10-13 22:30 - Etapa 9: testes de campo, metas, diário e Evolução (noite 2)
+
+- Feito:
+  - Check-in: com dor de 1 ou mais aparecem "Onde doeu" (lateral, medial, frente, atrás, tendão de Aquiles, dentro da articulação), "Movimento que doeu" e "Quanto tempo durou"; "Posterior apertou?" aparece sempre. Os valores vão para `regioes`, `movimentos`, `duracao_dor` e `posterior_apertou`.
+  - Testes de campo T1 a T6 em `/evolucao/testes`: instruções curtas, aquecimento sugerido, aviso "Pare se doer mais de 3", cronômetro (T1 e T3), melhor de 3 tentativas, falhas no equilíbrio, gráfico de evolução por teste, simetria entre os pés e variação. O T5 só abre na fase 3 ou mais e com semáforo verde. A regra R10 (queda de 5% ou mais) e os marcos automáticos passam a ler esses testes.
+  - Metas de 2027: sugeridas a partir do primeiro teste (sprint -4%, salto +5%, equilíbrio 30 s de olhos fechados, panturrilha com 90% de simetria), com valor inicial, atual, alvo, prazo, barra de progresso e alvo editável.
+  - Marcos: detectados sozinhos nos dados e confirmados por você (cartão "Marco atingido?").
+  - Diário do centroavante (20 s): contadores, notas de 1 a 5, duas coisas boas e duas a melhorar, na Evolução > Jogos e na página do jogo; tendência por média móvel de 5 jogos.
+  - Insights I1 a I10 (aba Insights): só com 10 registros ou 4 semanas, sempre "com base em N registros", linguagem "parece que", botão "Por que?". Sem dados, mostra o que falta.
+  - Evolução em 8 abas. Calendário com ponto de treino, check de feito, bola de jogo, cor da dor e lua de descanso; tocar numa data abre "Planejado x realizado" (treinos, jogo, check-in, testes, decisão do coach recalculada com os registros até aquele dia). Carga empilhada por tipo com filtros, "O que compôs o dia" (esforço x minutos, sono e dor), comparativo com as 4 semanas anteriores e "Como calculamos" com a fórmula e os dados. Força por exercício: gráfico (mínimo 3 sessões), recordes pessoais, platô e "Comparar sessões" (mínimo 2) com frase gerada por regra e aviso de quantas sessões faltam.
+  - Migração 0008 aplicada (só aditiva): `field_tests`, `goals`, `game_stats`, todas com segurança por linha.
+- Arquivos: `src/lib/testes`, `src/lib/diario`, `src/lib/evolucao/{dia,exercicios}.ts`, `src/lib/coach/insights.ts`, `src/lib/tipos-testes.ts`, `src/components/evolucao/*`, `src/components/features/{registrar-teste,metas-card,diario-sheet}.tsx`, `src/app/(app)/evolucao/{page,testes/page}.tsx`, `supabase/migrations/0008_testes_metas_diario.sql`, `e2e/etapa9.spec.ts`.
+- Como testar: ver a lista "Para testar no iPhone de manhã" acima.
+- Decisões tomadas: T3 guarda os segundos mantidos e as falhas; T5 e T6 têm variações (horizontal, triplo; frente, lateral, atrás). Metas guardam o valor inicial e o atual vem dos testes. Os insights usam "parece que" e nunca falam em causa. O calendário usa botões em grupo em vez de uma grade ARIA (a grade exigia linhas e o axe reprovava). Demo ganhou testes e diário fictícios para as abas aparecerem.
+- Pendências: gráficos de carga e calendário só foram verificados em tela de 390 px; "comparar períodos" e "comparar dois dias" ficaram para depois; a IA entra na migração 0009 ou posterior.
+- Teste automático: 376 testes de lógica e 84 de interface (fluxos, treino, coach, etapa 9 e axe nos dois temas) passando; ESLint, tsc e build limpos.
+- Próximo passo: fim da noite 2. Etapa 10 (lembretes) é a próxima, em outra noite.
+
 ## 2026-10-13 18:30 - Etapa 8: motor do coach e adaptação (noite 2)
 
 - Feito:

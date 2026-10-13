@@ -6,6 +6,8 @@ import {
   DADOS_VAZIOS,
   type Checkin,
   type DadosApp,
+  type DiarioJogo,
+  type TesteCampo,
   type Gatilho,
   type Jogo,
   type PreJogoLog,
@@ -116,5 +118,49 @@ export function gerarDadosDemo(hoje: string, dias = 30): DadosApp {
     if (seguinte) seguinte.jogoId = j.id ?? null;
   }
 
-  return { ...structuredClone(DADOS_VAZIOS), checkins, sessoes, jogos, preJogos };
+  // testes de campo fictícios: linha de base há 30 dias e repetição agora
+  const testes: TesteCampo[] = [];
+  const t = (
+    data: string,
+    tipo: TesteCampo["tipo"],
+    valor: number,
+    unidade: string,
+    extra: Partial<TesteCampo> = {},
+  ) =>
+    testes.push({
+      id: `demo-${tipo}-${data}-${testes.length}`,
+      tipo,
+      valor,
+      unidade,
+      tentativa: 1,
+      data,
+      ...extra,
+    });
+  const base = addDias(hoje, -(dias - 1));
+  t(base, "T1", 3.62, "s");
+  t(hoje, "T1", 3.5, "s");
+  t(base, "T2", 38, "cm");
+  t(hoje, "T2", 40, "cm");
+  t(base, "T4", 18, "reps", { pe: "direito" });
+  t(base, "T4", 14, "reps", { pe: "esquerdo" });
+  t(hoje, "T4", 20, "reps", { pe: "direito" });
+  t(hoje, "T4", 17, "reps", { pe: "esquerdo" });
+
+  // diário do centroavante fictício nos jogos já registrados
+  const diarios: DiarioJogo[] = jogos
+    .filter((j) => j.dor !== null)
+    .map((j, i) => ({
+      jogoData: dataISO(new Date(j.inicio)),
+      finalizacoes: entre(rng, 1, 5),
+      gols: entre(rng, 0, 2),
+      assistencias: entre(rng, 0, 1),
+      arrancadas: entre(rng, 3, 9),
+      olhadas: entre(rng, 2, 5),
+      movimentacao: entre(rng, 2, 5),
+      condicao: Math.min(5, 2 + (i % 4)),
+      bom: ["Boa leitura da zaga"],
+      melhorar: ["Atacar mais cedo o espaço"],
+    }));
+
+  return { ...structuredClone(DADOS_VAZIOS), checkins, sessoes, jogos, preJogos, testes, diarios };
 }

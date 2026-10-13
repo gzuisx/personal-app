@@ -211,6 +211,9 @@ export type RegistroAuditoria = {
   criadoEm: string;
 };
 
+export type { DiarioJogo, Meta, PeTeste, TesteCampo, TipoTeste } from "./tipos-testes";
+import type { DiarioJogo, Meta, TesteCampo } from "./tipos-testes";
+
 export type Marco = { chave: string; concluidoEm: string | null };
 
 export type MarcoDef = {
@@ -338,6 +341,9 @@ export type DadosApp = {
   propostas: Proposta[];
   versoes: PlanoVersao[];
   auditoria: RegistroAuditoria[];
+  testes: TesteCampo[];
+  metas: Meta[];
+  diarios: DiarioJogo[];
   series: SerieLog[];
   execucao: Execucao | null;
   seguranca: ConfigSeguranca;
@@ -357,6 +363,9 @@ export const DADOS_VAZIOS: DadosApp = {
   propostas: [],
   versoes: [],
   auditoria: [],
+  testes: [],
+  metas: [],
+  diarios: [],
   series: [],
   execucao: null,
   seguranca: SEGURANCA_PADRAO,

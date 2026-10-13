@@ -8,6 +8,9 @@ import {
   ROTINA_PADRAO,
   type Checkin,
   type DadosApp,
+  type DiarioJogo,
+  type Meta,
+  type TesteCampo,
   type DuracaoDor,
   type Execucao,
   type ExcecaoAgenda,
@@ -93,6 +96,9 @@ export function criarSupabaseRepo(): Repo {
       propR,
       audR,
       verR,
+      testR,
+      metaR,
+      diarR,
     ] = await Promise.all([
       supabase.from("profiles").select("nome, dados, fase_tornozelo, fase_inicio").maybeSingle(),
       supabase
@@ -153,6 +159,20 @@ export function criarSupabaseRepo(): Repo {
         .from("plan_versions")
         .select("id, chave_template, inicio, fim, origem, ativo, conteudo")
         .order("inicio", { ascending: false }),
+      supabase
+        .from("field_tests")
+        .select("id, tipo, pe, subtipo, valor, unidade, tentativa, falhas, nota, data")
+        .order("data"),
+      supabase
+        .from("goals")
+        .select("id, chave, titulo, tipo_teste, subtipo, pe, inicial, alvo, unidade, menor_melhor, prazo")
+        .order("created_at"),
+      supabase
+        .from("game_stats")
+        .select(
+          "jogo_data, finalizacoes, gols, assistencias, arrancadas, olhadas, movimentacao, condicao, bom, melhorar",
+        )
+        .order("jogo_data"),
     ]);
 
     erro("perfil", perfilR.error);
@@ -171,6 +191,9 @@ export function criarSupabaseRepo(): Repo {
     erro("propostas", propR.error);
     erro("registro de decisões", audR.error);
     erro("versões do plano", verR.error);
+    erro("testes de campo", testR.error);
+    erro("metas", metaR.error);
+    erro("diário do centroavante", diarR.error);
 
     const dados = (perfilR.data?.dados ?? {}) as Partial<Perfil>;
     const doBanco = (restR.data ?? []).map((r) => restricaoDaLinha(r as LinhaRestricao));
@@ -286,6 +309,43 @@ export function criarSupabaseRepo(): Repo {
         origem: r.origem as PlanoVersao["origem"],
         ativo: !!r.ativo,
         conteudo: ((r.conteudo as Record<string, unknown> | null) ?? {}) as Record<string, unknown>,
+      })),
+      testes: (testR.data ?? []).map((r) => ({
+        id: r.id as string,
+        tipo: r.tipo as TesteCampo["tipo"],
+        pe: (r.pe as TesteCampo["pe"]) ?? null,
+        subtipo: (r.subtipo as string | null) ?? null,
+        valor: Number(r.valor),
+        unidade: r.unidade as string,
+        tentativa: Number(r.tentativa ?? 1),
+        falhas: (r.falhas as number | null) ?? null,
+        nota: (r.nota as string | null) ?? null,
+        data: r.data as string,
+      })),
+      metas: (metaR.data ?? []).map((r) => ({
+        id: r.id as string,
+        chave: r.chave as string,
+        titulo: r.titulo as string,
+        tipoTeste: (r.tipo_teste as Meta["tipoTeste"]) ?? null,
+        subtipo: (r.subtipo as string | null) ?? null,
+        pe: (r.pe as Meta["pe"]) ?? null,
+        inicial: r.inicial === null || r.inicial === undefined ? null : Number(r.inicial),
+        alvo: Number(r.alvo),
+        unidade: r.unidade as string,
+        menorEhMelhor: !!r.menor_melhor,
+        prazo: (r.prazo as string | null) ?? null,
+      })),
+      diarios: (diarR.data ?? []).map((r) => ({
+        jogoData: r.jogo_data as string,
+        finalizacoes: (r.finalizacoes as number | null) ?? null,
+        gols: (r.gols as number | null) ?? null,
+        assistencias: (r.assistencias as number | null) ?? null,
+        arrancadas: (r.arrancadas as number | null) ?? null,
+        olhadas: (r.olhadas as number | null) ?? null,
+        movimentacao: (r.movimentacao as number | null) ?? null,
+        condicao: (r.condicao as number | null) ?? null,
+        bom: (r.bom as string[] | null) ?? [],
+        melhorar: (r.melhorar as string[] | null) ?? [],
       })),
       auditoria: (audR.data ?? []).map((r) => ({
         id: r.id as string,
@@ -443,6 +503,77 @@ export function criarSupabaseRepo(): Repo {
       const user_id = await userId();
       const { error } = await supabase.from("execution_state").delete().eq("user_id", user_id);
       erro("limpar treino em andamento", error);
+    },
+
+    async salvarTeste(t: TesteCampo) {
+      const user_id = await userId();
+      const { error } = await supabase.from("field_tests").upsert({
+        id: t.id,
+        user_id,
+        tipo: t.tipo,
+        pe: t.pe ?? null,
+        subtipo: t.subtipo ?? null,
+        valor: t.valor,
+        unidade: t.unidade,
+        tentativa: t.tentativa,
+        falhas: t.falhas ?? null,
+        nota: t.nota ?? null,
+        data: t.data,
+      });
+      erro("salvar teste de campo", error);
+    },
+
+    async removerTeste(id: string) {
+      const { error } = await supabase.from("field_tests").delete().eq("id", id);
+      erro("remover teste de campo", error);
+    },
+
+    async salvarMeta(m: Meta) {
+      const user_id = await userId();
+      const { error } = await supabase.from("goals").upsert(
+        {
+          id: m.id,
+          user_id,
+          chave: m.chave,
+          titulo: m.titulo,
+          tipo_teste: m.tipoTeste,
+          subtipo: m.subtipo ?? null,
+          pe: m.pe ?? null,
+          inicial: m.inicial,
+          alvo: m.alvo,
+          unidade: m.unidade,
+          menor_melhor: m.menorEhMelhor,
+          prazo: m.prazo,
+        },
+        { onConflict: "user_id,chave" },
+      );
+      erro("salvar meta", error);
+    },
+
+    async removerMeta(id: string) {
+      const { error } = await supabase.from("goals").delete().eq("id", id);
+      erro("remover meta", error);
+    },
+
+    async salvarDiario(d: DiarioJogo) {
+      const user_id = await userId();
+      const { error } = await supabase.from("game_stats").upsert(
+        {
+          user_id,
+          jogo_data: d.jogoData,
+          finalizacoes: d.finalizacoes,
+          gols: d.gols,
+          assistencias: d.assistencias,
+          arrancadas: d.arrancadas,
+          olhadas: d.olhadas,
+          movimentacao: d.movimentacao,
+          condicao: d.condicao,
+          bom: d.bom,
+          melhorar: d.melhorar,
+        },
+        { onConflict: "user_id,jogo_data" },
+      );
+      erro("salvar diário do jogo", error);
     },
 
     async salvarExcecao(e: ExcecaoAgenda) {

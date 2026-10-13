@@ -138,7 +138,7 @@ export function AjustarSemana({
             ))}
           </ul>
         )}
-        <p className="t-pq mt-2 text-texto3">Entra em {rotuloDia(dataSugestao)}, no bloco de força.</p>
+        <p className="t-pq mt-2 text-texto2">Entra em {rotuloDia(dataSugestao)}, no bloco de força.</p>
       </GlassCard>
 
       <BottomSheet aberto={aberto} onFechar={() => setAberto(false)} titulo="Ajustar semana">

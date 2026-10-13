@@ -20,7 +20,10 @@ import {
   type Checkin,
   type Execucao,
   type DadosApp,
+  type DiarioJogo,
   type ExcecaoAgenda,
+  type Meta,
+  type TesteCampo,
   type Rotina,
   type FaseTornozelo,
   type Jogo,
@@ -47,6 +50,11 @@ type Acoes = {
   alternarMarco: (chave: string) => Promise<void>;
   /** só pode ser chamada ao aceitar uma proposta de fase (C5) */
   definirFase: (f: FaseTornozelo) => Promise<void>;
+  salvarTeste: (t: TesteCampo) => Promise<void>;
+  removerTeste: (id: string) => Promise<void>;
+  salvarMeta: (m: Meta) => Promise<void>;
+  removerMeta: (id: string) => Promise<void>;
+  salvarDiario: (d: DiarioJogo) => Promise<void>;
   salvarExcecao: (e: ExcecaoAgenda) => Promise<void>;
   removerExcecao: (id: string) => Promise<void>;
   salvarRotina: (r: Rotina) => Promise<void>;
@@ -249,6 +257,31 @@ export function DadosProvider({ children }: { children: React.ReactNode }) {
         aplicar(
           (d) => ({ ...d, faseTornozelo: f }),
           () => repo.salvarFase(f),
+        ),
+      salvarTeste: (t) =>
+        aplicar(
+          (d) => ({ ...d, testes: substituir(d.testes, t, (a, b) => a.id === b.id) }),
+          () => repo.salvarTeste(t),
+        ),
+      removerTeste: (id) =>
+        aplicar(
+          (d) => ({ ...d, testes: d.testes.filter((x) => x.id !== id) }),
+          () => repo.removerTeste(id),
+        ),
+      salvarMeta: (m) =>
+        aplicar(
+          (d) => ({ ...d, metas: substituir(d.metas, m, (a, b) => a.chave === b.chave) }),
+          () => repo.salvarMeta(m),
+        ),
+      removerMeta: (id) =>
+        aplicar(
+          (d) => ({ ...d, metas: d.metas.filter((x) => x.id !== id) }),
+          () => repo.removerMeta(id),
+        ),
+      salvarDiario: (di) =>
+        aplicar(
+          (d) => ({ ...d, diarios: substituir(d.diarios, di, (a, b) => a.jogoData === b.jogoData) }),
+          () => repo.salvarDiario(di),
         ),
       salvarExcecao: (e) =>
         aplicar(

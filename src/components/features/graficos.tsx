@@ -252,3 +252,88 @@ export function GraficoBarras({
     </div>
   );
 }
+
+export type SerieLinha = {
+  chave: string;
+  rotulo: string;
+  cor: string;
+  pontos: { iso: string; valor: number }[];
+};
+
+const CORES_LINHA = ["var(--accent)", "var(--success)", "var(--warning)", "var(--primary-hover)"];
+export const corDaSerie = (i: number) => CORES_LINHA[i % CORES_LINHA.length];
+
+/** Linhas simples por data (testes de campo, tendências do diário). Cada ponto vira um círculo. */
+export function GraficoLinha({
+  series,
+  descricao,
+  unidade,
+}: {
+  series: SerieLinha[];
+  descricao: string;
+  unidade?: string;
+}) {
+  const { ref, largura } = useLargura();
+  const altura = 170;
+  const m = { l: 40, r: 10, t: 12, b: 30 };
+  const iw = largura - m.l - m.r;
+  const ih = altura - m.t - m.b;
+  const datas = [...new Set(series.flatMap((s) => s.pontos.map((p) => p.iso)))].sort();
+  const valores = series.flatMap((s) => s.pontos.map((p) => p.valor));
+  if (!valores.length) return null;
+  const vmin = Math.min(...valores);
+  const vmax = Math.max(...valores);
+  const folga = vmax === vmin ? Math.max(1, Math.abs(vmax) * 0.1) : (vmax - vmin) * 0.15;
+  const lo = vmin - folga;
+  const hi = vmax + folga;
+  const x = (iso: string) =>
+    datas.length === 1 ? m.l + iw / 2 : m.l + (datas.indexOf(iso) / (datas.length - 1)) * iw;
+  const y = (v: number) => m.t + ih * (1 - (v - lo) / (hi - lo));
+  const fmt = (v: number) => (Math.abs(v) >= 100 ? v.toFixed(0) : v.toFixed(1)).replace(".", ",");
+  const rotuloData = (iso: string) => `${iso.slice(8)}/${iso.slice(5, 7)}`;
+
+  return (
+    <div ref={ref} className="w-full">
+      <svg width={largura} height={altura} role="img" aria-label={descricao}>
+        {[lo + folga, (lo + hi) / 2, hi - folga].map((v) => (
+          <g key={v}>
+            <line
+              x1={m.l}
+              x2={largura - m.r}
+              y1={y(v)}
+              y2={y(v)}
+              stroke="var(--border-glass)"
+              strokeWidth={1}
+            />
+            <text x={m.l - 6} y={y(v) + 4} textAnchor="end" fontSize={13} fill="var(--text-2)">
+              {fmt(v)}
+            </text>
+          </g>
+        ))}
+        {series.map((s) => (
+          <g key={s.chave}>
+            {s.pontos.length > 1 && (
+              <polyline
+                fill="none"
+                stroke={s.cor}
+                strokeWidth={2.5}
+                points={s.pontos.map((p) => `${x(p.iso)},${y(p.valor)}`).join(" ")}
+              />
+            )}
+            {s.pontos.map((p) => (
+              <circle key={p.iso} cx={x(p.iso)} cy={y(p.valor)} r={4.5} fill={s.cor} />
+            ))}
+          </g>
+        ))}
+        {datas.map((iso, i) =>
+          datas.length <= 6 || i === 0 || i === datas.length - 1 ? (
+            <text key={iso} x={x(iso)} y={altura - 8} textAnchor="middle" fontSize={13} fill="var(--text-2)">
+              {rotuloData(iso)}
+            </text>
+          ) : null,
+        )}
+      </svg>
+      {unidade && <p className="t-pq text-texto2">Em {unidade}</p>}
+    </div>
+  );
+}

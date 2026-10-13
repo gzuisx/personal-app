@@ -115,7 +115,7 @@ export function DecisaoDoDia({ indice = 1, data, decisao, escolha, onAbrirChecki
                 <li key={c.id}>{c.detalhe}</li>
               ))}
             </ul>
-            <p className="t-pq mt-2 text-texto3">
+            <p className="t-pq mt-2 text-texto2">
               Pontuação interna do app: {decisao.prontidao.pontuacao}. Não é medida fisiológica.
             </p>
           </section>
@@ -157,7 +157,7 @@ export function DecisaoDoDia({ indice = 1, data, decisao, escolha, onAbrirChecki
                 setAjustar(false);
               }}
             />
-            <p className="t-pq mt-2 text-texto3">
+            <p className="t-pq mt-2 text-texto2">
               Monta o essencial do plano para esse tempo e registra como parcial.
             </p>
           </section>

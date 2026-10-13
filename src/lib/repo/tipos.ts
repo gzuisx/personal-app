@@ -3,7 +3,10 @@ import type {
   Checkin,
   DadosApp,
   Execucao,
+  DiarioJogo,
   ExcecaoAgenda,
+  Meta,
+  TesteCampo,
   PlanoVersao,
   Proposta,
   RegistroAuditoria,
@@ -32,6 +35,11 @@ export interface Repo {
   salvarExecucao(e: Execucao): Promise<void>;
   limparExecucao(): Promise<void>;
   /** exceções de agenda e ajustes de exercício do dia */
+  salvarTeste(t: TesteCampo): Promise<void>;
+  removerTeste(id: string): Promise<void>;
+  salvarMeta(m: Meta): Promise<void>;
+  removerMeta(id: string): Promise<void>;
+  salvarDiario(d: DiarioJogo): Promise<void>;
   salvarExcecao(e: ExcecaoAgenda): Promise<void>;
   removerExcecao(id: string): Promise<void>;
   salvarRotina(r: Rotina): Promise<void>;

@@ -90,6 +90,26 @@ export function criarLocalRepo(chave: string = CHAVE_LOCAL): Repo {
     async limparExecucao() {
       gravar({ ...ler(), execucao: null });
     },
+    async salvarTeste(t) {
+      const d = ler();
+      gravar({ ...d, testes: upsert(d.testes, t, (a, b) => a.id === b.id) });
+    },
+    async removerTeste(id) {
+      const d = ler();
+      gravar({ ...d, testes: d.testes.filter((x) => x.id !== id) });
+    },
+    async salvarMeta(m) {
+      const d = ler();
+      gravar({ ...d, metas: upsert(d.metas, m, (a, b) => a.chave === b.chave) });
+    },
+    async removerMeta(id) {
+      const d = ler();
+      gravar({ ...d, metas: d.metas.filter((x) => x.id !== id) });
+    },
+    async salvarDiario(di) {
+      const d = ler();
+      gravar({ ...d, diarios: upsert(d.diarios, di, (a, b) => a.jogoData === b.jogoData) });
+    },
     async salvarExcecao(e) {
       const d = ler();
       gravar({ ...d, excecoes: upsert(d.excecoes, e, (a, b) => a.id === b.id) });
