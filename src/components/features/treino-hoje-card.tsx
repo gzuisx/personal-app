@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ChevronRight, Clock, Play } from "lucide-react";
+import { ChevronRight, Clock, ListOrdered, Play, RotateCcw } from "lucide-react";
 import { SessaoSheet } from "@/components/features/sessao-sheet";
 import { StatusBloco } from "@/components/features/status-bloco";
 import { TagChip } from "@/components/features/tag-chip";
@@ -12,7 +12,9 @@ import { IconeBola } from "@/components/ui/icone-bola";
 import type { RotuloCarga } from "@/lib/carga";
 import { sessaoDoBloco } from "@/lib/derivados";
 import { ROTULO_PERIODO, blocoTreinavel, type Bloco, type DiaPlano } from "@/lib/seed/plano";
-import type { Sessao } from "@/lib/tipos";
+import { hrefSequencia } from "@/lib/rotas";
+import type { SequenciaDoDia } from "@/lib/treino/apoio";
+import type { Execucao, Sessao } from "@/lib/tipos";
 
 type Props = {
   dia: DiaPlano;
@@ -27,6 +29,10 @@ type Props = {
   /** bloco aberto de fora (ex.: anel TREINOS completo pedindo para editar) */
   blocoParaEditar?: Bloco | null;
   onFecharEdicao?: () => void;
+  /** blocos pendentes do mesmo período, encadeáveis (24.6) */
+  sequencia?: SequenciaDoDia | null;
+  /** treino em andamento, para continuar */
+  execucao?: Execucao | null;
 };
 
 export function TreinoHojeCard({
@@ -39,6 +45,8 @@ export function TreinoHojeCard({
   hrefIniciar,
   blocoParaEditar,
   onFecharEdicao,
+  sequencia,
+  execucao,
 }: Props) {
   const [sheetAberto, setSheetAberto] = useState(false);
   const [blocoSheet, setBlocoSheet] = useState<Bloco>(dia.blocos[0]);
@@ -95,14 +103,48 @@ export function TreinoHojeCard({
         })}
       </ul>
 
-      {proximoBloco && hrefIniciar && (
+      {execucao && execucao.data === dia.iso && execucao.estado.fase !== "resumo" && (
         <BotaoAcao
           className="mt-4"
-          rotulo="Iniciar treino"
-          icone={<Play className="size-5" />}
-          href={hrefIniciar}
+          rotulo="Continuar treino de hoje"
+          icone={<RotateCcw className="size-5" />}
+          href={`/treino/${execucao.estado.blocos[0].id}?data=${dia.iso}${execucao.estado.sequencia ? "&sequencia=1" : ""}`}
         />
       )}
+
+      {sequencia && !(execucao && execucao.data === dia.iso && execucao.estado.fase !== "resumo") && (
+        <div className="mt-4 rounded-2xl border border-borda bg-vidro p-3">
+          <p className="t-h3">Sequência do dia · {sequencia.totalMin} min</p>
+          <ol className="mt-2 space-y-1">
+            {sequencia.blocos.map((b, i) => (
+              <li key={b.id} className="t-corpo flex items-center gap-2 text-texto2">
+                <span className="num flex size-6 shrink-0 items-center justify-center rounded-full bg-primario text-[0.8125rem] font-semibold text-white">
+                  {i + 1}
+                </span>
+                <span className="min-w-0 flex-1 truncate">{b.titulo}</span>
+                <span className="num">{b.duracaoMin} min</span>
+              </li>
+            ))}
+          </ol>
+          <BotaoAcao
+            className="mt-3"
+            rotulo="Iniciar sequência"
+            icone={<ListOrdered className="size-5" />}
+            href={hrefSequencia(dia.iso, sequencia.blocos[0].id)}
+          />
+        </div>
+      )}
+
+      {proximoBloco &&
+        hrefIniciar &&
+        !(execucao && execucao.data === dia.iso && execucao.estado.fase !== "resumo") && (
+          <BotaoAcao
+            className="mt-4"
+            rotulo="Iniciar treino"
+            icone={<Play className="size-5" />}
+            href={hrefIniciar}
+          />
+        )}
 
       <SessaoSheet
         aberto={aberto}

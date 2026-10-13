@@ -33,7 +33,7 @@ type Props = {
   /** abre o check-in (feito ou por fazer) */
   onCheckin: () => void;
   /** endereço que abre um bloco pendente (detalhe do dia ou treino guiado) */
-  hrefBloco: (blocoId: string) => string;
+  hrefBloco: (bloco: Bloco) => string;
   /** abre o registro/edição de um bloco já feito */
   onEditarSessao: (bloco: Bloco) => void;
 };
@@ -86,7 +86,7 @@ export function AneisDoDia({
     // pendente: abre exatamente o que falta
     if (anel.id === "checkin") return onCheckin();
     const proximo = anel.pendentes[0];
-    if (proximo) router.push(hrefBloco(proximo.id));
+    if (proximo) router.push(hrefBloco(proximo));
   }
 
   const blocosDoResumo =
@@ -169,7 +169,12 @@ export function AneisDoDia({
                   )
                 }
                 onClick={
-                  proxima.anel === "checkin" ? onCheckin : () => router.push(hrefBloco(proxima.blocoId!))
+                  proxima.anel === "checkin"
+                    ? onCheckin
+                    : () => {
+                        const b = dia.blocos.find((x) => x.id === proxima.blocoId);
+                        if (b) router.push(hrefBloco(b));
+                      }
                 }
               />
             </>

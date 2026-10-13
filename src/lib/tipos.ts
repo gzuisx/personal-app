@@ -1,5 +1,6 @@
 import { SEGURANCA_PADRAO, type ConfigSeguranca } from "./safety";
 import { INICIO_PLANO } from "./seed/fase";
+import type { EsforcoSerie, EstadoTreino } from "./treino/motor";
 
 export type Gatilho = "chute" | "giro" | "terreno" | "nenhum" | "nao_sei";
 export type SonoFaixa = "menos_5" | "5_6" | "7_8" | "mais_8";
@@ -74,6 +75,34 @@ export type PreJogoLog = {
   fasesConcluidas: number;
   duracaoS: number;
   tornozeleira: boolean | null;
+};
+
+/** Uma série registrada no treino guiado (set_logs). */
+export type SerieLog = {
+  execucaoId: string;
+  /** AAAA-MM-DD */
+  data: string;
+  bloco: string;
+  /** slug do exercício */
+  exercicio: string;
+  numero: number;
+  cargaKg: number | null;
+  reps: number | null;
+  duracaoS: number | null;
+  rir: number | null;
+  esforco: EsforcoSerie | null;
+  dorDurante: number | null;
+  /** ISO */
+  criadoEm: string;
+};
+
+/** Treino em andamento, guardado para retomar depois de fechar o app (execution_state). */
+export type Execucao = {
+  id: string;
+  tipo: "bloco" | "sequencia";
+  data: string;
+  estado: EstadoTreino;
+  atualizadoEm: string;
 };
 
 export type Marco = { chave: string; concluidoEm: string | null };
@@ -198,6 +227,8 @@ export type DadosApp = {
   sessoes: Sessao[];
   jogos: Jogo[];
   preJogos: PreJogoLog[];
+  series: SerieLog[];
+  execucao: Execucao | null;
   seguranca: ConfigSeguranca;
   marcos: Marco[];
   marcosDefs: MarcoDef[];
@@ -210,6 +241,8 @@ export const DADOS_VAZIOS: DadosApp = {
   sessoes: [],
   jogos: [],
   preJogos: [],
+  series: [],
+  execucao: null,
   seguranca: SEGURANCA_PADRAO,
   marcos: [],
   marcosDefs: MARCOS_DEFINICOES,

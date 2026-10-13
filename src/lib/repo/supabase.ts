@@ -8,6 +8,7 @@ import {
   type Checkin,
   type DadosApp,
   type DuracaoDor,
+  type Execucao,
   type FaseNum,
   type FaseTornozelo,
   type Gatilho,
@@ -20,10 +21,12 @@ import {
   type RegiaoDor,
   type Resultado,
   type Restricao,
+  type SerieLog,
   type Sessao,
   type SonoFaixa,
   type StatusJogo,
 } from "@/lib/tipos";
+import type { EsforcoSerie, EstadoTreino } from "@/lib/treino/motor";
 import type { Repo } from "./tipos";
 
 function erro(contexto: string, e: { message: string } | null) {
@@ -67,37 +70,46 @@ export function criarSupabaseRepo(): Repo {
   }
 
   async function carregar(desdeISO: string): Promise<DadosApp> {
-    const [perfilR, restR, checkinsR, sessoesR, jogosR, preR, segR, marcosR, defsR] = await Promise.all([
-      supabase.from("profiles").select("nome, dados, fase_tornozelo, fase_inicio").maybeSingle(),
-      supabase
-        .from("restrictions")
-        .select("chave, regiao, lado, tipo, nivel_dor, status, ativa")
-        .eq("ativa", true),
-      supabase
-        .from("checkins")
-        .select(
-          "data, dor_tornozelo, inchaco, falhou, energia, sono_faixa, gatilho, notas, regioes, movimentos, duracao_dor, posterior_apertou, jogo_id",
-        )
-        .gte("data", desdeISO)
-        .order("data"),
-      supabase
-        .from("session_logs")
-        .select("data, bloco, resultado, esforco, duracao_min, notas")
-        .gte("data", desdeISO)
-        .not("bloco", "is", null),
-      supabase
-        .from("games")
-        .select("id, data_hora, minutos_jogados, esforco_pos_jogo, dor_tornozelo, gatilho, notas, status")
-        .gte("data_hora", `${desdeISO}T00:00:00Z`)
-        .order("data_hora"),
-      supabase
-        .from("pre_game_logs")
-        .select("jogo_data, aquecimento_concluido, fases_concluidas, duracao_s, tornozeleira")
-        .gte("jogo_data", desdeISO),
-      supabase.from("safety_settings").select("*").maybeSingle(),
-      supabase.from("milestones").select("chave, concluido_em"),
-      supabase.from("milestone_defs").select("chave, titulo, criterio, auto, ordem").order("ordem"),
-    ]);
+    const [perfilR, restR, checkinsR, sessoesR, jogosR, preR, segR, marcosR, defsR, seriesR, execR] =
+      await Promise.all([
+        supabase.from("profiles").select("nome, dados, fase_tornozelo, fase_inicio").maybeSingle(),
+        supabase
+          .from("restrictions")
+          .select("chave, regiao, lado, tipo, nivel_dor, status, ativa")
+          .eq("ativa", true),
+        supabase
+          .from("checkins")
+          .select(
+            "data, dor_tornozelo, inchaco, falhou, energia, sono_faixa, gatilho, notas, regioes, movimentos, duracao_dor, posterior_apertou, jogo_id",
+          )
+          .gte("data", desdeISO)
+          .order("data"),
+        supabase
+          .from("session_logs")
+          .select("data, bloco, resultado, esforco, duracao_min, notas")
+          .gte("data", desdeISO)
+          .not("bloco", "is", null),
+        supabase
+          .from("games")
+          .select("id, data_hora, minutos_jogados, esforco_pos_jogo, dor_tornozelo, gatilho, notas, status")
+          .gte("data_hora", `${desdeISO}T00:00:00Z`)
+          .order("data_hora"),
+        supabase
+          .from("pre_game_logs")
+          .select("jogo_data, aquecimento_concluido, fases_concluidas, duracao_s, tornozeleira")
+          .gte("jogo_data", desdeISO),
+        supabase.from("safety_settings").select("*").maybeSingle(),
+        supabase.from("milestones").select("chave, concluido_em"),
+        supabase.from("milestone_defs").select("chave, titulo, criterio, auto, ordem").order("ordem"),
+        supabase
+          .from("set_logs")
+          .select(
+            "execucao_id, data, bloco, exercicio, numero_serie, carga_kg, reps, duracao_s, rir, esforco, dor_durante, criado_em",
+          )
+          .gte("data", desdeISO)
+          .order("data"),
+        supabase.from("execution_state").select("execucao_id, tipo, estado, atualizado_em").maybeSingle(),
+      ]);
 
     erro("perfil", perfilR.error);
     erro("restrições", restR.error);
@@ -108,6 +120,8 @@ export function criarSupabaseRepo(): Repo {
     erro("regras de segurança", segR.error);
     erro("marcos", marcosR.error);
     erro("definição dos marcos", defsR.error);
+    erro("séries", seriesR.error);
+    erro("treino em andamento", execR.error);
 
     const dados = (perfilR.data?.dados ?? {}) as Partial<Perfil>;
     const doBanco = (restR.data ?? []).map((r) => restricaoDaLinha(r as LinhaRestricao));
@@ -190,6 +204,29 @@ export function criarSupabaseRepo(): Repo {
         concluidoEm: (r.concluido_em as string | null) ?? null,
       })),
       marcosDefs: defs.length ? defs : MARCOS_DEFINICOES,
+      series: (seriesR.data ?? []).map((r) => ({
+        execucaoId: r.execucao_id as string,
+        data: r.data as string,
+        bloco: r.bloco as string,
+        exercicio: r.exercicio as string,
+        numero: r.numero_serie as number,
+        cargaKg: r.carga_kg === null || r.carga_kg === undefined ? null : Number(r.carga_kg),
+        reps: (r.reps as number | null) ?? null,
+        duracaoS: (r.duracao_s as number | null) ?? null,
+        rir: (r.rir as number | null) ?? null,
+        esforco: (r.esforco as EsforcoSerie | null) ?? null,
+        dorDurante: (r.dor_durante as number | null) ?? null,
+        criadoEm: r.criado_em as string,
+      })),
+      execucao: execR.data
+        ? {
+            id: execR.data.execucao_id as string,
+            tipo: ((execR.data.tipo as string | null) ?? "bloco") as "bloco" | "sequencia",
+            data: ((execR.data.estado as EstadoTreino | null)?.data ?? "") as string,
+            estado: execR.data.estado as EstadoTreino,
+            atualizadoEm: execR.data.atualizado_em as string,
+          }
+        : null,
     };
   }
 
@@ -272,6 +309,51 @@ export function criarSupabaseRepo(): Repo {
         { onConflict: "user_id,jogo_data" },
       );
       erro("salvar pré-jogo", error);
+    },
+
+    async salvarSerie(sl: SerieLog) {
+      const user_id = await userId();
+      const { error } = await supabase.from("set_logs").upsert(
+        {
+          user_id,
+          execucao_id: sl.execucaoId,
+          data: sl.data,
+          bloco: sl.bloco,
+          exercicio: sl.exercicio,
+          numero_serie: sl.numero,
+          carga_kg: sl.cargaKg,
+          reps: sl.reps,
+          duracao_s: sl.duracaoS,
+          rir: sl.rir,
+          esforco: sl.esforco,
+          dor_durante: sl.dorDurante,
+          criado_em: sl.criadoEm,
+        },
+        { onConflict: "user_id,execucao_id,exercicio,numero_serie" },
+      );
+      erro("salvar série", error);
+    },
+
+    async salvarExecucao(e: Execucao) {
+      const user_id = await userId();
+      const { error } = await supabase.from("execution_state").upsert(
+        {
+          user_id,
+          execucao_id: e.id,
+          tipo: e.tipo,
+          passo_atual: e.estado.fase,
+          estado: e.estado,
+          atualizado_em: e.atualizadoEm,
+        },
+        { onConflict: "user_id" },
+      );
+      erro("salvar treino em andamento", error);
+    },
+
+    async limparExecucao() {
+      const user_id = await userId();
+      const { error } = await supabase.from("execution_state").delete().eq("user_id", user_id);
+      erro("limpar treino em andamento", error);
     },
 
     async salvarSeguranca(c) {

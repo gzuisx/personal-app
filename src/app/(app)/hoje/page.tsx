@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BellOff, Check, ChevronRight, ClipboardCheck, Lightbulb, Play, Smartphone } from "lucide-react";
 import { useDados } from "@/components/dados-provider";
 import { AneisDoDia } from "@/components/features/aneis-do-dia";
@@ -25,6 +25,7 @@ import { checkinDoDia } from "@/lib/derivados";
 import { proximaMelhorAcao, proximoBlocoPendente } from "@/lib/hoje";
 import { jogoEmFoco } from "@/lib/jogo";
 import { hrefDoBloco } from "@/lib/rotas";
+import { sequenciaPendente } from "@/lib/treino/apoio";
 import { ALERTA_SEGURANCA, avaliarSeguranca } from "@/lib/safety";
 import { dicaDoDia, diaDoPlano, type Bloco } from "@/lib/seed/plano";
 import { avaliarSemaforo } from "@/lib/semaforo";
@@ -37,6 +38,12 @@ export default function HojePage() {
   const [checkinAberto, setCheckinAberto] = useState(false);
   const [dicaAberta, setDicaAberta] = useState(false);
   const [editar, setEditar] = useState<Bloco | null>(null);
+
+  // Atalho: /hoje?acao=checkin abre o check-in (usado ao terminar um treino com dor e pelos Atalhos do iPhone).
+  useEffect(() => {
+    if (status !== "pronto") return;
+    if (new URLSearchParams(window.location.search).get("acao") === "checkin") setCheckinAberto(true);
+  }, [status]);
 
   if (!agora || status === "carregando") {
     return (
@@ -96,7 +103,10 @@ export default function HojePage() {
       : acao?.id === "registrar_jogo"
         ? `/jogo/pos?jogo=${acao.jogoData}`
         : acao?.id === "treino" && acao.blocoId
-          ? hrefDoBloco(hoje, acao.blocoId)
+          ? hrefDoBloco(
+              hoje,
+              dia.blocos.find((b) => b.id === acao.blocoId) ?? { id: acao.blocoId, exercicios: [] },
+            )
           : undefined;
 
   return (
@@ -200,7 +210,7 @@ export default function HojePage() {
         sessoes={dados.sessoes}
         checkins={dados.checkins}
         onCheckin={() => setCheckinAberto(true)}
-        hrefBloco={(id) => hrefDoBloco(hoje, id)}
+        hrefBloco={(b) => hrefDoBloco(hoje, b)}
         onEditarSessao={setEditar}
       />
 
@@ -217,7 +227,9 @@ export default function HojePage() {
         sessoes={dados.sessoes}
         semProgressao={!seg.podeProgredir && seg.nivel !== "sem_dados"}
         proximoBloco={proximoBloco}
-        hrefIniciar={proximoBloco ? hrefDoBloco(hoje, proximoBloco.id) : undefined}
+        hrefIniciar={proximoBloco ? hrefDoBloco(hoje, proximoBloco) : undefined}
+        sequencia={sequenciaPendente(dia, dados.sessoes)}
+        execucao={dados.execucao}
         blocoParaEditar={editar}
         onFecharEdicao={() => setEditar(null)}
       />

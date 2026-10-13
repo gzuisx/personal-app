@@ -53,3 +53,30 @@ test.describe("texto a 130%", () => {
     });
   }
 });
+
+// Treino guiado (etapa 7): as três telas principais, nos dois temas.
+for (const tema of ["escuro", "claro"] as const) {
+  test.describe(`acessibilidade do treino guiado, tema ${tema}`, () => {
+    test("preparar, exercício, descanso e resumo sem violações", async ({ page }) => {
+      await preparar(page, { tema });
+      await page.goto("/treino/qua-tornozelo");
+      const verificar = async (etapa: string) => {
+        await page.waitForTimeout(600);
+        const r = await new AxeBuilder({ page })
+          .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
+          .analyze();
+        const resumo = r.violations.map(
+          (v) => `${v.id}: ${v.nodes.length}x ${v.nodes[0]?.html.slice(0, 140)}`,
+        );
+        expect(resumo, `${etapa}\n${resumo.join("\n")}`).toEqual([]);
+      };
+      await verificar("preparar");
+      await page.getByRole("button", { name: "Começar" }).click();
+      await verificar("exercício");
+      await page.getByRole("button", { name: "Concluir série", exact: true }).click();
+      await verificar("descanso");
+      await page.getByRole("button", { name: "Pular descanso" }).click();
+      await verificar("pronto");
+    });
+  });
+}

@@ -3,7 +3,9 @@
 import { useEffect, useState } from "react";
 import { notFound, useParams } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
-import { ChevronDown, Clock } from "lucide-react";
+import { ChevronDown, Clock, Play } from "lucide-react";
+import { BotaoAcao } from "@/components/ui/botao-acao";
+import { hrefDoBloco } from "@/lib/rotas";
 import { IconeBola } from "@/components/ui/icone-bola";
 import { useToast } from "@/components/ui/toast";
 import { useDados } from "@/components/dados-provider";
@@ -212,6 +214,15 @@ export default function DetalheDiaPage() {
                     <Exercicio key={`${b.id}-${e.slug}`} e={e} />
                   ))}
                 </ul>
+              )}
+
+              {blocoTreinavel(b) && b.exercicios.length > 0 && iso === hoje && !sessao && (
+                <BotaoAcao
+                  className="mt-4"
+                  rotulo="Iniciar treino"
+                  icone={<Play className="size-5" />}
+                  href={hrefDoBloco(iso, b)}
+                />
               )}
 
               {blocoTreinavel(b) && (

@@ -4,6 +4,26 @@ Entradas mais recentes no topo. Fonte de verdade: `ESPECIFICACAO-APP.txt`. Plano
 
 <!-- ENTRADAS -->
 
+## 2026-10-13 14:10 - Etapa 7: treino guiado e registro de séries (noite 2)
+
+- Feito:
+  - Treino guiado em tela cheia (`/treino/[bloco]`, sem barra inferior): "Iniciar treino" na Hoje, nos anéis (TREINOS e TORNOZELO) e no detalhe do dia. Um exercício por vez, com "como fazer" (2 linhas), cuidado (1 linha), espaço de mídia, chips S1/S2/S3, repetições e carga com botões de 56 px, tempo por série e esforço opcional (Fácil, Ok, Duro).
+  - Botão principal único que muda por etapa: Concluir série, Descansar (timer em anel, -15 s, +15 s, Pular descanso), Próxima série, Próximo exercício, Finalizar treino. Descanso padrão: força 90 s, tornozelo 45 s, velocidade 120 s.
+  - Cada série é gravada na hora (`set_logs`); o andamento fica em `execution_state` e o treino retoma depois de fechar o app ("Continuar treino de hoje" na Hoje e ao reabrir o link).
+  - "Doeu" (R11): dor de 4 a 5 manda parar e sugere a versão mais leve do catálogo; 6 ou mais encerra o treino e abre o check-in. Pular exercício (com motivo) e Trocar exercício (mais leve, equivalente, mais difícil só com a segurança liberada; respeita fase do tornozelo, falta de academia e impacto).
+  - Valores sugeridos vêm da última sessão do mesmo exercício; dica de progressão (+2,5% a 5%) só como sugestão e só com `podeProgredir` verdadeiro (`lib/coach/progressao.ts`: dupla progressão, reduzir após 3 sessões abaixo do piso, variante para peso do corpo).
+  - Resumo final: duração, séries, volume, maiores cargas, esforço percebido, dor ao final e nota; grava uma sessão por bloco (feito, parcial) e limpa o andamento.
+  - Modo do dia na tela de preparar: Completo, Reduzido, Só 20 min, Sem academia, Recuperação, com "Por que?". O ajuste só tira ou troca exercícios do plano, nunca acrescenta.
+  - Sequência do dia: quando há 2 ou mais blocos pendentes no mesmo período (ex.: manhã de quarta, tornozelo + força de pernas, 55 min), aparece "Iniciar sequência"; tela de transição entre blocos com "Pular bloco"; cada bloco gera a sua sessão.
+  - Tela acesa durante o treino (Screen Wake Lock, com falha silenciosa onde não houver suporte).
+  - Catálogo com 77 exercícios (`src/lib/seed/catalogo.ts`), progressão e regressão ligadas. Migração 0006 aplicada: `set_logs`, `exercise_catalog`, `plan_templates`, `plan_versions`, `execution_state`, plano v2 (blocos separados) e função que semeia o catálogo.
+- Arquivos: `src/lib/treino/{motor,apoio}.ts`, `src/lib/coach/progressao.ts`, `src/lib/seed/catalogo.ts`, `src/components/treino/*`, `src/app/(app)/treino/[bloco]/page.tsx`, `src/lib/use-wake-lock.ts`, `src/lib/rotas.ts`, `scripts/gerar-0006-sql.ts`, `supabase/migrations/0006_treino_guiado.sql`, `e2e/treino.spec.ts`.
+- Como testar: na Hoje, toque em "Iniciar treino" (ou "Iniciar sequência" de manhã); conclua uma série, deixe o descanso, feche e reabra o app; toque em "Doeu" e escolha 4 e depois 7.
+- Decisões tomadas: o modo do dia desta etapa vem só da segurança (bloqueio vira Recuperação, atenção vira Reduzido); a etapa 8 troca isso pelo motor do coach. O catálogo fica por usuário, igual às outras tabelas. `workout_exercises` não foi criada: os exercícios do bloco continuam no JSON de `workouts`. Cada arrancada conta como uma série (6 no plano). Descanso de tornozelo fixado em 45 s para todos os exercícios dessa categoria.
+- Pendências: fotos e vídeos dos exercícios (etapa 11); a prontidão ainda não entra na sugestão de progressão (a etapa 8 passa `prontidaoOk`).
+- Teste automático: 195 testes de lógica e 47 de interface (fluxos, treino guiado e acessibilidade com axe nos dois temas) passando.
+- Próximo passo: etapa 8 (motor do coach e adaptação).
+
 ## 2026-10-13 12:40 - Etapa 6: correções, decisões e visual alvo (noite 2)
 
 - Feito:

@@ -73,6 +73,23 @@ export function criarLocalRepo(chave: string = CHAVE_LOCAL): Repo {
       const d = ler();
       gravar({ ...d, preJogos: upsert(d.preJogos, p, (a, b) => a.jogoData === b.jogoData) });
     },
+    async salvarSerie(s) {
+      const d = ler();
+      gravar({
+        ...d,
+        series: upsert(
+          d.series,
+          s,
+          (a, b) => a.execucaoId === b.execucaoId && a.exercicio === b.exercicio && a.numero === b.numero,
+        ),
+      });
+    },
+    async salvarExecucao(e) {
+      gravar({ ...ler(), execucao: e });
+    },
+    async limparExecucao() {
+      gravar({ ...ler(), execucao: null });
+    },
     async salvarSeguranca(c) {
       gravar({ ...ler(), seguranca: c });
     },

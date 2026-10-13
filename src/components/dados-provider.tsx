@@ -10,10 +10,12 @@ import { addDias, dataISO } from "@/lib/tempo";
 import {
   DADOS_VAZIOS,
   type Checkin,
+  type Execucao,
   type DadosApp,
   type FaseTornozelo,
   type Jogo,
   type Perfil,
+  type SerieLog,
   type PreJogoLog,
   type Sessao,
 } from "@/lib/tipos";
@@ -25,6 +27,11 @@ type Acoes = {
   salvarSessao: (s: Sessao) => Promise<void>;
   salvarJogo: (j: Jogo) => Promise<void>;
   salvarPreJogo: (p: PreJogoLog) => Promise<void>;
+  /** uma série do treino guiado (grava assim que é concluída) */
+  salvarSerie: (sl: SerieLog) => Promise<void>;
+  /** treino em andamento, para retomar depois de fechar o app */
+  salvarExecucao: (e: Execucao) => Promise<void>;
+  limparExecucao: () => Promise<void>;
   salvarSeguranca: (c: ConfigSeguranca) => Promise<void>;
   salvarPerfil: (p: Perfil) => Promise<void>;
   alternarMarco: (chave: string) => Promise<void>;
@@ -172,6 +179,28 @@ export function DadosProvider({ children }: { children: React.ReactNode }) {
         aplicar(
           (d) => ({ ...d, preJogos: substituir(d.preJogos, p, (a, b) => a.jogoData === b.jogoData) }),
           () => repo.salvarPreJogo(p),
+        ),
+      salvarSerie: (sl) =>
+        aplicar(
+          (d) => ({
+            ...d,
+            series: substituir(
+              d.series,
+              sl,
+              (a, b) => a.execucaoId === b.execucaoId && a.exercicio === b.exercicio && a.numero === b.numero,
+            ),
+          }),
+          () => repo.salvarSerie(sl),
+        ),
+      salvarExecucao: (e) =>
+        aplicar(
+          (d) => ({ ...d, execucao: e }),
+          () => repo.salvarExecucao(e),
+        ),
+      limparExecucao: () =>
+        aplicar(
+          (d) => ({ ...d, execucao: null }),
+          () => repo.limparExecucao(),
         ),
       salvarSeguranca: (c) =>
         aplicar(
