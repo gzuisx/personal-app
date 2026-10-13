@@ -15,9 +15,7 @@ export function checkinDoDia(checkins: Checkin[], data: string) {
 
 /** Check-in mais recente até `hoje`. */
 export function ultimoCheckin(checkins: Checkin[], hoje: string) {
-  return (
-    [...checkins].filter((c) => c.data <= hoje).sort((a, b) => b.data.localeCompare(a.data))[0] ?? null
-  );
+  return [...checkins].filter((c) => c.data <= hoje).sort((a, b) => b.data.localeCompare(a.data))[0] ?? null;
 }
 
 /** Compara a dor do último check-in com a do anterior. */

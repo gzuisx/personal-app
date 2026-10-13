@@ -102,7 +102,8 @@ export function avaliarSeguranca(entrada: EntradaSeguranca): ResultadoSeguranca 
     .sort((a, b) => b.data.localeCompare(a.data));
 
   const ultimo = ordenados[0];
-  const posJogo = entrada.jogos && entrada.agora ? nivelPosJogoRecente(entrada.jogos, entrada.agora, config) : "liberado";
+  const posJogo =
+    entrada.jogos && entrada.agora ? nivelPosJogoRecente(entrada.jogos, entrada.agora, config) : "liberado";
 
   if (!ultimo && posJogo === "liberado") {
     return {
@@ -147,7 +148,11 @@ export function avaliarSeguranca(entrada: EntradaSeguranca): ResultadoSeguranca 
 }
 
 /** Quantos dias seguidos (até hoje) o último check-in está liberado e sem bloqueio recente. */
-export function diasVerdesSeguidos(checkins: CheckinSeg[], hoje: string, config: ConfigSeguranca = SEGURANCA_PADRAO) {
+export function diasVerdesSeguidos(
+  checkins: CheckinSeg[],
+  hoje: string,
+  config: ConfigSeguranca = SEGURANCA_PADRAO,
+) {
   let dias = 0;
   const porData = new Map(checkins.map((c) => [c.data, c]));
   for (let i = 0; i < 365; i++) {

@@ -1,0 +1,390 @@
+================================================================================
+RELATORIO: O QUE FOI FEITO E O QUE FICOU PENDENTE
+App "Meu Personal" - etapas 1 a 5 (modo autonomo da noite de 12 para 13/10/2026)
+================================================================================
+
+Este documento compara o que foi construido com a ESPECIFICACAO-APP.txt e com o
+PLANO-NOITE.md. A numeracao das secoes segue a da especificacao.
+
+Legenda:
+  [OK]        feito e conferido (teste automatico e/ou print em tela de celular)
+  [PARCIAL]   feito, mas diferente do pedido ou incompleto (o motivo esta escrito)
+  [NAO FEITO] fora do escopo desta noite ou nao feito
+  [NAO TESTADO] feito, mas nao consegui testar no ambiente real
+
+Enderecos:
+  App em producao:  https://personal-app-ezfw.vercel.app
+  Repositorio:      https://github.com/gzuisx/personal-app (privado)
+  Banco:            projeto Supabase "Gym App" (ref aokluklnuhvugpgwsdot)
+
+--------------------------------------------------------------------------------
+1. RESUMO GERAL
+--------------------------------------------------------------------------------
+- As 5 etapas pedidas foram implementadas, compiladas, publicadas na Vercel e
+  enviadas ao GitHub.
+- "npm run build" sem erros. "npm test": 81 testes passando (seguranca,
+  semaforo, tempo/jogos, plano por dia da semana, fase do tornozelo, carga e
+  metricas).
+- 4 migracoes SQL aplicadas no Supabase (0001 a 0004), com seguranca por linha
+  (RLS) em todas as tabelas.
+- Conferi o visual em celular simulado (390 x 844) nas telas Hoje, Semana,
+  detalhe do dia, check-in, pre-jogo, Perfil, Evolucao e no tema claro.
+- NAO consegui testar no ambiente real: o login por e-mail dentro do iPhone, a
+  gravacao no Supabase pelo app (so conferi que as colunas do banco batem com o
+  codigo), a instalacao na Tela de Inicio e a area segura do iPhone.
+  O primeiro check-in feito por voce no iPhone e o teste final.
+
+--------------------------------------------------------------------------------
+2. PENDENCIAS E FORA DO ESCOPO (resumo, detalhes nas secoes 5 e 6)
+--------------------------------------------------------------------------------
+Fora do escopo desta noite, como combinado (secao 3 da especificacao):
+  - Etapa 6: biblioteca de exercicios com imagens, videos e animacoes reais.
+  - Etapa 7: IA (personal com Claude via API), propostas e revisao semanal.
+  - Notificacoes push.
+  - Uso offline (service worker).
+  - Relatorio em PDF.
+  - Check-in por voz.
+  - Testes de campo.
+  - Diario do centroavante.
+
+Itens dentro do escopo que ficaram diferentes ou incompletos:
+  - Dados de exemplo no modo local (nao criei, de proposito).
+  - Tabela/campo para guardar a fase do tornozelo (a fase e calculada pela data).
+  - Cartao separado para o jogo na tela Semana (o jogo aparece dentro do cartao
+    do dia, com destaque).
+  - Campo de anotacao do funcional dentro do proprio cartao (a nota e feita no
+    registro da sessao).
+  - Medicao formal de contraste das cores e suporte total a Dynamic Type.
+  - Rota /biblioteca (era opcional na secao 16).
+  - Tema claro conferido visualmente so na tela Hoje.
+
+--------------------------------------------------------------------------------
+3. O QUE FOI FEITO, ETAPA POR ETAPA
+--------------------------------------------------------------------------------
+
+ETAPA 1 - FUNDACAO VISUAL (especificacao 14.1)  [OK]
+  - Tema azul escuro com degrade fixo (#030B1F, #061A4A, #0A3A9C) e cor de
+    reserva para nao piscar branco.
+  - Fonte Poppins (pesos 400, 500, 600, 700) via next/font.
+  - Tokens de design em um unico lugar: variaveis CSS em src/app/globals.css e
+    espelho em TypeScript em src/lib/design/tokens.ts (cores, raios, grade de
+    4 px, sombras, movimento).
+  - Escala tipografica da especificacao (display, h1, h2, h3, corpo, corpo-pq,
+    rotulo, numero grande). Fonte minima de 13 px.
+  - Os 19 componentes da secao 7: GlassCard, Button, Chip/ChipGroup,
+    ToggleSimNao, EscalaDor, BottomNav, Header, MetricTile, ProgressRing,
+    SemaforoCard, BottomSheet, Toast, Skeleton, EmptyState, Timer, DayStrip,
+    MidiaPlaceholder, Banner e Splash. Alem deles: Logo, CountUp, CheckAnimado e
+    ConfirmDialog.
+  - Barra inferior flutuante em pilula com 5 abas (Hoje, Semana, Personal,
+    Evolucao, Perfil), circulo branco que desliza com mola, rotulo so na aba
+    ativa, area segura do iPhone e espaco no fim das telas para nao cobrir
+    conteudo. A barra some nas telas de fluxo (login e pre-jogo).
+  - Animacoes com Motion: transicao entre telas (fade + 12 px), entrada dos
+    cartoes em sequencia (60 ms), toque nos botoes (scale 0,97 em CSS), anel de
+    progresso (800 ms), contagem numerica (600 ms), pulso do semaforo (2,4 s;
+    mais forte no vermelho), check que se desenha, sheet com mola, linha e
+    barras dos graficos, shimmer nos esqueletos, toast de 3 s, timer em anel.
+  - "Reduzir animacoes": segue o sistema (prefers-reduced-motion) e tem opcao
+    no Perfil.
+  - Desfoque (blur) usado so na barra inferior, com fallback sem blur.
+  - Logotipo ORIGINAL em SVG (arco ascendente terminando em um ponto, em
+    quadrado azul) e wordmark "Meu Personal". Icones 192, 512, maskable 512 e
+    apple-touch-icon 180 gerados por scripts/gerar-icones.mjs a partir do
+    logotipo.
+  - Splash de 1,2 s com o subtitulo "Seu treino. Seu tornozelo. Seu ritmo.",
+    mostrada uma vez por sessao.
+  - PWA: manifest "Meu Personal", start_url /hoje, tema #030B1F, orientacao
+    retrato.
+  - Tema claro e automatico (entregue; era opcional).
+  - Login com o visual novo, link magico e codigo de 6 digitos (para o iPhone),
+    mensagens de erro, limite de e-mails e mensagem generica para e-mail nao
+    autorizado.
+
+ETAPA 2 - PLANO E TELA HOJE (14.2)  [OK, com ressalvas da secao 5]
+  - Plano completo da semana (secao 12) em src/lib/seed/plano.ts:
+      Segunda: tornozelo + superiores e core (manha); funcional com bola (noite).
+      Terca: tornozelo + mobilidade (manha); jogo 20h30.
+      Quarta: tornozelo + forca de pernas (manha); funcional leve (noite).
+      Quinta: tornozelo 15 min (manha); velocidade e arranque as 19h.
+      Sexta: tornozelo + mobilidade (manha); funcional recuperacao ativa (noite).
+      Sabado: ativacao do tornozelo as 13h; jogo 14h30.
+      Domingo: folga total.
+  - Rotina do tornozelo por fase (calculada pela data): fase 1 a partir de
+    13/10, fase 2 a partir de 3/11, fase 3 a partir de 1/12.
+  - Flexora com 2 series nas semanas 1 e 2 e 3 depois; arrancadas a 80-85% nas
+    semanas 1-2, 90-95% nas semanas 3-6 e 100% a partir da semana 7.
+  - Tela Hoje (secao 8.3): saudacao por horario, data por extenso em portugues,
+    sino desativado, cartao do semaforo, proximo jogo, treino de hoje com blocos
+    manha/noite e status Fazer/Feito/Parcial, tres metricas (dor, sono, carga)
+    com dados reais, dica do dia (maximo 2 linhas). Estados de carregamento
+    (esqueleto) e de erro (botao "Tentar de novo").
+  - Tela Semana (8.6): seletor de semana, faixa de dias com marcadores de jogo e
+    de treino feito, 7 cartoes de dia com tags, rotulo de carga e estado (Hoje,
+    Concluido, Folga), chip "Tornozelo: fase 1 - semana 1 de 3" e cartao de
+    conducao de bola e visao de jogo (12.10).
+  - Detalhe do dia /semana/AAAA-MM-DD (8.7): exercicios com series x repeticoes,
+    observacao e espaco 16:9 para midia, expansiveis com animacao; sessao do
+    instrutor para o funcional; botao "Marcar bloco como feito".
+  - Camada de dados (5.2): interface Repo com supabaseRepo e localRepo
+    (localStorage, modo local sem login, com aviso "Modo local").
+  - Migracao 0002: tabela exercises (com media_url nulo), colunas extras em
+    workouts e copia base do plano (1 plano, 13 blocos, 26 exercicios) criada
+    por funcao idempotente seed_plano_padrao, ja executada para o seu usuario e
+    ligada ao cadastro de novos usuarios.
+  - Teste "Hoje mostra o treino certo" para segunda a domingo com datas
+    simuladas.
+
+ETAPA 3 - CHECK-IN, SESSAO E SEGURANCA (14.3)  [OK]
+  - Check-in de 30 segundos em folha deslizante (8.4): dor 0 a 10 (obrigatoria),
+    inchaco, falhou, energia (1 a 5 com icone de bateria), sono (4 faixas),
+    gatilho (aparece se dor >= 1) e nota de ate 200 caracteres recolhida.
+    Um por dia (se ja existe, abre preenchido e atualiza). Animacao de check,
+    toast e atualizacao imediata da Hoje.
+  - Registro de sessao (8.5): Feito/Parcial/Nao fiz, esforco 0 a 10, duracao com
+    botoes -5/+5 (sugestao = duracao planejada) e notas.
+  - Regras de seguranca em src/lib/safety (10.1):
+      dor >= 6, inchaco ou "falhou" = BLOQUEIO;
+      dor 4 ou 5 = ATENCAO (mantem a carga);
+      dor ate 3, sem inchaco e sem falha = LIBERADO;
+      dor persistente = 3 check-ins seguidos com dor >= 4 (sugere avaliacao
+      profissional);
+      todas as mensagens de bloqueio dizem "procure ortopedista ou
+      fisioterapeuta".
+  - Testes (Vitest) cobrem dor 0, 3, 4, 5, 6 e 10, inchaco, falhou, dor
+    persistente, limites editados, check-ins futuros e dor pos-jogo.
+  - Banner de alerta fixo na Hoje no bloqueio e aviso no treino do dia
+    ("Hoje nao aumente a carga"). A flag podeProgredir fica falsa.
+  - Perfil completo (8.10): avatar com iniciais, dados editaveis (nome, idade 21,
+    peso 87, altura vazia, posicao), focos atuais com prioridade 1, restricoes
+    (tornozelo direito + "Adicionar restricao"), regras de seguranca editaveis
+    com dialogo de confirmacao ("Tem certeza? Isso muda quando o app protege
+    seu tornozelo"), aparencia, exportar dados em JSON, sair e o texto fixo de
+    apoio.
+  - Migracao 0003: colunas novas em checkins e session_logs (com restricao de
+    unicidade por dia e bloco), tabela safety_settings e campo dados em profiles.
+
+ETAPA 4 - JOGOS, PRE/POS-JOGO E SEMAFORO (14.4)  [OK]
+  - Jogos recorrentes terca 20h30 e sabado 14h30 em fuso America/Sao_Paulo,
+    contagem regressiva ("em 1 d 3 h", "em 2 h 15 min", "agora"), inclusive na
+    virada de semana (testado).
+  - Modo pre-jogo /jogo/pre: libera 4 h antes; aquecimento guiado de 5 fases
+    (elastico, equilibrio, corrida leve, mobilidade dinamica, progressivas) com
+    timer em anel, pausar, continuar e pular; lembrete da tornozeleira.
+  - Modo pos-jogo /jogo/pos: minutos jogados, dor 0 a 10, gatilho e notas;
+    grava em games; lembrete de comer em ate 1-2 h. Disponivel quando o jogo
+    acaba e ate 12 h depois do inicio.
+  - Lembretes por horario na Hoje (secao 11), com botao X que dispensa no dia:
+      terca: refeicao 17h30, lanche 19h15, ativacao 19h30, aquecimento 19h45;
+      sabado: refeicao 11h30, ativacao 13h, lanche 13h15, aquecimento 13h45.
+  - Cartao "Semana encerrada" no domingo a noite (treinos feitos e dor media).
+  - Rotulos de carga relativos aos jogos (10.4) na Semana e na Hoje.
+  - Semaforo (src/lib/semaforo): verde, amarelo, vermelho e neutro, com motivo
+    em uma frase gerado do dado real (ex.: "Dor 2 de 10 ha 3 dias."), aviso
+    "Faca o check-in de hoje" e pulso animado. Testes cobrem os 4 estados.
+  - Migracao 0004: coluna gatilho em games, indice unico por horario de jogo e
+    tabela milestones.
+
+ETAPA 5 - EVOLUCAO COM GRAFICOS (14.5)  [OK]
+  - Faixa da semana com jogos e treinos marcados; tocar em um dia mostra o
+    resumo do dia (dor, treinos, jogo).
+  - Filtro Semana | Mes.
+  - Tres aneis: treinos feitos x planejados, esforco medio e sono medio.
+  - Grafico de linha da dor com faixa azul nos dias de jogo, losango para a dor
+    pos-jogo e linhas tracejadas dos limites de atencao e bloqueio.
+  - Graficos de barras de esforco e de sono (valor medio de cada faixa).
+  - Area do Tornozelo: fase atual, semana da fase, criterio para avancar com
+    barra de "dias verdes seguidos", historico de dor pos-jogo e Jornada de
+    marcos que voce pode marcar como concluidos ("30 dias sem dor acima de 3",
+    "Primeiro jogo sem dor depois do chute", "Sprint a 100% sem dor").
+  - Estados vazios sem erro; graficos animam na entrada; graficos feitos em SVG
+    proprio (sem biblioteca), com texto sempre >= 13 px.
+
+ENTREGA E OPERACAO
+  - PROGRESSO.md com uma entrada por etapa, no formato da secao 15.2, e a secao
+    "FINAL DA NOITE" com a lista do que voce deve fazer e testar.
+  - Commits: etapa 1 e etapas 2 a 5 (em um unico commit, porque as telas
+    dependem umas das outras). Push para o GitHub e deploy automatico na
+    Vercel (ultimo deploy: Pronto).
+  - Nenhum segredo foi commitado. .env.local, .vercel e supabase/.temp ficam no
+    .gitignore. A chave usada no app e so a publica (anon/publishable).
+  - Nada foi apagado: nenhum projeto, tabela ou dado existente foi removido.
+
+--------------------------------------------------------------------------------
+4. CHECAGEM DOS CRITERIOS DE ACEITACAO (secao 14)
+--------------------------------------------------------------------------------
+Etapa 1
+  [OK] Build ok e TypeScript sem erros.
+  [OK] As 5 abas navegam com animacao e o indicador desliza.
+  [OK] Fonte minima 13 px (conferida no codigo) e areas de toque >= 44 px.
+  [OK] Nada coberto pela barra inferior (padding de 120 px + area segura).
+  [OK] Funciona com prefers-reduced-motion e com a opcao do Perfil.
+  [OK] Visual consistente (mesmos tokens).
+  [NAO TESTADO] PWA instalavel: manifest e icones existem e carregam, mas nao
+       instalei em um iPhone real.
+Etapa 2
+  [OK] Hoje mostra o treino correto do dia (teste de segunda a domingo).
+  [OK] Semana lista os 7 dias com blocos, tags, jogos e rotulos.
+  [OK] Detalhe do dia mostra exercicios, series x repeticoes e observacoes.
+  [OK] Saudacao por horario e data por extenso em portugues.
+  [OK] Funciona em modo local. [NAO TESTADO] com Supabase real (so o mapeamento
+       das colunas foi conferido).
+Etapa 3
+  [OK] Salvar check-in atualiza a Hoje na hora; um por dia (testado em modo
+       local, incluindo o alerta vermelho).
+  [OK] Testes cobrem dor 0, 3, 4, 5, 6, 10, inchaco, falhou e dor persistente.
+  [OK] Bloqueio mostra banner e marca podeProgredir = falso.
+  [OK] Sessao salva muda o estado do bloco e a carga media (testes de carga).
+Etapa 4
+  [OK] Contagem regressiva correta, inclusive na virada de semana (testes).
+  [OK] Pre-jogo ativa 4 h antes e o timer guia as 5 fases (visto em tela).
+  [OK] Pos-jogo grava em games e atualiza semaforo e Evolucao (logica testada;
+       gravacao no Supabase real nao testada).
+  [OK] Semaforo coberto por testes: verde, amarelo, vermelho e sem dados.
+Etapa 5
+  [OK] Mostra dados de check-ins, sessoes e jogos; sem dados mostra estado vazio.
+  [OK] Graficos legiveis em celular simulado (fonte >= 13 px).
+  [OK] Filtro Semana/Mes funciona; marcos podem ser concluidos.
+
+--------------------------------------------------------------------------------
+5. DIFERENCAS EM RELACAO A ESPECIFICACAO (e por que)
+--------------------------------------------------------------------------------
+ 1. Dados de exemplo no modo local (5.2): nao criei check-ins ou treinos de
+    exemplo. Motivo: o principio 4 da secao 2 ("nada de metricas inventadas").
+    O modo local comeca vazio, so com o perfil padrao.
+ 2. Fase do tornozelo (secao 9): a fase e calculada pela data (10.3), sem tabela
+    ankle_phase nem campo em profiles. Avancar de fase continua manual/futuro.
+ 3. Tabela milestones (secao 9): tem chave e data de conclusao. Titulo e
+    criterio dos marcos ficam no codigo (MARCOS_DEFINICOES), nao no banco.
+ 4. Restricoes (8.10): ficam em profiles.dados (JSON). A tabela restrictions
+    da migracao 0001 continua sem uso.
+ 5. Jogos na tela Semana (8.6): aparecem dentro do cartao do dia, com destaque,
+    e nao como um cartao especial separado.
+ 6. Funcional (8.7): "campo para o usuario anotar o que foi feito" virou o campo
+    de notas do registro da sessao (aparece no cartao depois de salvar).
+ 7. Check-in pendente (secao 11): nao e um cartao a parte; e o aviso "Faca o
+    check-in de hoje" dentro do cartao do semaforo, depois das 6h.
+ 8. Dispensar gatilhos (secao 11): o X existe nos lembretes de jogo e no resumo
+    de domingo. O alerta de seguranca nao pode ser dispensado, de proposito.
+ 9. Semaforo (10.2): se a dor pos-jogo das ultimas 48 h for igual ou maior que o
+    limite de bloqueio, o semaforo fica VERMELHO (a especificacao so previa
+    amarelo para dor >= 4). Escolhi o mais restritivo, conforme a regra de
+    seguranca do prompt.
+10. Bloqueio vale por 7 dias (10.1): depois de um check-in em bloqueio, o app
+    nao libera "progredir" por 7 dias, mesmo que a dor melhore no dia seguinte.
+    Interpretei "bloqueia aumento de carga naquela semana" ao pe da letra.
+11. Rotulo "pico de volume" (10.4): existe no codigo, mas com jogos na terca e no
+    sabado nenhum dia cai a 72 h de um jogo, entao ele nunca aparece.
+12. Series e repeticoes das fases 2 e 3 do tornozelo (12.3 e 12.4): a
+    especificacao nao dava os numeros. Usei 3 x 10 (panturrilha em um pe),
+    3 x 30 s (equilibrio na almofada), 3 x 10 (agachamento em uma perna) e
+    3 x 8 (saltos). Na fase 3 todos os dias de tornozelo levam os saltos
+    (a especificacao diz "2 a 3 vezes por semana, como manutencao").
+13. Tempo dos blocos: terca de manha = tornozelo 10 min + mobilidade 10 min
+    (20 min); quarta de manha = 55 min; segunda de manha = 50 min.
+14. Splash (8.2): e uma abertura que cobre a tela por 1,2 s uma vez por sessao,
+    e nao uma rota que depois navega. A raiz "/" redireciona para /hoje no
+    servidor, e quem nao tem login vai para /login.
+15. Botoes: o efeito de toque e CSS (scale 0,97 em 100 ms) em vez de mola em
+    JavaScript, para pesar menos no iPhone.
+16. Rota de login: /login (nao dentro de um grupo "(auth)").
+17. Graficos: SVG proprio, sem Recharts (a especificacao permitia).
+18. Imagens de inspiracao: nao havia pasta referencias/. As duas imagens estao em
+    "Ideias UI/" e foram usadas so como inspiracao de estilo; nao foram
+    commitadas (estao no .gitignore).
+19. Extra: o endereco ?splash=0 pula a abertura (util para prints e testes).
+
+--------------------------------------------------------------------------------
+6. PENDENTE / O QUE FALTA FAZER
+--------------------------------------------------------------------------------
+
+6.1 Fora do escopo da noite (planejado para depois)
+
+ETAPA 6 - BIBLIOTECA DE EXERCICIOS COM IMAGENS E ANIMACOES  [NAO FEITO]
+  - Ja esta pronto: espaco 16:9 em cada exercicio (MidiaPlaceholder) e a coluna
+    media_url (nula) na tabela exercises.
+  - Falta: gravar videos curtos de cada exercicio (seus, ou material com licenca
+    livre registrada), subir para o armazenamento do Supabase, preencher
+    media_url e exibir no detalhe do dia. Falta a tela /biblioteca (busca e
+    filtro por grupo/tipo) e a opcao de trocar um exercicio por equivalente.
+  - O codigo do plano usa o campo mediaUrl; basta preenche-lo.
+
+ETAPA 7 - IA (PERSONAL COM CLAUDE VIA API)  [NAO FEITO]
+  - Ja esta pronto: aba Personal com a explicacao, chips de exemplo
+    desabilitados e campo de mensagem desabilitado; a flag podeProgredir e a
+    avaliacao de seguranca em src/lib/safety, que a IA deve respeitar; o plano
+    base gravado em plans/workouts/exercises.
+  - Falta: tabelas ai_messages, ai_proposals e weekly_reviews (com RLS); rota no
+    servidor que chama a API do Claude; chave da API SO no servidor, em variavel
+    de ambiente (nunca no cliente); limite mensal de gasto definido no Console
+    da Anthropic; tela de propostas com Aceitar/Recusar.
+  - Regras de produto ja definidas: o plano semanal ja existe e a IA NAO gera
+    plano novo toda semana; so propoe evolucao (mais carga, mudar de fase do
+    tornozelo) quando os dados mostrarem melhora; proposta so vale depois que
+    voce aceitar; a IA nunca desbloqueia carga se podeProgredir for falso.
+
+OUTROS ITENS FORA DO ESCOPO
+  - Notificacoes push (hoje os lembretes so aparecem dentro do app, na Hoje; o
+    botao de sino esta desativado).
+  - Uso offline (service worker). Hoje o app precisa de internet, exceto o modo
+    local.
+  - Relatorio em PDF.
+  - Check-in por voz.
+  - Testes de campo.
+  - Diario do centroavante.
+
+6.2 Dentro do escopo, mas incompleto ou sem verificacao
+
+  - Teste real no iPhone: instalar na Tela de Inicio, area segura (notch e barra
+    inferior), splash, barra flutuante, teclado nos campos do Perfil, folha
+    deslizante do check-in e login pelo codigo dentro do app instalado.
+  - Teste real com o Supabase: login, primeiro check-in, sessao, jogo, regras de
+    seguranca e marcos gravando e voltando do banco. Se aparecer erro ao salvar,
+    o app mostra "Nao foi possivel salvar" e desfaz a mudanca na tela.
+  - Supabase (painel): conferir Site URL e Redirect URLs; depois do primeiro
+    login, desligar "Allow new users to sign up" (cadastro publico).
+  - Contraste: nao medi formalmente a razao 4,5:1 de todas as combinacoes. No
+    tema claro troquei os textos amarelo, verde, vermelho e azul-claro por tons
+    mais escuros, mas conferi so a tela Hoje.
+  - Tema claro e automatico: conferir as demais telas.
+  - Dynamic Type: os titulos usam rem, mas varios textos usam tamanhos em px.
+  - Meta tags iOS: o app usa appleWebApp do Next.js; confirmar no iPhone que abre
+    em tela cheia com barra de status translucida.
+  - Fase do tornozelo: avancar de fase e manual. O app so mostra o criterio
+    ("semaforo verde por 7 dias") e o contador de dias verdes.
+  - Marcos da Jornada: sao marcados a mao (nao ha deteccao automatica).
+  - Tabela restrictions e coluna sono (smallint) da migracao 0001 sem uso.
+  - Testes automaticos cobrem a logica (81 testes). Nao ha testes de interface
+    (componentes) nem testes do supabaseRepo.
+  - Sem lint configurado (ESLint).
+  - Dica do dia: texto fixo da lista (secao 12.9), com no maximo 2 linhas; uma
+    dica longa pode ser cortada.
+  - Pre-jogo em andamento: o aviso/aquecimento nao grava historico (so guia).
+
+6.3 Pendencias suas
+  - Os dois blocos de texto que voce colou para o CLAUDE.md (secao "Resumo ao
+    final de cada tarefa" e "Estilo de comunicacao") NAO foram aplicados ao
+    CLAUDE.md, porque voce respondeu que nao queria. O PROGRESSO.md foi mantido
+    de qualquer jeito, por ordem do PLANO-NOITE.md.
+  - Decidir se concorda com as decisoes da secao 5, principalmente a 9
+    (semaforo vermelho por dor pos-jogo) e a 10 (bloqueio por 7 dias).
+
+--------------------------------------------------------------------------------
+7. ARQUIVOS PRINCIPAIS
+--------------------------------------------------------------------------------
+Raiz:       CLAUDE.md, ESPECIFICACAO-APP.txt, PLANO-NOITE.md, PROGRESSO.md,
+            RELATORIO-ETAPAS-1-A-5.txt (este arquivo), vercel.json
+Telas:      src/app/(app)/hoje, semana, semana/[dia], personal, evolucao,
+            perfil, jogo/pre, jogo/pos; src/app/login; src/app/auth/*
+Logica:     src/lib/safety, semaforo, tempo, carga, seed (plano e fase),
+            derivados.ts, tipos.ts, dispensados.ts
+Dados:      src/lib/repo (interface, local, supabase), src/components/dados-provider
+Interface:  src/components/ui/*, src/components/features/*
+Banco:      supabase/migrations/0001 a 0004
+Scripts:    scripts/gerar-icones.mjs (icones), scripts/gerar-seed-sql.ts
+            (gera a migracao 0002 a partir do plano em codigo)
+Comandos:   npm run build | npm test | npm run typecheck | npm run icons
+
+================================================================================
+FIM DO RELATORIO
+================================================================================

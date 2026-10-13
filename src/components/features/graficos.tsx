@@ -57,7 +57,9 @@ export function GraficoDor({
   const y = (v: number) => m.t + ih * (1 - v / 10);
 
   const com = pontos.flatMap((p, i) => (p.dor === null ? [] : [{ i, v: p.dor }]));
-  const caminho = com.map((p, k) => `${k === 0 ? "M" : "L"}${x(p.i).toFixed(1)} ${y(p.v).toFixed(1)}`).join(" ");
+  const caminho = com
+    .map((p, k) => `${k === 0 ? "M" : "L"}${x(p.i).toFixed(1)} ${y(p.v).toFixed(1)}`)
+    .join(" ");
 
   return (
     <div ref={ref} className="w-full">
@@ -80,7 +82,14 @@ export function GraficoDor({
 
         {[0, 5, 10].map((v) => (
           <g key={v}>
-            <line x1={m.l} x2={largura - m.r} y1={y(v)} y2={y(v)} stroke="var(--border-glass)" strokeWidth={1} />
+            <line
+              x1={m.l}
+              x2={largura - m.r}
+              y1={y(v)}
+              y2={y(v)}
+              stroke="var(--border-glass)"
+              strokeWidth={1}
+            />
             <text x={m.l - 6} y={y(v) + 4} textAnchor="end" fontSize={13} fill="var(--text-2)">
               {v}
             </text>
@@ -157,7 +166,14 @@ export function GraficoDor({
         {pontos.map(
           (p, i) =>
             mostrarRotulo(i, n) && (
-              <text key={`t-${p.iso}`} x={x(i)} y={altura - 8} textAnchor="middle" fontSize={13} fill="var(--text-2)">
+              <text
+                key={`t-${p.iso}`}
+                x={x(i)}
+                y={altura - 8}
+                textAnchor="middle"
+                fontSize={13}
+                fill="var(--text-2)"
+              >
                 {p.rotulo}
               </text>
             ),
@@ -195,7 +211,14 @@ export function GraficoBarras({
       <svg width={largura} height={altura} role="img" aria-label={descricao}>
         {[0, max / 2, max].map((v) => (
           <g key={v}>
-            <line x1={m.l} x2={largura - m.r} y1={y(v)} y2={y(v)} stroke="var(--border-glass)" strokeWidth={1} />
+            <line
+              x1={m.l}
+              x2={largura - m.r}
+              y1={y(v)}
+              y2={y(v)}
+              stroke="var(--border-glass)"
+              strokeWidth={1}
+            />
             <text x={m.l - 6} y={y(v) + 4} textAnchor="end" fontSize={13} fill="var(--text-2)">
               {Number.isInteger(v) ? v : v.toFixed(1)}
             </text>

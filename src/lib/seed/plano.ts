@@ -4,14 +4,7 @@ import { DIAS_SEMANA, JOGOS_SEMANAIS, diaSemanaISO, type JogoSlot } from "../tem
 import { faseDoPlano, intensidadeVelocidade } from "./fase";
 
 export type Tag =
-  | "Tornozelo"
-  | "Força"
-  | "Velocidade"
-  | "Funcional"
-  | "Jogo"
-  | "Recuperação"
-  | "Folga"
-  | "Mobilidade";
+  "Tornozelo" | "Força" | "Velocidade" | "Funcional" | "Jogo" | "Recuperação" | "Folga" | "Mobilidade";
 
 export type TipoExercicio = "tornozelo" | "forca" | "velocidade" | "mobilidade" | "funcional";
 
@@ -77,28 +70,94 @@ const ex = (
 export const EXERCICIOS: Record<string, ExercicioBase> = Object.fromEntries(
   [
     // tornozelo, fase 1
-    ex("eq-um-pe", "Equilíbrio em um pé só (direito)", "Tornozelo", "tornozelo", "Depois de dominar, repita de olhos fechados."),
-    ex("el-fora", "Elástico: pé para fora", "Tornozelo", "tornozelo", "Lento. O movimento para fora (fibulares) é o que mais protege contra torção."),
+    ex(
+      "eq-um-pe",
+      "Equilíbrio em um pé só (direito)",
+      "Tornozelo",
+      "tornozelo",
+      "Depois de dominar, repita de olhos fechados.",
+    ),
+    ex(
+      "el-fora",
+      "Elástico: pé para fora",
+      "Tornozelo",
+      "tornozelo",
+      "Lento. O movimento para fora (fibulares) é o que mais protege contra torção.",
+    ),
     ex("el-dentro", "Elástico: pé para dentro", "Tornozelo", "tornozelo", "Lento e controlado."),
     ex("el-cima", "Elástico: pé para cima", "Tornozelo", "tornozelo", "Lento e controlado."),
     ex("pant-degrau", "Panturrilha no degrau", "Tornozelo", "tornozelo", "Desça em 3 segundos."),
-    ex("joelho-parede", "Joelho na parede", "Tornozelo", "mobilidade", "Mobilidade do tornozelo. Mantenha o calcanhar no chão."),
+    ex(
+      "joelho-parede",
+      "Joelho na parede",
+      "Tornozelo",
+      "mobilidade",
+      "Mobilidade do tornozelo. Mantenha o calcanhar no chão.",
+    ),
     // tornozelo, fase 2
-    ex("pant-um-pe", "Panturrilha em um pé só", "Tornozelo", "tornozelo", "Faça com o joelho esticado e depois com o joelho dobrado."),
-    ex("eq-almofada", "Equilíbrio na almofada passando a bola", "Tornozelo", "tornozelo", "Passe a bola contra a parede sem perder o equilíbrio."),
-    ex("agach-uma-perna", "Agachamento em uma perna e saltinhos no lugar", "Tornozelo", "tornozelo", "Controle o joelho: não deixe cair para dentro."),
+    ex(
+      "pant-um-pe",
+      "Panturrilha em um pé só",
+      "Tornozelo",
+      "tornozelo",
+      "Faça com o joelho esticado e depois com o joelho dobrado.",
+    ),
+    ex(
+      "eq-almofada",
+      "Equilíbrio na almofada passando a bola",
+      "Tornozelo",
+      "tornozelo",
+      "Passe a bola contra a parede sem perder o equilíbrio.",
+    ),
+    ex(
+      "agach-uma-perna",
+      "Agachamento em uma perna e saltinhos no lugar",
+      "Tornozelo",
+      "tornozelo",
+      "Controle o joelho: não deixe cair para dentro.",
+    ),
     // tornozelo, fase 3
-    ex("salto-aterrissagem", "Saltos e aterrissagens em um pé só", "Tornozelo", "tornozelo", "Aterrisse macio e estável."),
-    ex("salto-lateral", "Saltos laterais e mudanças de direção", "Tornozelo", "tornozelo", "Comece devagar e aumente a velocidade."),
+    ex(
+      "salto-aterrissagem",
+      "Saltos e aterrissagens em um pé só",
+      "Tornozelo",
+      "tornozelo",
+      "Aterrisse macio e estável.",
+    ),
+    ex(
+      "salto-lateral",
+      "Saltos laterais e mudanças de direção",
+      "Tornozelo",
+      "tornozelo",
+      "Comece devagar e aumente a velocidade.",
+    ),
     // mobilidade
     ex("mob-quadril", "Mobilidade de quadril (90/90)", "Mobilidade", "mobilidade"),
     ex("mob-posterior", "Mobilidade dinâmica de posteriores e panturrilha", "Mobilidade", "mobilidade"),
     // força de pernas
-    ex("stiff", "Stiff (levantamento terra romeno)", "Posterior de coxa", "forca", "Deixe 2 repetições de reserva."),
-    ex("flexora", "Flexora (elástico, slider ou nórdica assistida)", "Posterior de coxa", "forca", "Deixe 2 repetições de reserva."),
+    ex(
+      "stiff",
+      "Stiff (levantamento terra romeno)",
+      "Posterior de coxa",
+      "forca",
+      "Deixe 2 repetições de reserva.",
+    ),
+    ex(
+      "flexora",
+      "Flexora (elástico, slider ou nórdica assistida)",
+      "Posterior de coxa",
+      "forca",
+      "Deixe 2 repetições de reserva.",
+    ),
     ex("bulgaro", "Afundo búlgaro ou step-up", "Coxa", "forca", "Deixe 2 repetições de reserva."),
     ex("pant-pe-sentado", "Panturrilha em pé e sentado", "Panturrilha", "forca", "Lenta."),
-    ex("elev-quadril", "Elevação de quadril", "Glúteo e posterior", "forca", "Deixe 2 repetições de reserva."),
+    ex(
+      "elev-quadril",
+      "Elevação de quadril",
+      "Glúteo e posterior",
+      "forca",
+      "Deixe 2 repetições de reserva.",
+    ),
     // superiores e core
     ex("supino", "Supino ou flexão", "Peito", "forca", "Deixe 2 repetições de reserva."),
     ex("remada", "Remada", "Costas", "forca", "Deixe 2 repetições de reserva."),
@@ -106,13 +165,30 @@ export const EXERCICIOS: Record<string, ExercicioBase> = Object.fromEntries(
     ex("prancha", "Prancha", "Core", "forca"),
     ex("abdominal-rotacao", "Abdominal com rotação", "Core", "forca"),
     // velocidade
-    ex("vel-aquecimento", "Aquecimento de velocidade", "Velocidade", "velocidade", "Mobilidade, corrida leve, skipping e 2 a 3 progressivas."),
-    ex("vel-arrancadas", "Arrancadas de 10 a 20 m", "Velocidade", "velocidade", "Varie a saída: parado, de costas, depois de girar e depois de deslocamento lateral."),
+    ex(
+      "vel-aquecimento",
+      "Aquecimento de velocidade",
+      "Velocidade",
+      "velocidade",
+      "Mobilidade, corrida leve, skipping e 2 a 3 progressivas.",
+    ),
+    ex(
+      "vel-arrancadas",
+      "Arrancadas de 10 a 20 m",
+      "Velocidade",
+      "velocidade",
+      "Varie a saída: parado, de costas, depois de girar e depois de deslocamento lateral.",
+    ),
     ex("vel-fechamento", "Arrancadas com finalização", "Velocidade", "velocidade", "Em condição de jogo."),
   ].map((e) => [e.slug, e]),
 );
 
-const noBloco = (slug: string, repeticoes: string, series?: string, observacao?: string): ExercicioNoBloco => ({
+const noBloco = (
+  slug: string,
+  repeticoes: string,
+  series?: string,
+  observacao?: string,
+): ExercicioNoBloco => ({
   ...EXERCICIOS[slug],
   repeticoes,
   series,
@@ -156,7 +232,10 @@ export function rotinaAtivacao(): ExercicioNoBloco[] {
   ];
 }
 
-const mobilidade = (): ExercicioNoBloco[] => [noBloco("mob-quadril", "10", "2"), noBloco("mob-posterior", "10", "2")];
+const mobilidade = (): ExercicioNoBloco[] => [
+  noBloco("mob-quadril", "10", "2"),
+  noBloco("mob-posterior", "10", "2"),
+];
 
 const superiores = (): ExercicioNoBloco[] => [
   noBloco("supino", "8 a 10", "3"),
@@ -168,7 +247,12 @@ const superiores = (): ExercicioNoBloco[] => [
 
 const pernas = (semanaPlano: number): ExercicioNoBloco[] => [
   noBloco("stiff", "8", "3"),
-  noBloco("flexora", "6 a 8", semanaPlano <= 2 ? "2" : "3", semanaPlano <= 2 ? "Semanas 1 e 2: apenas 2 séries." : undefined),
+  noBloco(
+    "flexora",
+    "6 a 8",
+    semanaPlano <= 2 ? "2" : "3",
+    semanaPlano <= 2 ? "Semanas 1 e 2: apenas 2 séries." : undefined,
+  ),
   noBloco("bulgaro", "8 por perna", "3"),
   noBloco("pant-pe-sentado", "12 a 15", "3"),
   noBloco("elev-quadril", "8 a 10", "3"),
@@ -291,7 +375,8 @@ export function diaDoPlano(iso: string): DiaPlano {
             horario: "19h",
             tags: ["Velocidade"],
             exercicios: velocidade(semanaPlano),
-            observacao: "Se a dor do tornozelo passar de 3/10, pare a sessão e faça só a rotina do tornozelo.",
+            observacao:
+              "Se a dor do tornozelo passar de 3/10, pare a sessão e faça só a rotina do tornozelo.",
           }),
         ],
       };
@@ -374,11 +459,26 @@ export type FaseAquecimento = { id: string; titulo: string; instrucao: string; s
 
 /** Aquecimento pré-jogo guiado (seção 12.8): ~10 min. */
 export const AQUECIMENTO_PRE_JOGO: FaseAquecimento[] = [
-  { id: "elastico", titulo: "Elástico", instrucao: "Pé para fora 1x15, para dentro 1x15 e para cima 1x15. Lento.", segundos: 135 },
+  {
+    id: "elastico",
+    titulo: "Elástico",
+    instrucao: "Pé para fora 1x15, para dentro 1x15 e para cima 1x15. Lento.",
+    segundos: 135,
+  },
   { id: "equilibrio", titulo: "Equilíbrio", instrucao: "30 s em cada perna, em um pé só.", segundos: 60 },
   { id: "corrida", titulo: "Corrida leve", instrucao: "Trote leve para aquecer.", segundos: 180 },
-  { id: "mobilidade", titulo: "Mobilidade dinâmica", instrucao: "Quadril, posteriores e tornozelos, em movimento.", segundos: 120 },
-  { id: "progressivas", titulo: "Progressivas", instrucao: "2 a 3 progressivas até quase a velocidade máxima.", segundos: 120 },
+  {
+    id: "mobilidade",
+    titulo: "Mobilidade dinâmica",
+    instrucao: "Quadril, posteriores e tornozelos, em movimento.",
+    segundos: 120,
+  },
+  {
+    id: "progressivas",
+    titulo: "Progressivas",
+    instrucao: "2 a 3 progressivas até quase a velocidade máxima.",
+    segundos: 120,
+  },
 ];
 
 export const DICAS_DO_DIA = [

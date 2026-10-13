@@ -5,9 +5,18 @@ import { cn } from "@/lib/cn";
 import type { Sessao } from "@/lib/tipos";
 
 /** Botão de status do bloco: Fazer / Feito / Parcial (ou Não fiz). Toque abre o registro. */
-export function StatusBloco({ sessao, onClick, nome }: { sessao: Sessao | null; onClick: () => void; nome: string }) {
+export function StatusBloco({
+  sessao,
+  onClick,
+  nome,
+}: {
+  sessao: Sessao | null;
+  onClick: () => void;
+  nome: string;
+}) {
   const r = sessao?.resultado;
-  const rotulo = r === "feito" ? "Feito" : r === "parcial" ? "Parcial" : r === "nao_fiz" ? "Não fiz" : "Fazer";
+  const rotulo =
+    r === "feito" ? "Feito" : r === "parcial" ? "Parcial" : r === "nao_fiz" ? "Não fiz" : "Fazer";
   const Icone = r === "feito" ? Check : r === "parcial" ? Minus : r === "nao_fiz" ? X : null;
 
   return (

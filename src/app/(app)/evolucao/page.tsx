@@ -20,12 +20,7 @@ import { diasVerdesSeguidos } from "@/lib/safety";
 import { faseDoPlano } from "@/lib/seed/fase";
 import { diaDoPlano, treinosPlanejados } from "@/lib/seed/plano";
 import { DIAS_SEMANA, addDias, dataExtensoISO, dataISO, diasDaSemana } from "@/lib/tempo";
-import {
-  GATILHO_ROTULO,
-  MARCOS_DEFINICOES,
-  SONO_HORAS,
-  type Jogo,
-} from "@/lib/tipos";
+import { GATILHO_ROTULO, MARCOS_DEFINICOES, SONO_HORAS, type Jogo } from "@/lib/tipos";
 import { useAgora } from "@/lib/use-agora";
 
 type Filtro = "semana" | "mes";
@@ -90,7 +85,9 @@ export default function EvolucaoPage() {
     iso,
     rotulo: filtro === "semana" ? LETRAS[i] : String(Number(iso.slice(8))),
     valor: media(
-      sessoes.filter((s) => s.data === iso && s.esforco !== null && s.resultado !== "nao_fiz").map((s) => s.esforco!),
+      sessoes
+        .filter((s) => s.data === iso && s.esforco !== null && s.resultado !== "nao_fiz")
+        .map((s) => s.esforco!),
     ),
   }));
   const pontosSono: PontoBarra[] = dias.map((iso, i) => {
@@ -128,7 +125,10 @@ export default function EvolucaoPage() {
 
   const fase = faseDoPlano(hoje);
   const verdes = diasVerdesSeguidos(checkins, hoje, seguranca);
-  const posJogos = [...jogos].filter((j) => j.dor !== null).sort((a, b) => b.inicio.localeCompare(a.inicio)).slice(0, 6);
+  const posJogos = [...jogos]
+    .filter((j) => j.dor !== null)
+    .sort((a, b) => b.inicio.localeCompare(a.inicio))
+    .slice(0, 6);
 
   async function alternar(chave: string) {
     try {
@@ -151,8 +151,16 @@ export default function EvolucaoPage() {
       <GlassCard variante="leve" indice={0}>
         <p className="t-h3">{dataExtensoISO(diaSel)}</p>
         <ul className="t-corpo mt-2 space-y-1 text-texto2">
-          <li>{ckSel ? `Dor ${ckSel.dor} de 10${ckSel.inchaco ? " · inchaço" : ""}${ckSel.falhou ? " · tornozelo cedeu" : ""}` : "Sem check-in"}</li>
-          <li>{sessoesSel.length ? `${sessoesSel.length} ${sessoesSel.length === 1 ? "treino registrado" : "treinos registrados"}` : "Sem treino registrado"}</li>
+          <li>
+            {ckSel
+              ? `Dor ${ckSel.dor} de 10${ckSel.inchaco ? " · inchaço" : ""}${ckSel.falhou ? " · tornozelo cedeu" : ""}`
+              : "Sem check-in"}
+          </li>
+          <li>
+            {sessoesSel.length
+              ? `${sessoesSel.length} ${sessoesSel.length === 1 ? "treino registrado" : "treinos registrados"}`
+              : "Sem treino registrado"}
+          </li>
           {jogoSel && (
             <li className="text-texto">
               Jogo: {jogoSel.minutosJogados ?? "—"} min · dor depois {jogoSel.dor ?? "—"}
@@ -228,20 +236,33 @@ export default function EvolucaoPage() {
                   descricao={descDor}
                 />
                 <p className="t-pq mt-2 text-texto2">
-                  Faixa azul = dia de jogo · losango = dor depois do jogo · linhas tracejadas = limites de atenção e bloqueio
+                  Faixa azul = dia de jogo · losango = dor depois do jogo · linhas tracejadas = limites de
+                  atenção e bloqueio
                   {dorMedia(checkins, de, ate) !== null ? ` · média ${fmt(dorMedia(checkins, de, ate))}` : ""}
                 </p>
               </>
             ) : (
-              <EmptyState compacto titulo="Sem registros de dor" texto="Os check-ins aparecem aqui como uma linha." />
+              <EmptyState
+                compacto
+                titulo="Sem registros de dor"
+                texto="Os check-ins aparecem aqui como uma linha."
+              />
             )}
           </GlassCard>
 
           <GlassCard indice={3} titulo="Esforço dos treinos">
             {temEsforco ? (
-              <GraficoBarras pontos={pontosEsforco} max={10} descricao="Esforço percebido por dia, de 0 a 10." />
+              <GraficoBarras
+                pontos={pontosEsforco}
+                max={10}
+                descricao="Esforço percebido por dia, de 0 a 10."
+              />
             ) : (
-              <EmptyState compacto titulo="Sem treinos registrados" texto="Registre o esforço ao marcar um treino como feito." />
+              <EmptyState
+                compacto
+                titulo="Sem treinos registrados"
+                texto="Registre o esforço ao marcar um treino como feito."
+              />
             )}
           </GlassCard>
 
@@ -254,7 +275,11 @@ export default function EvolucaoPage() {
                 descricao="Horas de sono por dia, a partir das faixas do check-in."
               />
             ) : (
-              <EmptyState compacto titulo="Sem registros de sono" texto="Informe o sono no check-in diário." />
+              <EmptyState
+                compacto
+                titulo="Sem registros de sono"
+                texto="Informe o sono no check-in diário."
+              />
             )}
           </GlassCard>
         </>
@@ -265,12 +290,24 @@ export default function EvolucaoPage() {
           Fase {fase.fase}: {fase.nome}
         </p>
         <p className="t-corpo text-texto2">
-          {fase.semanasNaFase ? `Semana ${fase.semanaNaFase} de ${fase.semanasNaFase}` : `Semana ${fase.semanaNaFase}`}
+          {fase.semanasNaFase
+            ? `Semana ${fase.semanaNaFase} de ${fase.semanasNaFase}`
+            : `Semana ${fase.semanaNaFase}`}
         </p>
         <div className="mt-3 space-y-2">
           <p className="t-corpo">{fase.criterioAvancar}</p>
-          <div className="h-3 overflow-hidden rounded-full bg-vidro" role="progressbar" aria-valuemin={0} aria-valuemax={7} aria-valuenow={Math.min(7, verdes)} aria-label="Dias verdes seguidos">
-            <div className="h-full rounded-full bg-ok transition-[width] duration-700" style={{ width: `${(Math.min(7, verdes) / 7) * 100}%` }} />
+          <div
+            className="h-3 overflow-hidden rounded-full bg-vidro"
+            role="progressbar"
+            aria-valuemin={0}
+            aria-valuemax={7}
+            aria-valuenow={Math.min(7, verdes)}
+            aria-label="Dias verdes seguidos"
+          >
+            <div
+              className="h-full rounded-full bg-ok transition-[width] duration-700"
+              style={{ width: `${(Math.min(7, verdes) / 7) * 100}%` }}
+            />
           </div>
           <p className="t-pq text-texto2">{Math.min(7, verdes)} de 7 dias verdes seguidos</p>
         </div>
@@ -281,7 +318,10 @@ export default function EvolucaoPage() {
             {posJogos.map((j) => {
               const iso = dataISO(new Date(j.inicio));
               return (
-                <li key={j.inicio} className="flex items-center gap-3 rounded-2xl border border-borda bg-vidro p-3">
+                <li
+                  key={j.inicio}
+                  className="flex items-center gap-3 rounded-2xl border border-borda bg-vidro p-3"
+                >
                   <span
                     className={cn(
                       "num flex size-10 shrink-0 items-center justify-center rounded-full text-[17px] font-semibold",
@@ -292,9 +332,12 @@ export default function EvolucaoPage() {
                     {j.dor}
                   </span>
                   <div className="min-w-0">
-                    <p className="t-corpo">{dataBR(iso)} · {DIAS_SEMANA[diaDoPlano(iso).diaSemana]}</p>
+                    <p className="t-corpo">
+                      {dataBR(iso)} · {DIAS_SEMANA[diaDoPlano(iso).diaSemana]}
+                    </p>
                     <p className="t-pq text-texto2">
-                      {j.minutosJogados ?? "—"} min{j.gatilho ? ` · gatilho: ${GATILHO_ROTULO[j.gatilho].toLowerCase()}` : ""}
+                      {j.minutosJogados ?? "—"} min
+                      {j.gatilho ? ` · gatilho: ${GATILHO_ROTULO[j.gatilho].toLowerCase()}` : ""}
                     </p>
                   </div>
                 </li>
@@ -327,12 +370,18 @@ export default function EvolucaoPage() {
                       feito ? "border-ok bg-ok text-sobre" : "border-texto3 text-texto3",
                     )}
                   >
-                    {feito ? <Check className="size-5" aria-hidden="true" /> : <Circle className="size-3" aria-hidden="true" />}
+                    {feito ? (
+                      <Check className="size-5" aria-hidden="true" />
+                    ) : (
+                      <Circle className="size-3" aria-hidden="true" />
+                    )}
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="t-h3 block leading-snug">{def.titulo}</span>
                     <span className="t-pq text-texto2">
-                      {feito && m?.concluidoEm ? `Concluído em ${dataBR(m.concluidoEm)}` : "Em andamento · toque para concluir"}
+                      {feito && m?.concluidoEm
+                        ? `Concluído em ${dataBR(m.concluidoEm)}`
+                        : "Em andamento · toque para concluir"}
                     </span>
                   </span>
                 </button>

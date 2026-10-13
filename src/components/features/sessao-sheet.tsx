@@ -87,7 +87,12 @@ export function SessaoSheet({ aberto, onFechar, data, bloco, inicial, resultadoP
         <>
           <section className="space-y-2">
             <h3 className="t-h3">Esforço percebido</h3>
-            <EscalaDor variante="esforco" valor={esforco} onChange={setEsforco} rotuloAria="Esforço percebido" />
+            <EscalaDor
+              variante="esforco"
+              valor={esforco}
+              onChange={setEsforco}
+              rotuloAria="Esforço percebido"
+            />
           </section>
 
           <section className="space-y-2">

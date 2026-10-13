@@ -1,0 +1,10 @@
+.next
+node_modules
+package-lock.json
+supabase/migrations
+coverage
+playwright-report
+test-results
+*.txt
+*.md
+public

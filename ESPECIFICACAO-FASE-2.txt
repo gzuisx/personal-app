@@ -1,0 +1,1220 @@
+================================================================================
+ESPECIFICACAO DA FASE 2 - "MEU PERSONAL" INTELIGENTE
+De app de registro para um personal de verdade: pratico, estrategico e adaptativo
+Complementa ESPECIFICACAO-APP.txt e parte do RELATORIO-ETAPAS-1-A-5.txt
+================================================================================
+
+0. COMO USAR ESTE ARQUIVO
+--------------------------------------------------------------------------------
+- Ordem de leitura obrigatoria antes de qualquer tarefa: CLAUDE.md,
+  PROGRESSO.md, RELATORIO-ETAPAS-1-A-5.txt, ESPECIFICACAO-APP.txt (secoes 1 a 13
+  continuam valendo), este arquivo inteiro e, como referencia de ideias, o arquivo
+  Meu_Personal_Ideias_Funcionais_Apple_Fitness.txt (a decisao final sobre cada ideia
+  dele esta na secao 24 deste arquivo; em duvida, vale a secao 24).
+- Este arquivo REDEFINE a numeracao das etapas a partir da 6 (a antiga etapa 6
+  "biblioteca" e a antiga etapa 7 "IA" ganham novos numeros, secao 20).
+- Se este arquivo divergir da ESPECIFICACAO-APP.txt, vale este arquivo, exceto
+  em seguranca e limites (vale o mais restritivo; secao 19.4).
+- Tudo que o Claude Code pode fazer sozinho esta marcado [AUTONOMO]. O que
+  depende do Gabriel (conta, chave, credito, fotos, videos, teste no iPhone) esta
+  marcado [GABRIEL]. Itens [GABRIEL] nao travam as etapas [AUTONOMO]: deixar o
+  gancho pronto e anotar em PROGRESSO.md.
+- Idioma da interface e dos textos: portugues do Brasil. Fuso: America/Sao_Paulo.
+- Em duvida, escolher a opcao mais simples e segura e anotar a decisao.
+- O app NAO substitui avaliacao de ortopedista ou fisioterapeuta. Nenhuma tela,
+  texto ou resposta de IA pode diagnosticar.
+
+1. PONTO DE PARTIDA E DECISOES PENDENTES DO RELATORIO
+--------------------------------------------------------------------------------
+1.1 Situacao (resumo do relatorio)
+- Etapas 1 a 5 prontas e no ar: https://personal-app-ezfw.vercel.app (repositorio
+  privado gzuisx/personal-app; banco Supabase "Gym App"). 81 testes passando;
+  migracoes 0001 a 0004 aplicadas; RLS em todas as tabelas.
+- NAO testado em ambiente real: login por e-mail no iPhone, gravacao real no
+  Supabase pelo app, instalacao na Tela de Inicio, area segura do iPhone.
+
+1.2 Correcoes e decisoes (tarefas da ETAPA 6; cada uma com a regra final)
+C1. Semaforo vermelho por dor pos-jogo >= limite de bloqueio nas ultimas 48 h:
+    MANTER (e o mais restritivo e seguro).
+C2. Bloqueio de progressao por 7 dias fixos: SUBSTITUIR por regra adaptativa:
+    - Evento de bloqueio = check-in com dor >= 6, inchaco ou falhou (ou dor
+      pos-jogo >= 6).
+    - A progressao so e liberada quando: (a) passaram >= 3 dias desde o ultimo
+      evento de bloqueio E (b) os 2 ultimos check-ins, em dias diferentes, tem
+      dor <= 3 sem inchaco e sem falha. Ou automaticamente apos 7 dias com dor
+      <= 3 sem eventos.
+    - Atualizar lib/safety e os testes (casos: bloqueio hoje, 2 dias depois com
+      dor 2, 3 dias depois com dor 2 e 2 check-ins bons, novo bloqueio no meio).
+C3. Rotulo "pico de volume" que nunca aparece: recalcular por DIAS CORRIDOS ate
+    o proximo jogo (e desde o ultimo), e nao por horas desde 00h. Tabela fixa
+    por dia da semana (ja que os jogos sao terca e sabado):
+      Segunda : "24 h antes do jogo - leve"
+      Terca   : "Dia de jogo"
+      Quarta  : "Pos-jogo + 72 h antes do sabado - forca moderada"
+      Quinta  : "48 h antes do jogo - velocidade"
+      Sexta   : "24 h antes do jogo - recuperacao ativa"
+      Sabado  : "Dia de jogo"
+      Domingo : "Folga - recuperacao pos-jogo"
+    Se houver jogo extra/cancelado (secao 11), recalcular por offsets de dias.
+C4. Modo local sem dados de exemplo: criar o "Modo demonstracao" OPT-IN:
+    botao no Perfil "Carregar dados de exemplo" (so em modo local ou conta de
+    teste), com 30 dias de check-ins, sessoes e jogos FICTICIOS, claramente
+    marcados com a faixa "DEMONSTRACAO" em todas as telas e botao "Apagar dados
+    de exemplo". Serve para testar graficos, coach e insights. Nunca misturar com
+    dados reais no Supabase.
+C5. Fase do tornozelo so calculada por data: guardar no banco (profiles:
+    fase_tornozelo smallint, fase_inicio date) e avancar APENAS por proposta
+    aceita pelo Gabriel (secao 6.3). Mostrar na Semana e na Evolucao.
+C6. Restricoes em profiles.dados (JSON): migrar para a tabela restrictions
+    (migracao 0005), mantendo leitura do JSON antigo na migracao. Marcos: titulo e
+    criterio no banco (milestone_defs) em vez de no codigo.
+C7. CARD DE JOGO COM 3 ETAPAS (antes, depois, dia seguinte; secao 24.4) na Hoje e na
+    Semana: cartao proprio de jogo (horario, aquecimento previsto, refeicao);
+    campo de anotacao do funcional dentro do proprio cartao do dia; "check-in
+    pendente" como cartao de acao proprio na Hoje (nao so dentro do semaforo).
+C8. Pre-jogo em andamento nao grava historico: gravar pre_game_logs (data, jogo,
+    aquecimento_concluido bool, fases concluidas, duracao, tornozeleira usada
+    sim/nao). Alimenta insights (secao 10).
+C9. Dica do dia longa cortada: usar line-clamp de 2 linhas com "ver mais" em
+    bottom sheet.
+C10. Contraste e Dynamic Type: rodar auditoria automatica (axe-core e Lighthouse
+    de acessibilidade) em todas as telas nos dois temas, corrigir tudo que falhar
+    em 4.5:1, converter fontes em px para rem, testar com texto 130%.
+C11. Qualidade: configurar ESLint + Prettier, testes de interface com Playwright
+    (fluxos: abrir Hoje, fazer check-in, registrar sessao, pre-jogo, Evolucao, nos
+    temas escuro e claro, viewport 390x844), testes do supabaseRepo com mocks,
+    GitHub Actions (build + lint + testes em cada push).
+C12. Alinhar o visual a arte do Gabriel (pasta "Ideias UI/"): secao 18.1.
+C13. Blocos do CLAUDE.md (resumo ao final de cada tarefa e estilo de
+    comunicacao) NAO foram aplicados. [GABRIEL decide]: aplicar o resumo ao final
+    de cada tarefa (recomendado, curto) e o modo "caveman" (opcional).
+C14. [GABRIEL] No painel do Supabase: conferir Site URL e Redirect URLs com o
+    link da Vercel; apos o primeiro login, desligar "Allow new users to sign up".
+C15. [GABRIEL] Testar no iPhone real (lista na secao 19.6) e anotar o que falhar.
+C16. ANEIS DO PLANO acionaveis na Hoje (secao 24.1).
+C17. Prontidao sem "%" visivel: mostrar o modo e os motivos (secao 24.3 e).
+
+2. VISAO: DO REGISTRO AO PERSONAL INTELIGENTE
+--------------------------------------------------------------------------------
+2.1 O problema que esta fase resolve
+Hoje o app registra e mostra. Um personal de verdade decide: ajusta o treino ao
+estado do dia, explica o porque, progride na hora certa, avisa sobre risco e
+aprende com os padroes. As funcoes (check-in, sessao, jogo, sono, semaforo,
+plano) precisam conversar entre si por um unico "cerebro".
+
+2.2 Ciclo central (Plano -> Execucao -> Medida -> Adaptacao)
+ 1) PLANO: semana base + excecoes da agenda.
+ 2) DECISAO DO DIA: o motor lê prontidao, carga, jogos, fase do tornozelo e define
+    o modo do dia (Completo / Reduzido / Recuperacao / Folga) e os ajustes.
+ 3) EXECUCAO: treino guiado serie a serie (secao 5).
+ 4) MEDIDA: check-in, series, esforco, dor durante o exercicio, jogo, testes.
+ 5) ADAPTACAO: progressao, descarga, troca de exercicios, propostas.
+
+2.3 Camadas (de baixo para cima)
+ Camada 1 - DADOS: Supabase (tabelas da secao 17) + repo (supabase/local).
+ Camada 2 - MOTOR DE REGRAS (lib/coach): funcoes puras, testadas, deterministicas.
+            E a UNICA fonte de verdade para seguranca, prontidao e progressao.
+ Camada 3 - IA (Claude): explica, conversa, propoe e interpreta texto livre. NUNCA
+            decide seguranca; suas propostas passam pelo validador do motor.
+ Camada 4 - INTERFACE: Hoje, Semana, Treino guiado, Evolucao, Personal, Perfil.
+Princípio: o app funciona 100% sem IA (so com o motor de regras). A IA e um
+aprimoramento. Se a API falhar, nada quebra.
+
+2.4 Principios de produto desta fase
+ 1. Explicabilidade: toda decisao mostra "Por que?" com os dados usados.
+ 2. O usuario manda: o app sugere, o Gabriel aceita, recusa ou ajusta.
+ 3. Seguranca nao e negociavel: IA e motor nao liberam carga se podeProgredir for
+    falso.
+ 4. Menos digitacao: toques, padroes inteligentes, valores sugeridos.
+ 5. Nada inventado: insights so com dados suficientes (minimo de amostras).
+ 6. Pouco ruido: no maximo 2 lembretes por dia.
+
+3. MOTOR DO COACH (lib/coach) [AUTONOMO]
+--------------------------------------------------------------------------------
+3.1 Estrutura de modulos (funcoes puras + testes Vitest para cada um)
+  lib/coach/contexto.ts        buildCoachContext(agora, dados) -> CoachContext
+  lib/coach/prontidao.ts       calcularProntidao(contexto) -> 0..100 + componentes
+  lib/coach/carga.ts           carga das sessoes e jogos, semanal, variacao
+  lib/coach/modo.ts            definirModoDoDia(contexto) -> Decisao
+  lib/coach/regras.ts          catalogo de regras (gatilho -> acao), ver secao 4
+  lib/coach/recomendacao.ts    sugestao de exercicios e planos (secoes 7 e 8)
+  lib/coach/progressao.ts      progressao de carga e de fase (secao 6)
+  lib/coach/insights.ts        correlacoes e padroes (secao 10)
+  lib/coach/agenda.ts          excecoes, jogo extra, "so tenho X min" (secao 11)
+  lib/coach/validador.ts       valida propostas (inclusive as da IA)
+Todas as telas e a IA consomem o MESMO CoachContext e a MESMA Decisao.
+
+3.2 CoachContext (o que o motor "sabe" a cada instante)
+  agora, fuso, diaDaSemana
+  perfil (idade, peso, altura, posicao), focos, restricoes ativas
+  faseTornozelo (1,2,3,4), semanaDaFase, diasVerdesSeguidos
+  checkins (ultimos 28 dias), sessoes (ultimos 28 dias), series (ultimos 28 dias)
+  jogos (ultimos 28 dias + proximos 14), preJogos, testesDeCampo
+  planoDaSemana, excecoesDaAgenda, configuracoesDeSeguranca
+  semaforo (cor + motivo), seguranca (nivel, podeProgredir)
+  horasDesdeUltimoJogo, horasAteProximoJogo
+
+3.3 Prontidao do dia (0 a 100) - formula de partida (ajustavel em Perfil >
+    Avancado; revisar apos 4 semanas de dados reais)
+  base = 100
+  dor:      - (dor x 4)                                  (0 a -40)
+  sono:     <5 h: -20 | 5-6 h: -12 | 7-8 h: 0 | >8 h: 0
+  energia:  - ((5 - energia) x 3,75)                     (0 a -15)
+  carga:    carga 7d / media das 4 semanas anteriores
+            > 1,30: -15 | 1,15 a 1,30: -8 | demais: 0
+  jogo:     <24 h desde o ultimo jogo: -10 | 24 a 48 h: -5 | demais: 0
+  Sobrescritas (prioridade sobre a conta):
+    inchaco = sim OU falhou = sim OU dor >= 6 -> prontidao maxima 40 e modo
+    Recuperacao; mostrar alerta de seguranca (texto da secao 19.3).
+  Sem check-in hoje: usar o ultimo check-in com desconto de 10 pontos e pedir o
+  check-in (cartao de acao).
+  Observacao: pesos sao um ponto de partida razoavel, nao ciencia exata. Registrar
+  em PROGRESSO.md que precisam de calibracao com dados reais.
+  EXIBICAO: a pontuacao 0-100 e INTERNA (serve so para escolher o modo do dia). Na
+  interface mostrar o MODO e a lista de motivos, nunca uma "porcentagem de
+  recuperacao". Se aparecer no "Por que?", rotular "pontuacao interna do app; nao e
+  medida fisiologica" (secao 24.3 e).
+
+3.4 Carga (secao carga.ts)
+  - Carga da sessao = esforco percebido (0-10) x duracao em minutos.
+  - Carga do jogo = esforco pos-jogo (novo campo 0-10 no pos-jogo) x minutos.
+  - Carga semanal = soma das cargas. Referencia = media das 4 semanas anteriores.
+  - Variacao = carga da semana / referencia. Alerta amarelo > 1,30; vermelho >
+    1,50 (regra pratica, nao garantia). Exigir pelo menos 3 semanas de historico;
+    antes disso mostrar "poucos dados" e nao alertar.
+  - Transparencia: o botao "Como calculamos" mostra a formula, as sessoes e jogos
+    usados e as 4 semanas de referencia (secao 24.3). O calculo e proprio do app e
+    usa so os registros reais.
+
+3.5 Modos do dia
+  Prontidao >= 75  : COMPLETO     (treino planejado, progressao permitida se o
+                                    motor de seguranca liberar)
+  55 a 74          : REDUZIDO     (-20 a -30% de volume; sem esforco maximo; sem
+                                    pliometria nem mudanca de direcao intensa)
+  35 a 54          : RECUPERACAO  (mobilidade, tornozelo leve, caminhada, sem
+                                    sprint, sem carga alta)
+  < 35             : FOLGA        (descanso; se dor/inchaco/falha, orientar
+                                    avaliacao profissional)
+  Quando for dia de jogo: o modo ajusta o AQUECIMENTO e o texto pre-jogo, nao
+  cancela o jogo (a decisao de jogar e do Gabriel); se bloqueio de seguranca,
+  mostrar aviso forte antes do jogo ("hoje o risco e maior; considere ajustar").
+
+3.6 Decisao (saida do motor) - tipo TypeScript
+  Decisao = {
+    modo, prontidao, componentes[],         // para o "Por que?"
+    ajustesDoTreino[],                       // ex.: "reduzir series de 3 para 2"
+    substituicoes[],                         // ex.: "trocar salto por equilibrio"
+    alertas[], proximasAcoes[],              // cartoes de acao na Hoje
+    podeProgredir, motivoBloqueio?,
+    sugestaoDePlano?, sugestaoDeFase?
+  }
+
+3.7 "Por que?" (explicabilidade) [obrigatorio]
+Em todo cartao que mostra uma decisao (modo do dia, ajuste, proposta, alerta)
+ha o botao "Por que?" que abre um bottom sheet com: a regra aplicada, os dados
+usados (com datas) e o que mudaria a decisao. Ex.: "Modo Reduzido: sono 5-6 h
+(-12) e dor 2 (-8) -> prontidao 68. Se amanha dormir 7 h e dor <= 2, volta ao
+Completo."
+
+3.8 Testes obrigatorios (Vitest)
+  - Prontidao: casos limite (todas as combinacoes de sobrescrita), sem check-in.
+  - Modo: cada faixa, fronteiras 34/35, 54/55, 74/75.
+  - Carga: menos de 3 semanas, variacao 1,29/1,31/1,51.
+  - Seguranca adaptativa (C2) e consistencia: nenhuma funcao do coach retorna
+    podeProgredir = true quando lib/safety diz false.
+  - Propriedade: modo nunca e Completo se houver bloqueio de seguranca.
+
+4. COMO AS FUNCOES CONVERSAM (matriz gatilho -> acao) [AUTONOMO]
+--------------------------------------------------------------------------------
+Implementar como regras declarativas em lib/coach/regras.ts (cada regra: id,
+gatilho, condicao, acoes, mensagem, "por que"). A cada novo registro (check-in,
+sessao, jogo, teste, excecao) o motor recalcula a Decisao e atualiza todas as
+telas.
+ R01 Check-in com dor >= 6, inchaco ou falhou -> semaforo vermelho; modo
+     Recuperacao; bloqueia progressao; alerta de avaliacao profissional; remove
+     pliometria e velocidade do dia; ofere ce "Plano de retorno" (secao 8).
+ R02 Check-in com dor 4-5 -> semaforo amarelo; modo Reduzido; mantem carga; troca
+     exercicios de impacto por isometricos/equilibrio; pergunta "qual
+     movimento doeu" (secao 9.4).
+ R03 Sono < 5 h por 2 dias seguidos -> modo Reduzido; cartao "Priorize dormir
+     hoje" com meta de horario; sprint maximo sai do dia.
+ R04 Esforco do jogo >= 8 e dor pos-jogo >= 4 -> dia seguinte em modo
+     Recuperacao e foco em tornozelo; sugerir mobilidade e caminhada.
+ R05 Duas sessoes seguidas "nao fiz" -> perguntar motivo (chips: sem tempo,
+     cansado, dor, agenda, outro); se "sem tempo": oferecer plano curto; se
+     "dor": abrir check-in; se "cansado": sugerir revisar sono e carga.
+ R06 Semana completa (>= 90% das sessoes) + dor <= 3 + dias verdes >= 7 ->
+     proposta de progressao (secao 6) com botoes Aceitar / Adiar / Recusar.
+ R07 Prontidao media < 55 por 5 dias, ou 3 semanas seguidas de carga crescente
+     (> 1,15) -> proposta de semana de descarga (secao 8).
+ R08 Jogo cancelado ou jogo extra (excecao de agenda) -> recalcular rotulos de
+     carga, ajustar os dias vizinhos (secao 11).
+ R09 Aquecimento pre-jogo concluido -> grava pre_game_log; depois do jogo cruza
+     com dor pos-jogo (insight, secao 10).
+ R10 Teste de campo pior que o anterior em >= 5% -> alerta amarelo "desempenho
+     caiu"; checar sono e carga; adiar progressao.
+ R11 Dor durante um exercicio (botao no treino guiado) > 3 -> parar o exercicio,
+     sugerir regressao; se >= 6, encerrar o treino do dia e abrir check-in.
+ R12 Funcional do dia anterior registrado como "pesado" (esforco >= 8) -> quarta
+     ou sexta em modo Reduzido (se o motor ainda estiver em Completo).
+ R13 Meta semanal de sono atingida (5 de 7 noites >= 7 h) -> reconhecimento
+     discreto no resumo de domingo.
+ R14 Marco da Jornada do tornozelo atingido automaticamente (secao 9.3) -> toast
+     de comemoracao e registro em milestones.
+ R15 Nenhum check-in por 3 dias -> cartao leve "Como esta seu tornozelo?" (sem
+     culpa) e, se push ativo, um unico lembrete.
+ R16 Fase do tornozelo apta a avancar -> proposta de fase (secao 6.3).
+ R17 Pos-jogo salvo -> cria o check-in VINCULADO do dia seguinte ("Como seu tornozelo
+     respondeu?", secao 24.4); se esse check-in vier com dor >= 4 e o jogo teve esforco
+     >= 8, aplicar R04 e mostrar "Dor depois do jogo: X -> hoje: Y".
+ R18 Dia de descanso (domingo) ou modo Folga -> os aneis do plano mostram "Descanso"
+     e nao criam meta extra (secao 24.1).
+Cada regra tem teste unitario com um caso que dispara e um que nao dispara.
+
+5. TREINO GUIADO (MODO EXECUCAO) E REGISTRO DE SERIES [AUTONOMO]
+--------------------------------------------------------------------------------
+5.1 Entrada: botao "Iniciar treino" no cartao do dia (Hoje) e no detalhe do dia.
+    Abre tela cheia (/treino/[bloco]) sem barra inferior, fundo escuro, foco total.
+5.2 Antes de comecar: cartao "Modo do dia: Completo/Reduzido/..." com o "Por
+    que?" e botoes "Comecar", "Ajustar" (Completo / Reduzido / So 20 min / Sem
+    academia / Recuperacao).
+5.3 Tela de exercicio (um por vez)
+  - Topo: barra de progresso do treino (n de m), botao fechar (pede confirmacao,
+    salva o parcial).
+  - Nome do exercicio (h1), midia 16:9 (placeholder ate a etapa 11), 2 linhas de
+    "como fazer" e 1 linha de "cuidado" (ex.: "pare se a dor passar de 3/10").
+  - Series: chips S1, S2, S3 (a atual em destaque, feitas com check).
+  - Campos por serie: repeticoes (stepper com + e -, valor sugerido do plano) e
+    carga em kg (stepper de 1 kg ou 2,5 kg; vazio para peso do corpo/elastico);
+    para exercicios por tempo, timer da serie. Esforco opcional (RIR 0-4 ou
+    "facil / ok / duro").
+  - UM unico botao principal que muda por etapa (secao 24.2): "Concluir serie" (grava
+    em set_logs) -> "Descansar" (timer) -> "Proxima serie" -> "Proximo exercicio" ->
+    "Finalizar treino".
+  - Botao secundario "Doeu" (dor durante o exercicio 0-10 em chips) -> regra R11.
+  - "Pular exercicio" (motivo em chips) e "Trocar exercicio" (lista de
+    alternativas equivalentes da secao 7, respeitando equipamento e dor).
+5.4 Descanso: timer em anel, tempos padrao: forca 90 s; tornozelo/isometria 45 s;
+    velocidade/arranque 120 s; botoes -15 s / +15 s / "Pular". Som e vibracao
+    desativados por padrao (opcao no Perfil). Mostra o proximo exercicio.
+5.5 Valores sugeridos: o app pre-preenche reps e carga com a ultima sessao do
+    mesmo exercicio e aplica a progressao aceita (secao 6).
+5.6 Resumo final: duracao, series feitas, volume (series x reps x kg), maiores
+    cargas, esforco percebido geral (0-10), dor ao final (0-10), nota livre.
+    Grava session_log e atualiza prontidao, carga e Evolucao. Animacao de
+    conclusao discreta.
+5.7 Modos especiais
+  - Treino de tornozelo: reps e series sem carga; mostra a regressao/progressao
+    disponivel ("muito facil? subir nivel" / "doeu? descer nivel").
+  - Velocidade: cada arrancada e uma "serie" com campo de distancia e tempo
+    opcional (cronometro manual: toque para iniciar e parar); descanso 120 s.
+  - Aquecimento pre-jogo: reaproveitar o fluxo do timer ja feito.
+5.8 Persistencia: salvar a cada serie (para nao perder se fechar o app);
+    retomar treino interrompido ("Continuar treino de hoje").
+5.9 Acessibilidade e desempenho: botoes >= 56 px na tela de execucao; modo
+    "academia" com alto contraste; manter a tela acesa durante o treino (Screen
+    Wake Lock API, com fallback silencioso quando indisponivel).
+5.10 Testes: logica de serie/descanso/retomada (Vitest) e fluxo completo
+    (Playwright).
+5.11 Sequencia do dia e refinamentos: ver secoes 24.2 e 24.6 (botao principal unico,
+    registro em um toque e encadeamento dos blocos do dia).
+
+6. PROGRESSAO (FORCA, TORNOZELO, VELOCIDADE) E DESCARGA [AUTONOMO]
+--------------------------------------------------------------------------------
+6.1 Forca (dupla progressao)
+  - Cada exercicio tem faixa de repeticoes (ex.: 6-8) e meta de reserva (2 RIR).
+  - Se em TODAS as series o Gabriel atingir o topo da faixa com esforco "ok" por 2
+    sessoes seguidas E podeProgredir = true E prontidao >= 75 nos dias: propor
+    aumento de carga de 2,5% a 5% (ou o menor anilha disponivel, ex.: +1 a +2 kg).
+  - Se nao atingir o piso da faixa em 2 sessoes: manter a carga; se 3, propor
+    reduzir 5-10% e checar sono e carga.
+  - Exercicio sem carga externa (peso do corpo/elastico): progredir por variante
+    (secao 7) ou por tempo/reps.
+6.2 Velocidade e arranque
+  - Meses de baixa exposicao: comecar a 80-85% (semanas 1-2), 90-95% (semanas 3-6),
+    100% (semana 7+), como no plano. Cada passo sobe somente com: semaforo verde
+    nos ultimos 7 dias, dor pos-jogo <= 3 no ultimo jogo e sem dor em posterior
+    de coxa (novo chip no check-in: "posterior apertou" sim/nao).
+  - Corridas em velocidade maxima limitadas a 6-8 arrancadas por sessao e 1 sessao
+    de velocidade por semana ate a fase 3 estar estavel. "Corrida lancada" (maior
+    velocidade) so depois de 4 semanas na fase 3 e com posterior sem queixa.
+6.3 Fase do tornozelo (criterios SUGERIDOS; confirmar com fisioterapeuta)
+  Fase 1 -> Fase 2 (proposta aparece quando TODOS):
+    - semaforo verde por 7 dias seguidos;
+    - panturrilha bilateral no degrau 3x12 sem dor >= 4 em 5 sessoes seguidas;
+    - equilibrio unipodal 30 s no chao sem falha nas 3 ultimas sessoes;
+    - elastico (3 direcoes) 3x15 sem dor >= 4.
+  Fase 2 -> Fase 3 (proposta aparece quando TODOS):
+    - semaforo verde por 14 dias seguidos;
+    - panturrilha unipodal 3x10 (joelho esticado e dobrado) sem dor >= 4;
+    - equilibrio na almofada 30 s sem falha; agachamento unipodal 3x10 controlado;
+    - dor pos-jogo <= 3 nos 2 ultimos jogos.
+  Fase 3 -> Fase 4 "retorno total" (proposta quando TODOS):
+    - semaforo verde por 21 dias; saltos e mudancas de direcao sem dor >= 4 em 6
+      sessoes; testes de campo (secao 9) com simetria >= 90% entre os pes em salto
+      unipodal (quando houver o teste), dor pos-jogo <= 2 nos 3 ultimos jogos.
+  Mostrar cada criterio como checklist com progresso ("3 de 5 sessoes").
+  A mudanca de fase so acontece apos o Gabriel tocar "Aceitar" (grava em
+  profiles e registra um marco). Texto fixo na proposta: "Criterios sugeridos;
+  confirme com um fisioterapeuta ou ortopedista, principalmente se ainda houver
+  dor ao chutar de mal jeito."
+6.4 Descarga (deload)
+  - Quando: a cada 4 semanas OU pela regra R07. Dura 1 semana.
+  - O que muda: volume -40% (menos series), intensidade mantida, 1 sessao de
+    velocidade curta (4 arrancadas), tornozelo mantido, funcional leve.
+  - O Gabriel aceita, adia 1 semana (maximo 1 vez) ou recusa.
+6.5 Regra mestra: nenhuma progressao (carga, fase, velocidade) e proposta ou
+    aplicada se lib/safety.podeProgredir for false.
+6.6 Testes: cenarios de progressao com e sem bloqueio, de fase (cada criterio
+    faltando) e de descarga.
+
+7. RECOMENDACAO DE EXERCICIOS [AUTONOMO]
+--------------------------------------------------------------------------------
+7.1 Catalogo (tabela exercise_catalog; semente em lib/seed/catalogo.ts)
+ Campos: id, nome, grupo, tipo [tornozelo, forca, velocidade, potencia,
+ mobilidade, core, bola, visao], equipamento [nenhum, elastico, degrau, anilha,
+ halter, barra, academia, campo, cones], nivel (1-5), faseMinima do tornozelo,
+ impacto [baixo, medio, alto], contraindicacoes (ex.: "dor lateral >= 4"),
+ progressaoDe/regressaoPara (ids), alternativas (ids), series/reps/tempo padrao,
+ descanso, comoFazer (2 linhas), cuidado (1 linha), midia (nula), licenca.
+7.2 Regras de substituicao automatica
+  - Sem equipamento -> trocar por exercicio com equipamento "nenhum/elastico".
+  - Dor lateral/medial >= 4 -> remover impacto "alto" e "medio"; priorizar
+    isometria, eversao/inversao com elastico leve, equilibrio no chao.
+  - Prontidao no modo Reduzido -> manter exercicios do dia, cortar 1 serie de cada
+    e remover o ultimo exercicio acessorio.
+  - Tempo curto ("so tenho 20 min") -> escolher o essencial: tornozelo (6-8 min),
+    1 exercicio principal, 1 acessorio (secao 11).
+  - Tedio/estagnacao: apos 6 semanas no mesmo exercicio, sugerir variante de mesmo
+    objetivo.
+7.3 Catalogo inicial sugerido (todos com progressao/regressao ligadas)
+ TORNOZELO - mobilidade: joelho na parede; alongamento de panturrilha no degrau
+   (joelho esticado e dobrado); circulos de tornozelo controlados.
+ TORNOZELO - forca: elastico em 4 direcoes (eversao, inversao, dorsiflexao,
+   flexao plantar); isometria de eversao contra parede; panturrilha bilateral no
+   degrau -> unipodal -> unipodal com carga (mochila/halter) -> descida lenta
+   (3-5 s); caminhada na ponta dos pes e nos calcanhares.
+ TORNOZELO - propriocepcao: equilibrio unipodal chao 30 s -> olhos fechados ->
+   almofada -> almofada com bola na parede -> perturbacoes leves (passe de bola de
+   diferentes angulos) -> alcance multidirecional (tocar pontos a frente,
+   lateral e atras com o outro pe).
+ TORNOZELO - saltos e agilidade (so na fase 3 e semaforo verde): saltinhos no
+   lugar -> saltos e aterrissagem controlada bipodal -> unipodal -> saltos laterais
+   -> zigue-zague em cones lento -> mudanca de direcao com desaceleracao -> giros
+   com bola.
+ POSTERIOR DE COXA: stiff (levantamento romeno); stiff unilateral; ponte de gluteo
+   e ponte com flexao de joelho (slider/toalha); flexora nordica assistida
+   (elastico) -> excentrica completa; isometria de posterior em 30 graus.
+ PANTURRILHA: em pe e sentado (soleo); unipodal; excentrica lenta; pogo jumps
+   (somente fase 3+).
+ COXA/QUADRICEPS e GLUTEO: agachamento (goblet), afundo bulgaro, step-up,
+   agachamento isometrico na parede, hip thrust, abducao com elastico, clamshell,
+   caminhada lateral com elastico.
+ CORE: prancha, prancha lateral, dead bug, Pallof press (elastico), abdominal com
+   rotacao.
+ SUPERIORES (aguentar contato): supino/flexao, remada, desenvolvimento, puxada
+   ou barra.
+ VELOCIDADE/ARRANQUE: saidas de 10-20 m (parado, de costas, apos giro 180,
+   apos deslocamento lateral); skipping tecnico; aceleracao em 3 pontos; arrancada
+   com finalizacao; arrancadas em rampa suave (sem trenó) opcional.
+ POTENCIA (fase 3+, tornozelo verde): salto vertical, salto horizontal, box jump
+   baixo com aterrissagem suave, arremesso de bola medicinal (superior).
+ BOLA (centroavante): conducao em slalom, controle orientado, giro de costas para o
+   zagueiro, protecao de bola, tabela na parede, finalizacao de primeira, apos giro
+   e com a perna nao dominante (progressao de volume de chutes controlada pelo
+   tornozelo).
+ VISAO DE JOGO: "scan" antes de receber (contar olhadas), estudo de 10 min de
+   movimento sem bola, anotacao pos-jogo (2 decisoes boas e 2 a melhorar).
+7.4 Recomendador (lib/coach/recomendacao.ts)
+  recomendar({objetivo, tempoDisponivel, equipamento, modoDoDia, fase, restricoes,
+  historico}) -> lista ordenada com justificativa curta. Pontua por: aderencia ao
+  foco ativo, lacuna de volume semanal por grupo (ex.: posterior abaixo da meta),
+  fase/impacto permitido, variedade e tempo. Mostra "Sugestoes para voce" na
+  Semana e no detalhe do dia ("Adicionar" substitui ou acrescenta com 1 toque).
+7.5 Volume semanal minimo por grupo (metas de partida, editaveis): posterior 6-9
+  series; panturrilha 8-12; quadriceps/gluteo 8-12; core 6-9; tornozelo (todas as
+  direcoes) diariamente; superiores 9-12; sprint 6-8 arrancadas em 1 sessao. O
+  app mostra a barra "feito x meta" por grupo na Evolucao.
+
+8. RECOMENDACAO DE PLANOS E PERIODIZACAO [AUTONOMO]
+--------------------------------------------------------------------------------
+8.1 Modelos de plano (tabela plan_templates; o plano atual vira "Base")
+  P1 BASE (atual): como na ESPECIFICACAO-APP secao 12.
+  P2 SEMANA CURTA: 3 sessoes de ~25 min (tornozelo + 1 principal + 1 acessorio) +
+     jogos; usar quando "sem tempo" ou semana atipica.
+  P3 DESCARGA: volume -40%, 1 sessao de velocidade curta, tornozelo mantido.
+  P4 RETORNO APOS ALERTA: 7 dias: tornozelo leve diario, caminhada, mobilidade,
+     sem pliometria/velocidade; sai quando semaforo verde por 3 dias.
+  P5 FOCO POSTERIOR: +3 series de posterior na semana, sprint reduzido a 80-90%,
+     sem corrida lancada; usar quando houver queixa leve de posterior ou meta de
+     volume nao atingida.
+  P6 FOCO ARRANQUE/POTENCIA (so fase 3+ e verde): 2 sessoes curtas de saidas e
+     saltos com muito descanso; manter 1 sessao de forca.
+  P7 SEM ACADEMIA/VIAGEM: peso do corpo + elastico + escada/degrau, 3 sessoes.
+  Cada modelo tem: estrutura por dia, objetivos, quando recomendar, quando sair,
+  duracao e o que NAO fazer.
+8.2 Como o app recomenda e aplica
+  - Cartao "Sugestao de plano" (Semana) com o motivo e botoes Aceitar/Adiar/
+    Recusar. Aceitar cria uma NOVA VERSAO do plano (plan_versions) com data de
+    inicio e fim; o plano Base fica guardado e volta automaticamente ao fim.
+  - Nunca editar o plano Base em silencio; sempre versionar e permitir "Voltar ao
+    plano anterior".
+8.3 Periodizacao ate janeiro (calendario base)
+  13/10 a 2/11  (semanas 1-3): FASE 1, base do tornozelo, adaptacao.
+  3/11 a 30/11  (semanas 4-7): FASE 2, forca e arrancadas sobem.
+  1/12 a 21/12  (semanas 8-10): FASE 3, performance.
+  22/12 a 28/12 (semana 11): DESCARGA + TESTES DE CAMPO (comparar com o teste
+                 inicial).
+  29/12 em diante: FASE 4 "retorno total / alta performance" (se criterios da
+                 6.3 forem atendidos); metas de 2027 definidas apos os testes.
+  O app mostra essa linha do tempo na Evolucao (marcos em datas e criterios) e
+  avisa quando um marco depende de teste que ainda nao foi feito.
+8.4 Metas de partida para os testes (definidas apos o primeiro teste; sugerir e o
+  Gabriel edita): melhorar o tempo do sprint de 20 m em 3 a 5% em 8 semanas;
+  salto vertical +5%; equilibrio unipodal 30 s olhos fechados sem falha; panturrilha
+  unipodal com repeticoes proximas entre os dois pes (simetria >= 90%).
+  Observacao: metas de referencia, nao promessas.
+
+9. TESTES DE CAMPO, METAS E DIARIO DO CENTROAVANTE [AUTONOMO]
+--------------------------------------------------------------------------------
+9.1 Testes (tela /evolucao/testes), 1 vez por mes (e no baseline na semana 1)
+  T1 Sprint 20 m: cronometro manual no app (toque para iniciar e parar) ou tempo
+     digitado; 3 tentativas, vale a melhor; descanso de 2 min.
+  T2 Salto vertical (contramovimento): altura estimada digitada (marca na parede) ou
+     tempo de voo medido por video no futuro; 3 tentativas.
+  T3 Equilibrio unipodal 30 s: olhos abertos e fechados, cada pe, contar falhas.
+  T4 Panturrilha unipodal: repeticoes ate a falha controlada, cada pe (anotar
+     simetria).
+  T5 Salto horizontal unipodal (distancia, cada pe) e triplo salto unipodal, na fase
+     3+ e com semaforo verde (calcula simetria entre os pes).
+  T6 Teste de alcance multidirecional (a frente, lateral, atras), cada pe, distancia
+     em cm (opcional).
+  Cada teste: instrucoes curtas, aquecimento sugerido, aviso "pare se doer > 3".
+  Grafico de evolucao por teste e simetria entre os pes. Regra R10 (queda de >= 5%).
+9.2 Metas e progresso: card "Metas de 2027" com cada meta, valor inicial, atual,
+  alvo e barra de progresso.
+9.3 Jornada do tornozelo automatica: os marcos ja existentes passam a ser
+  detectados sozinhos quando os dados atendem (ex.: "30 dias sem dor acima de 3"),
+  com confirmacao do Gabriel. Novos marcos: "Primeiro jogo completo sem dor", "10
+  dias seguidos de rotina de tornozelo", "Teste de equilibrio sem falha", "Simetria
+  >= 90% no salto unipodal", "Primeira corrida lancada sem queixa".
+9.4 Localizacao e movimento da dor (acrescentar ao check-in quando dor >= 1)
+  - Regiao: lateral, medial, frente, atras, tendao de Aquiles, "dentro da
+    articulacao" (chips; marcar uma ou mais).
+  - Movimento que doeu: virar para dentro, virar para fora, flexionar o pe para
+    cima, esticar a ponta, chutar, apoiar, correr, saltar, nenhum.
+  - Duracao da dor: "passou em < 1 min", "5-10 min", "ficou o dia todo".
+  Usados pelo motor (R02), pelas substituicoes (7.2) e pelo relatorio ao
+  profissional (secao 16). Coluna nova em checkins ou tabela pain_events.
+9.5 Diario do centroavante (pos-jogo, 20 segundos)
+  - Finalizacoes (contador), gols, assistencias, arrancadas de ruptura (contador),
+    "olhadas por cima do ombro" (nota 1-5), nota de movimentacao sem bola (1-5),
+    nota de condicao fisica (1-5), duas coisas boas e duas a melhorar (texto curto).
+  - Tendencias: media movel de 5 jogos; cruzamento com sono, carga e dor
+    (insights da secao 10).
+  - Tabela game_stats. Sem comparacoes sociais e sem gamificacao agressiva.
+
+10. INSIGHTS E CORRELACOES (honestos e com dados minimos) [AUTONOMO]
+--------------------------------------------------------------------------------
+Regras gerais: so mostrar um insight com no minimo 10 observacoes (ou 4 semanas);
+sempre dizer "com base em N registros"; linguagem "parece que" e nao "causa".
+Lista inicial:
+ I1 Dor pos-jogo por dia (terca x sabado) e por gatilho mais comum (chute, giro,
+    terreno).
+ I2 Dor do dia seguinte quando dorme < 6 h x >= 7 h.
+ I3 Dor pos-jogo com e sem aquecimento completo (pre_game_logs) e com e sem
+    tornozeleira.
+ I4 Carga semanal x dor media da semana seguinte.
+ I5 Posterior apertou x semanas com mais sprint ou com mais volume de posterior.
+ I6 Horario/dia em que o treino e mais cumprido (aderencia) e sugestao de
+    reagendar ("voce cumpre mais pela manha").
+ I7 Qual exercicio mais gera "doeu" (top 3) -> sugerir regressao.
+ I8 Evolucao de cargas por exercicio (tendencia), platos (estagnado ha 4 semanas) e
+    comparacao entre sessoes equivalentes (secao 24.7).
+ I9 Sono medio por dia da semana e proposta de ritual (horario fixo).
+ I10 Relacao entre notas do diario (movimentacao, condicao) e sono/carga.
+Apresentacao: aba "Insights" em Evolucao, cartoes com um grafico simples, uma
+frase e o botao "Por que?" (dados usados). O Claude (secao 13) pode explicar e
+sugerir acoes a partir deles, mas o calculo e do codigo.
+
+11. AGENDA INTELIGENTE [AUTONOMO]
+--------------------------------------------------------------------------------
+11.1 Excecoes de calendario (tabela calendar_overrides; tela Semana > "Ajustar
+  semana"): jogo extra, jogo cancelado, trabalho presencial extra, viagem, feriado,
+  funcional cancelado, dia sem academia. Cada uma recalcula rotulos de carga, o modo
+  recomendado e propoe ajustes (R08).
+11.2 "So tenho X minutos" (botao na Hoje): 15, 20, 30, 45 min. O motor monta o
+  essencial do dia (tornozelo + 1 principal + 1 acessorio), mostra a duracao total e
+  inicia o treino guiado.
+11.3 "Nao consigo hoje": remaneja o treino para outro dia respeitando 48 h de
+  distancia dos jogos e a regra de 1 sessao de velocidade por semana; mostra
+  sugestao com Aceitar/Recusar.
+11.4 Horarios inteligentes: sugere horario do treino conforme a rotina do Gabriel
+  (home office seg a qua; presencial qui e sex com saida 17h; funcional 18h30 as
+  19h30; acorda ~7h): ex.: quinta tornozelo antes de sair (7h30), velocidade ~19h;
+  sexta idem; quarta forca de manha. Editavel em Perfil > Rotina.
+11.5 Funcional do instrutor: antes/depois registrar em 2 toques: "intensidade
+  percebida" (leve, moderado, pesado) e "foco" (chips: com bola, forca, cardio,
+  recuperacao); alimenta R12 e a carga semanal.
+11.6 Refeicoes e sono (checklists leves): dia de jogo (refeicao principal,
+  lanche, agua), meta de horario para dormir (editavel), 5 de 7 noites >= 7 h. Sem
+  contar calorias. Opcional: meta de proteina por refeicao (ex.: uma fonte de
+  proteina em cada refeicao); numeros so se o Gabriel pedir.
+
+12. LEMBRETES, PUSH, CALENDARIO, ATALHOS E APPLE SAUDE
+--------------------------------------------------------------------------------
+12.1 Notificacoes push (PWA instalado no iPhone, iOS 16.4+; o Gabriel usa
+  iOS 26.6.1) [AUTONOMO para o codigo; GABRIEL toca em "Ativar notificacoes"]
+  - Service worker + Web Push com chaves VAPID (gerar com a biblioteca web-push;
+    guardar a chave privada so em variavel de ambiente do servidor; publica no
+    cliente). Tabela push_subscriptions (user_id, endpoint, chaves, criado_em).
+  - Tela Perfil > Notificacoes: botao "Ativar notificacoes" (a permissao precisa de
+    um toque do usuario, com o app instalado na Tela de Inicio), chave por tipo e
+    horario silencioso.
+  - Regras: maximo 2 por dia, nunca entre 22h30 e 7h. Lembretes: check-in (seg a qua
+    8h30; qui e sex 7h30), pre-jogo (refeicao, aquecimento, conforme os horarios
+    ja definidos), pos-jogo (1 h depois do fim previsto: terca ~22h50, sabado
+    ~16h30), resumo de domingo 20h, propostas pendentes (1 vez), alerta de seguranca
+    (vermelho) uma vez por dia.
+  - Agendador: o limite de cron do plano gratuito da Vercel pode ser de uma
+    execucao por dia; por isso usar Supabase pg_cron + pg_net (ou Supabase Edge
+    Function agendada) chamando uma rota protegida por segredo (CRON_SECRET), a
+    cada 5 minutos, que decide quem notificar. Documentar a escolha em PROGRESSO.md.
+  - Tudo respeita o fuso America/Sao_Paulo; testes de horario com datas simuladas.
+12.2 Calendario do iPhone (feed .ics) [AUTONOMO]
+  - Rota /api/calendario/[token].ics com treinos e jogos das proximas 4 semanas
+    (titulos curtos, local vazio, descricao com link para o dia). Perfil >
+    "Assinar no Calendario" gera o link webcal:// com token secreto (tabela
+    calendar_tokens; botao "Gerar novo link" invalida o antigo).
+12.3 Atalhos do iPhone [AUTONOMO para as rotas; GABRIEL monta o atalho]
+  - Deep links: /hoje?acao=checkin, /hoje?acao=treino, /jogo/pre, /jogo/pos.
+    Instrucoes em Perfil > Atalhos: como criar atalhos na Tela de Inicio.
+12.4 Apple Saude via Atalhos (opcional) [AUTONOMO para a rota; GABRIEL monta]
+  - Rota POST /api/saude com token pessoal (tabela api_tokens, apenas "escrita de
+    saude") que recebe sono (horas) e passos. O check-in usa o sono importado como
+    sugestao (o Gabriel confirma). Sem leitura de dados de terceiros.
+12.5 Widgets da Tela de Bloqueio: nao existem para PWA; alternativa: notificacao
+  push + atalhos. Registrar essa limitacao no Perfil > Ajuda.
+
+13. IA CLAUDE DENTRO DO APP (PERSONAL) - ETAPA 12 [AUTONOMO para o codigo; GABRIEL
+    para chave e credito]
+--------------------------------------------------------------------------------
+13.1 Pre-requisitos [GABRIEL]
+  - Conta no Console da Anthropic (console.anthropic.com), crie uma chave de API
+    SOMENTE para este app, adicione um valor pequeno de credito e DEFINA um limite
+    mensal de gasto. A assinatura do chat (Pro) NAO cobre a API.
+  - Guardar a chave em variavel de ambiente na Vercel: ANTHROPIC_API_KEY (apenas
+    ambientes de producao e preview), nunca no codigo nem em NEXT_PUBLIC_*.
+  Sem a chave, o codigo deve compilar e a aba Personal mostra "IA nao configurada"
+  com o motor de regras funcionando normalmente.
+13.2 Modelos
+  - claude-sonnet-5-5: conversa, revisao semanal, propostas e explicacoes.
+  - claude-haiku-5-5: tarefas pequenas e baratas (interpretar texto livre de
+    check-in, classificar, resumir notas).
+  - Usar cache de prompt para a parte fixa (prompt de sistema + plano + catalogo
+    resumido). Streaming nas respostas do chat.
+  - Nao codificar precos; ler o consumo e estimar custo a partir da resposta da API
+    (tokens), com tabela de precos editavel em configuracao.
+13.3 Rotas do servidor (Next.js Route Handlers; todas exigem sessao; validar
+  entradas com Zod; limite de requisicoes por usuario)
+  POST /api/personal/chat            (streaming)
+  POST /api/personal/checkin-texto   (Haiku: transforma texto livre em campos do
+                                      check-in; o Gabriel confirma antes de salvar)
+  POST /api/personal/briefing        (resumo curto do dia, 1x por dia, em cache)
+  POST /api/personal/revisao-semanal (domingo; gera weekly_review + propostas)
+  POST /api/personal/analise-mensal  (1x por mes; padroes e estrategia)
+  POST /api/personal/proposta/[id]/aceitar | /recusar | /ajustar
+13.4 Contexto enviado em toda chamada (CoachContext compacto, <= ~3.000 tokens)
+  perfil e focos; restricoes; fase do tornozelo e criterios; semaforo e
+  prontidao com componentes; seguranca (nivel, podeProgredir, motivo); ultimos 14
+  dias de check-ins e sessoes (resumidos); jogos; testes; plano da semana e
+  excecoes; horario atual; proximos eventos; memoria estavel (13.8).
+  Nunca enviar: e-mail, tokens, chaves, ids tecnicos desnecessarios.
+13.5 Ferramentas (function calling) - o modelo NAO escreve no banco; so propoe
+  buscar_historico(dias, tipo)           leitura
+  buscar_plano(semana)                   leitura
+  sugerir_mudanca_de_plano(mudancas[], justificativa)  -> cria ai_proposals
+  sugerir_troca_de_exercicio(exercicio_id, motivo)     -> cria ai_proposals
+  sugerir_fase(fase_nova, justificativa)               -> cria ai_proposals
+  registrar_nota(texto)                  -> grava uma nota (sempre com confirmacao)
+  Todo resultado de ferramenta de escrita passa por lib/coach/validador.ts, que
+  RECUSA qualquer proposta que: aumente carga com podeProgredir = false; inclua
+  exercicio de impacto com dor >= 4; remova o aquecimento ou a rotina de tornozelo;
+  ultrapasse os limites de volume (6.x, 7.5); mude a fase sem os criterios; ou
+  altere regras de seguranca.
+13.6 Propostas (tabela ai_proposals) e UI
+  - Cartao de proposta no chat e na Semana: titulo, o que muda (antes -> depois),
+    motivo em 1-2 frases, "Por que?" (dados), botoes Aceitar / Ajustar / Recusar.
+  - Status: pendente, aceita, recusada, expirada (7 dias). Aceitar aplica via funcao
+    do servidor (cria plan_version, atualiza fase, troca exercicio) e registra
+    audit_log. Desfazer em 24 h.
+  - Regra de produto: o plano semanal ja existe; a IA NAO gera plano novo toda
+    semana; so propoe evolucao quando os dados mostram melhora ou quando ha motivo
+    claro (dor, sono, agenda).
+13.7 Prompt de sistema (versao inicial; guardar em lib/ia/prompt.ts e versionar)
+  "Voce e o Personal do Gabriel, um preparador fisico de futebol (atacante,
+  centroavante, 21 anos, 87 kg) dentro do app Meu Personal. Responda sempre em
+  portugues do Brasil, em frases curtas e diretas, com tom de parceiro: firme e
+  acolhedor, sem enrolacao e sem jargao. Use analogias simples quando ajudarem.
+  Prioridades, em ordem: 1) seguranca do tornozelo direito; 2) velocidade e
+  arranque; 3) forca de posterior, panturrilha e coxa; 4) conducao de bola e visao
+  de jogo.
+  REGRAS ABSOLUTAS: (a) Voce nao e medico nem fisioterapeuta e nunca diagnostica.
+  (b) Nunca recomende aumentar carga, volume, velocidade ou mudar de fase quando o
+  contexto indicar podeProgredir = falso. (c) Sinais de alerta - incapacidade de
+  apoiar o pe, deformidade, dormencia ou formigamento, inchaco rapido ou hematoma
+  grande, dor intensa em repouso ou a noite, dor ou inchaco na panturrilha, febre -
+  exigem orientar a procurar atendimento medico imediato (pronto atendimento; SAMU
+  192 em emergencia) e nao propor treino. (d) Dor persistente >= 4 em 3 check-ins:
+  recomende avaliacao com ortopedista ou fisioterapeuta (UBS/SUS ou clinica-escola).
+  (e) Use somente os dados do contexto; se faltar dado, diga que falta e peca o
+  registro; nunca invente numeros, datas ou resultados. (f) Todas as mudancas no
+  treino sao PROPOSTAS por ferramenta; nunca afirme que ja mudou algo. (g) Cite os
+  dados que usou (por exemplo: 'nos check-ins de 7 a 12/10'). (h) Nao reproduza
+  textos protegidos; explique com suas palavras.
+  ESTILO: comece pela resposta; no maximo 6 linhas na maioria das respostas; liste
+  passos so quando for um procedimento; termine com uma pergunta ou proxima acao
+  quando fizer sentido. Pergunte antes de supor quando a duvida muda a
+  recomendacao."
+13.8 Memoria (tabela ai_memory): fatos estaveis editaveis pelo Gabriel (lesao,
+  preferencias de treino, equipamento, horarios, o que ja nao funcionou). O app
+  atualiza resumos semanais (Haiku) mas o Gabriel pode editar e apagar tudo em
+  Perfil > Memoria do Personal.
+13.9 Tela Personal (/personal)
+  - Chat com streaming; chips contextuais acima do campo (mudam com o contexto):
+    "Como esta meu tornozelo?", "Posso evoluir?", "So tenho 20 min", "Foco em
+    posterior", "Explique o treino de hoje", "Plano para a semana do jogo", "Doeu
+    ao chutar".
+  - Entrada por voz: o teclado do iPhone ja tem ditado; nao implementar
+    reconhecimento proprio.
+  - Mensagens especiais: cartao de proposta, cartao de insight, alerta de
+    seguranca (vermelho, sem IA).
+  - Briefing do dia na Hoje (1 a 2 frases, cache de 1 dia): "Hoje: modo Reduzido.
+    Dormiu pouco; foque no tornozelo e adie as arrancadas." Sem consumir tokens se
+    nao houve mudanca de contexto.
+13.10 Controle de custo e abuso
+  - Tabela ai_usage (data, rota, modelo, tokens de entrada/saida, custo
+    estimado). Limites padrao editaveis: 30 mensagens/dia no chat, 1 briefing/dia, 1
+    revisao/semana, 1 analise/mes. Teto mensal em R$ (campo no Perfil): ao atingir
+    80%, avisar; ao atingir 100%, bloquear novas chamadas e manter o motor de
+    regras. Mostrar consumo do mes no Perfil.
+  - max_tokens por rota; cache de respostas por hash do contexto (mesma pergunta,
+    mesmo contexto, 10 min).
+13.11 Qualidade e testes
+  - Conjunto de 12 cenarios "dourados" (mock do modelo + validador): dor 7 pedindo
+    para progredir; dor 2 e semana completa pedindo evolucao; sono ruim e jogo em 1
+    dia; pergunta medica pedindo diagnostico; sinal de alerta de emergencia; pedido
+    para remover aquecimento; pedido de plano sem dados; etc. Verificar que o
+    validador recusa o que deve e que o prompt exige alerta nos casos de risco.
+  - Log de cada proposta e decisao (audit_log) para revisar depois.
+13.12 Falhas: timeout, erro de API ou limite -> mensagem curta "O personal esta
+  indisponivel agora; o app continua funcionando" + motor de regras ativo.
+
+14. DAR ACESSO DO CLAUDE AO APP: OPCOES (da mais simples a mais avancada)
+--------------------------------------------------------------------------------
+Sobre "dar acesso ao site": o Claude do chat (claude.ai) nao entra sozinho num app
+com login. As opcoes reais sao:
+ A) [RECOMENDADO] IA dentro do app (secao 13): o personal ja le seus dados pelo
+    servidor, com a chave da API, sem expor senha. Esse e o caminho principal.
+ B) "Resumo para o Claude" (Perfil > Compartilhar): botao que copia um texto
+    compacto (ultimos 14 a 28 dias: dor, sono, sessoes, jogos, testes, fase, plano
+    da semana) para colar no chat. Rapido de fazer e nao exige nada tecnico.
+ C) Revisao visual do app: o Claude Code ja pode abrir o site e tirar prints
+    (Playwright), e a extensao Claude in Chrome (se estiver disponivel na sua
+    conta) pode abrir o app logado no seu navegador para revisar telas. Nao e
+    acesso de leitura de dados; serve para QA visual.
+ D) [AVANCADO, OPCIONAL] Rota de leitura com token pessoal (somente leitura, escopo
+    "resumo", expira) + conector MCP proprio para consultar dados de dentro do
+    chat. So depois da etapa 12, e sem dados clinicos alem dos ja existentes.
+ NAO FAZER: compartilhar senha, enviar a chave service_role, abrir o banco ao
+ publico ou dar acesso de escrita ao chat.
+ Tarefa [AUTONOMO]: implementar a opcao B na etapa 13 e deixar a D como ideia
+ documentada (nao implementar).
+
+15. BIBLIOTECA DE EXERCICIOS COM MIDIA - ETAPA 11 [AUTONOMO para a tela;
+    GABRIEL para midia]
+--------------------------------------------------------------------------------
+15.1 Tela /biblioteca (aberta pela Semana e pela busca no treino guiado): busca,
+  filtros (grupo, tipo, equipamento, fase do tornozelo, impacto), cartoes com
+  midia, series/reps padrao e "Adicionar ao dia".
+15.2 Detalhe do exercicio: video em loop (mudo), "como fazer" em 3 passos, erros
+  comuns, cuidado, progressao e regressao, alternativas, historico de cargas e
+  recordes pessoais.
+15.3 Midia [GABRIEL]: gravar videos curtos (5 a 10 s, vertical) dos exercicios do
+  plano (principalmente os de tornozelo, que quase nenhuma base cobre bem); enviar
+  pelo app (Perfil > Midia) para o armazenamento do Supabase (bucket privado) ou
+  deixar na pasta "midia/" para o Claude Code subir. O Claude Code converte para
+  MP4 leve (H.264, <= 1,5 MB), gera poster e preenche media_url.
+  Fonte alternativa: bases abertas de exercicios somente com licenca livre
+  compativel; registrar licenca e origem de cada arquivo em midia/LICENCAS.txt.
+  Nao copiar videos ou imagens de sites e apps.
+15.4 Enquanto nao houver midia: ilustracoes SVG simples por categoria e o
+  placeholder atual.
+
+16. RELATORIOS, COMPARTILHAR E EXPORTAR [AUTONOMO]
+--------------------------------------------------------------------------------
+16.1 Relatorio para o profissional (PDF e pagina imprimivel): resumo de 4 a 8
+  semanas com linha do tempo da lesao, grafico de dor, regioes e movimentos que
+  doem, gatilhos, jogos, testes de campo, exercicios que doem, o plano de tornozelo
+  atual e perguntas sugeridas para a consulta. Aviso: "Relatorio gerado pelo app; nao
+  e laudo".
+16.2 Link temporario de leitura (7 dias) com token (tabela share_tokens) para
+  mostrar a um fisioterapeuta, revogavel em 1 toque. Somente leitura e so dados do
+  relatorio.
+16.3 Exportacao: JSON (ja existe) e CSV por tabela; importacao de JSON para
+  restaurar. Backup semanal automatico (cron) para o armazenamento do Supabase
+  (bucket privado) mantendo os 4 ultimos.
+
+17. DADOS: NOVAS TABELAS E MIGRACOES (0005 em diante; todas com user_id + RLS)
+--------------------------------------------------------------------------------
+0005: restrictions (migrar JSON), milestone_defs, profiles.fase_tornozelo,
+      profiles.fase_inicio, pre_game_logs, checkins (novas colunas: regioes[],
+      movimentos[], duracao_dor, posterior_apertou), games (esforco_pos_jogo, status [agendado, jogado,
+      cancelado]), checkins.jogo_id (check-in do dia seguinte vinculado ao jogo),
+      pre_game_logs.game_id.
+0006: set_logs (session_log_id, exercise_id, numero_serie, carga_kg, reps,
+      duracao_s, rir, dor_durante, criado_em); exercise_catalog; workout_exercises
+      referenciando o catalogo; plan_templates; plan_versions (plan_id, template_id,
+      inicio, fim, origem, ativo); execution_state (user_id, execucao_id, tipo
+      [bloco, sequencia], passo_atual, estado JSON, atualizado_em) para retomar treino
+      ou sequencia interrompida.
+0007: field_tests (tipo, pe, valor, unidade, tentativa, data); goals (meta,
+      inicial, atual, alvo, prazo); game_stats; calendar_overrides; routine
+      (horarios do Gabriel).
+0008: ai_messages, ai_proposals, ai_memory, ai_usage, weekly_reviews, audit_log.
+0009: push_subscriptions, notification_log, calendar_tokens, api_tokens,
+      share_tokens, backups_log.
+Regras: nunca recriar tabelas existentes; migracoes idempotentes
+(IF NOT EXISTS); politicas RLS select/insert/update/delete com auth.uid() =
+user_id; indices por (user_id, data); testes de RLS (script que tenta ler com outro
+usuario e deve falhar); seeds por funcao idempotente; nunca "db reset" remoto.
+
+18. UI/UX
+--------------------------------------------------------------------------------
+18.1 Alinhar ao design alvo do Gabriel (arte na pasta "Ideias UI/"; ler a imagem
+  com Read; usar o caminho entre aspas por causa do espaco no nome) [AUTONOMO]:
+  - Barra inferior com rotulo visivel em TODAS as abas (min. 13 px); aba ativa com
+    circulo branco.
+  - Hoje: antes do check-in, o cartao do topo e "Como esta seu tornozelo? Registre
+    como voce esta hoje." com botao "Fazer check-in"; depois do check-in, vira o
+    semaforo com a cor do dia. Cartao "Treino de hoje" com titulo do bloco, duracao,
+    tag e botao "Iniciar treino" (abre o treino guiado). Cartao "Proximo jogo" com
+    horario e botao "Modo pre-jogo".
+  - Acoes principais em pilulas largas com icone a esquerda e seta a direita:
+    Iniciar treino (azul primario), Fazer check-in, Modo pre-jogo, Ver evolucao
+    (contorno ciano).
+  - Escolhas rapidas em chips com icone: Tornozelo, Velocidade, Arranque, Forca,
+    Mobilidade, Recuperacao (selecionado com check) - usar como tags e filtros.
+  - Controles segmentados Feito / Parcial / Nao fiz e Sim / Nao com a opcao ativa em
+    azul e check.
+  - Estados do botao: normal, pressionado, carregando ("Salvando..." + spinner) e
+    desabilitado (cadeado, "Em breve").
+  - Escala de dor: circulos 0-10 com borda verde (0-3), amarela (4-5) e vermelha
+    (6-10); selecionado com anel ciano e check.
+  - Icone de bola de futebol em SVG proprio; medidas: pilulas 48 a 56 px, icones 20
+    a 24 px, toque minimo 44 px.
+  - Onde a arte e a especificacao divergirem no visual, vale a arte.
+  - Pasta de artes de inspiracao: novas imagens em "Ideias UI/" devem ser lidas
+    pelo Claude Code quando o Gabriel pedir.
+18.2 Hoje mais inteligente
+  - Cartao "Decisao do dia" (modo Completo/Reduzido/Recuperacao/Folga) com 1 frase
+    + "Por que?" e botao "Ajustar treino".
+  - Cartoes de acao (maximo 3 visiveis, em ordem de prioridade): alerta de
+    seguranca, check-in pendente, proposta pendente, pre-jogo/pos-jogo, resumo de
+    domingo.
+  - Linha "Proxima melhor acao": um unico botao dinamico (ex.: "Fazer check-in",
+    "Iniciar treino", "Aquecer para o jogo", "Registrar o jogo").
+  - Aneis do plano (secao 24.1): Treinos, Tornozelo e Check-in, abaixo do cartao de
+    decisao do dia; tocar em um anel incompleto abre o que falta fazer.
+  - Card de jogo com 3 etapas (secao 24.4) no lugar do cartao simples de proximo jogo.
+18.3 Semana: arrastar um bloco para outro dia (com validacao do motor); filtros por
+  tag; "Ajustar semana" (excecoes); barras de volume por grupo ("feito x meta").
+18.4 Evolucao: abas Resumo, Calendario, Carga, Tornozelo, Forca, Testes, Insights,
+  Jogos; comparar
+  periodos; recordes pessoais; metas de 2027.
+18.5 Microinteracoes e acabamento: desfazer (toast com "Desfazer" por 5 s) em acoes
+  destrutivas; pull-to-refresh; confirmacao leve em acoes importantes;
+  esqueletos coerentes; vazios com orientacao ("faca seu primeiro check-in"); textos
+  curtos e consistentes; opcao de reduzir animacoes preservada; haptics nao
+  disponiveis em PWA no iOS (nao implementar).
+18.6 Tema: manter escuro como padrao; claro revisado em todas as telas (C10).
+18.7 Identidade: manter "Meu Personal" ate o Gabriel escolher o nome final;
+  trocar nome/logotipo deve ser centralizado em um arquivo de configuracao.
+
+19. QUALIDADE, SEGURANCA E PRIVACIDADE
+--------------------------------------------------------------------------------
+19.1 Engenharia: TypeScript estrito; ESLint; Prettier; testes Vitest (logica),
+  Playwright (fluxos), mocks do repo; CI no GitHub Actions; relatorio de cobertura
+  das pastas lib/safety, lib/semaforo e lib/coach (>= 90% de linhas); Lighthouse
+  (acessibilidade >= 95, desempenho >= 85 em celular simulado).
+19.2 Seguranca da aplicacao: validacao Zod em toda rota; limite de requisicoes;
+  cabecalhos de seguranca (CSP, X-Content-Type-Options, Referrer-Policy);
+  CRON_SECRET nas rotas agendadas; tokens com hash no banco; RLS testada; segredos
+  somente em variaveis de ambiente; cadastro publico desligado.
+19.3 Texto padrao de alerta de seguranca: "Hoje nao aumente a carga. Se a dor
+  persistir, o tornozelo falhar ou houver inchaco, procure um ortopedista ou
+  fisioterapeuta. Se nao conseguir apoiar o pe, houver deformidade, dormencia ou
+  inchaco rapido, procure atendimento medico agora."
+19.4 LIMITES (valem para toda execucao, inclusive autonoma): nunca apagar projeto,
+  banco ou dados; nunca "supabase db reset" remoto nem "git push --force"; nunca
+  imprimir ou commitar segredos; service_role nunca no cliente; nada fora da pasta
+  do projeto (exceto instalar CLIs); repositorio sempre privado; midia e textos so com
+  licenca livre ou do Gabriel; sem copiar nome, logotipo, fotos ou textos de outros
+  apps; nada de dados de saude enviados a servicos que nao sejam Supabase, Vercel e
+  a API da Anthropic (esta so apos a etapa 12).
+19.5 Privacidade (LGPD, uso pessoal): dados de saude sao sensiveis; app de um unico
+  usuario; sem analytics de terceiros; sem anuncios; exportar/apagar tudo em
+  Perfil; mensagens enviadas a IA contem so o necessario.
+19.6 Checklist de teste no iPhone [GABRIEL] (anotar o que falhar em PROGRESSO.md):
+  instalar na Tela de Inicio; abrir em tela cheia; login por link e por codigo;
+  barra inferior e area segura; teclado nos campos; check-in; treino guiado com tela
+  acesa; timer de descanso; pre-jogo; Evolucao; notificacoes (apos etapa 10); tema
+  claro; reduzir animacoes.
+
+20. ETAPAS, TAREFAS E CRITERIOS DE ACEITACAO (ordem de execucao)
+--------------------------------------------------------------------------------
+Regras de fluxo (iguais as da noite anterior): uma etapa por vez; ao fim de cada
+uma rodar build, lint e testes; atualizar PROGRESSO.md (formato da secao 15.2 da
+ESPECIFICACAO-APP.txt); commit; push; deploy; se falhar 3 vezes na mesma etapa,
+anotar, voltar ao ultimo commit estavel e seguir.
+
+ETAPA 6 - CORRECOES, DECISOES E VISUAL ALVO [AUTONOMO]
+ Tarefas: C1 a C12, C16 e C17 (secao 1.2), secoes 18.1, 24.1 (aneis) e 24.4 (card de
+ jogo de 3 etapas); migracao 0005.
+ Aceitacao:
+  [ ] Seguranca adaptativa (C2) com testes cobrindo os 4 cenarios descritos.
+  [ ] Rotulos de carga por dias corridos mostram os textos da tabela C3 para cada
+      dia da semana (teste de segunda a domingo).
+  [ ] Modo demonstracao opt-in, marcado e apagavel; nao grava no Supabase real.
+  [ ] Fase do tornozelo no banco; restricoes e marcos migrados.
+  [ ] Cartao de jogo na Semana; check-in pendente como cartao; pre_game_logs.
+  [ ] Auditoria de acessibilidade sem falhas de contraste; texto 130% sem quebrar.
+  [ ] ESLint, Playwright e CI funcionando.
+  [ ] Visual alinhado a arte "Ideias UI" (comparar por prints lado a lado).
+  [ ] Aneis do plano: cada anel abre a pendencia correta; domingo e modo Folga
+      mostram "Descanso"; terca abre o card de jogo.
+  [ ] Card de jogo com 3 etapas mostra a etapa certa por horario e o check-in do dia
+      seguinte fica vinculado ao jogo (/jogo/[id] com linha do tempo).
+
+ETAPA 7 - TREINO GUIADO E REGISTRO DE SERIES [AUTONOMO]
+ Tarefas: secao 5 inteira; migracao 0006 (set_logs, catalogo base, plan_versions);
+ progressao por exercicio (6.1) apenas como calculo e sugestao; refinamentos do
+ treino guiado (24.2) e Sequencia do dia (24.6); religar os aneis TREINOS e TORNOZELO
+ ao treino guiado (24.1).
+ Aceitacao:
+  [ ] "Iniciar treino" abre o fluxo, grava cada serie e retoma treino interrompido.
+  [ ] Timer de descanso, "Doeu" (R11), pular e trocar exercicio funcionam.
+  [ ] Valores sugeridos vem da ultima sessao; resumo final atualiza carga e Evolucao.
+  [ ] Tela fica acesa durante o treino (quando suportado).
+  [ ] O botao principal unico conduz serie -> descanso -> proxima serie -> finalizar.
+  [ ] A Sequencia do dia encadeia os blocos do plano e retoma apos fechar o app.
+  [ ] Os aneis TREINOS e TORNOZELO abrem o treino guiado.
+
+ETAPA 8 - MOTOR DO COACH E ADAPTACAO [AUTONOMO]
+ Tarefas: secoes 3, 4, 6, 8, 11 (excecoes e "so tenho X min") e 7.2/7.4 (regras e
+ recomendador); botoes "Por que?" e "Ajustar treino" na Hoje; cartao "Decisao do
+ dia"; propostas (sem IA) de progressao, fase, descarga e plano; migracao 0007
+ (parte de calendar_overrides e routine).
+ Incluir as regras R17 e R18 e a exibicao do modo sem porcentagem (24.3 e).
+ Aceitacao:
+  [ ] Prontidao, modo e carga com testes de fronteira; nenhuma funcao libera
+      progressao quando a seguranca bloqueia.
+  [ ] As 18 regras (R01 a R18) com testes (dispara e nao dispara).
+  [ ] Propostas aparecem com criterios em checklist e funcionam com Aceitar/Adiar/
+      Recusar; aceitar cria plan_version e registra audit_log.
+  [ ] "Por que?" mostra regra, dados e o que mudaria a decisao.
+
+ETAPA 9 - TESTES DE CAMPO, METAS, DIARIO E INSIGHTS [AUTONOMO]
+ Tarefas: secoes 9 e 10; novas colunas do check-in (regiao, movimento, duracao);
+ abas da Evolucao; migracao 0007 (field_tests, goals, game_stats).
+ Incluir carga da semana tocavel (24.3), calendario planejado x realizado (24.5) e
+ evolucao por exercicio com comparacao de sessoes (24.7).
+ Aceitacao:
+  [ ] Os testes T1 a T6 gravam e mostram evolucao e simetria entre os pes.
+  [ ] Diario do centroavante em 20 s; tendencia de 5 jogos.
+  [ ] Cada insight (I1 a I10) so aparece com dados minimos e mostra "N registros" e
+      "Por que?".
+  [ ] Marcos automaticos pedem confirmacao.
+  [ ] Carga: tocar em um dia lista as sessoes e jogos que o compoem; "Como calculamos"
+      mostra a formula; nenhuma tela exibe "% de recuperacao".
+  [ ] Calendario mostra planejado x realizado coerente com Hoje e Semana.
+  [ ] Comparar sessoes usa so dados registrados e informa quantas faltam.
+
+ETAPA 10 - LEMBRETES, CALENDARIO, ATALHOS E SAUDE [AUTONOMO + GABRIEL]
+ Tarefas: secao 12; migracao 0009 (parte de push, calendario e tokens).
+ [GABRIEL]: tocar em "Ativar notificacoes" no iPhone com o app instalado; criar
+ atalhos; assinar o calendario.
+ Aceitacao:
+  [ ] Push chega no iPhone no horario certo e respeita o limite de 2 por dia e o
+      horario silencioso.
+  [ ] Feed .ics aparece no Calendario com treinos e jogos corretos.
+  [ ] Rota /api/saude aceita sono e passos com token e nunca expoe leitura.
+
+ETAPA 11 - BIBLIOTECA COM MIDIA [AUTONOMO para a tela; GABRIEL para midia]
+ Tarefas: secao 15.
+ Aceitacao: busca e filtros; detalhe completo; midia aparece nos treinos; licencas
+ registradas.
+
+ETAPA 12 - IA CLAUDE NO APP [AUTONOMO para o codigo; GABRIEL para chave e credito]
+ Tarefas: secao 13; migracao 0008.
+ Aceitacao:
+  [ ] Sem chave, o app funciona e mostra "IA nao configurada".
+  [ ] Com chave, o chat responde em streaming, propoe mudancas por ferramenta e
+      todas passam pelo validador.
+  [ ] Os 12 cenarios dourados passam; nenhum caminho libera carga com bloqueio.
+  [ ] Limites de uso e teto mensal funcionam; consumo aparece no Perfil.
+
+ETAPA 13 - RELATORIOS, COMPARTILHAR E EXPORTAR [AUTONOMO]
+ Tarefas: secoes 14 (opcao B) e 16.
+ Aceitacao: PDF do relatorio; "Resumo para o Claude"; link temporario revogavel;
+ exportar/importar JSON e CSV; backup semanal.
+
+ETAPA 14 - OFFLINE E ACABAMENTO FINAL [AUTONOMO]
+ Tarefas: service worker com cache do shell e das ultimas telas, fila de registros
+ offline (check-in, series, sessoes) com sincronizacao ao voltar a internet e
+ resolucao de conflitos simples (ultima gravacao vence com aviso); polimento visual;
+ revisao de textos; desempenho; documentacao final (README.md com como rodar,
+ variaveis de ambiente, migracoes, deploy, backup e restauracao).
+ Aceitacao: usar Hoje, check-in e treino guiado sem internet; sincroniza ao voltar;
+ Lighthouse nas metas da secao 19.1.
+
+21. O QUE RODAR NA PROXIMA NOITE (MODO AUTONOMO)
+--------------------------------------------------------------------------------
+Recomendacao: rodar as ETAPAS 6, 7, 8 e 9 na proxima noite (nao dependem de nada do
+Gabriel). As etapas 10 a 14 ficam para depois do primeiro teste real no iPhone e,
+no caso das 11 e 12, de midia e chave de API. O prompt autonomo deve repetir as
+autorizacoes e os limites da secao 19.4, mandar ler os arquivos da secao 0 e
+terminar com um relatorio no mesmo formato do RELATORIO-ETAPAS-1-A-5.txt.
+
+22. PERGUNTAS PARA O GABRIEL (responder quando puder; nenhuma trava o autonomo)
+--------------------------------------------------------------------------------
+ 1. Nome final do app e se quer um logotipo diferente do arco ascendente.
+ 2. Aplicar no CLAUDE.md o resumo ao final de cada tarefa? E o modo "caveman"?
+ 3. Quais equipamentos voce tem na academia de bairro (leg press, cadeira extensora,
+    mesa flexora, polia, halteres, barra)? Isso refina o catalogo.
+ 4. Voce quer registrar peso corporal e medidas? (opcional; hoje nao ha.)
+ 5. Tem interesse em Apple Saude para sono e passos via Atalhos?
+ 6. Quer meta de proteina por refeicao ou so checklist de refeicoes?
+ 7. Vai gravar videos dos exercicios (principalmente tornozelo)?
+ 8. Prefere o personal mais direto e firme ou mais motivador? (ajusta o prompt da IA)
+ 9. Quando fara a avaliacao com ortopedista ou fisioterapeuta? (muda a prioridade
+    dos criterios de fase e o relatorio da secao 16)
+10. Quer jogos extras ou campeonatos no calendario nas proximas semanas?
+
+23. AVISOS FINAIS
+--------------------------------------------------------------------------------
+- Pesos, limites e metas deste documento sao pontos de partida razoaveis, nao
+  verdade absoluta. O app deve permitir editar e registrar a calibracao.
+- Se o tornozelo falhar, inchar, doer em repouso ou houver dor nas pernas com
+  inchaco, o app orienta buscar atendimento; nao ha treino que substitua isso.
+- Nao confiar cegamente: toda decisao do app mostra o motivo; em duvida, o Gabriel
+  decide e pode recusar qualquer proposta.
+
+--------------------------------------------------------------------------------
+24. IDEIAS DO ARQUIVO "Meu_Personal_Ideias_Funcionais_Apple_Fitness.txt":
+    ANALISE E DECISAO (esta secao faz parte da especificacao e vale em caso de
+    duvida sobre essas ideias)
+--------------------------------------------------------------------------------
+24.0 Criterios usados e decisao resumida
+Criterios: (a) liga funcoes que hoje estao separadas; (b) usa so dados que o app
+realmente registra; (c) ajuda a AGIR (toque leva ao que falta), nao so a ver; (d)
+custo baixo sobre o que ja existe; (e) respeita a seguranca do tornozelo; (f) nao
+inventa numero nem diagnostico.
+
+  Ideia                                     Decisao                 Etapa   Prioridade
+  1 Aneis do plano acionaveis               ADOTAR (com ajustes)    6 (e 7) 1a
+  2 Treino guiado                           JA PREVISTO; REFINAR    7       2a
+  3 Carga da semana com detalhes por dia    ADOTAR (com ajustes)    9       alta
+  4 Card de jogo com 3 etapas               ADOTAR                  6 e 8   3a
+  5 Calendario que explica cada dia         ADOTAR PARCIAL          9       media
+    (comparar dois dias: ADIADO)                                    (14 opc.)
+  6 Sequencia do dia                        ADOTAR (dentro do guiado) 7     media
+  7 Evolucao por exercicio + comparar       ADOTAR                  9 (11)  media
+Ordem pedida pelo Gabriel (aneis, treino guiado, card de jogo) respeitada: as tres
+entram nas etapas 6 e 7. Quando existir arte da tela na pasta "Ideias UI/", ler a
+imagem com Read (caminho entre aspas) e seguir a arte; sem arte, seguir este texto.
+
+24.1 ANEIS DO PLANO ACIONAVEIS (ETAPA 6; religar ao treino guiado na etapa 7)
+ Decisao: adotar, com ajuste: os aneis refletem o PLANO DO DIA (nao criam meta
+ extra) e sao um atalho de acao.
+ a) Os 3 aneis do dia
+    - TREINOS: blocos principais planejados do dia (forca, velocidade, funcional).
+      Feito = 1; parcial = 0,5; nao fiz = 0. Mostra "1/2" no centro.
+    - TORNOZELO: rotina de tornozelo prevista para o dia (bloco com a tag
+      Tornozelo). Feito = 1.
+    - CHECK-IN: check-in do dia (1 por dia).
+    - Alternar "Dia | Semana": na semana, feitos/planejados da semana (check-ins
+      = 7).
+ b) Interacao (cada anel e um botao grande, >= 44 px)
+    - Anel incompleto -> abre exatamente o que falta:
+        TREINOS: proximo bloco principal pendente (na etapa 7, abre o treino
+        guiado; antes disso, abre o detalhe do dia no bloco);
+        TORNOZELO: a rotina de tornozelo do dia;
+        CHECK-IN: o sheet do check-in.
+    - Ao salvar a atividade, o anel anima ate o novo valor e atualizam a Hoje, a
+      Semana e a Evolucao.
+    - Anel completo -> abre o resumo do que foi registrado (sessao ou check-in), com
+      opcao de editar.
+ c) Regras
+    - Dia de descanso (domingo) ou modo Folga: os aneis viram o estado "Descanso"
+      (cinza-azulado, icone de lua) sem criar obrigacao extra.
+    - Dia de jogo sem bloco principal (ex.: terca): o anel TREINOS mostra o icone
+      do jogo e abre o card de jogo (24.4); jogos nao contam como treino principal,
+      mas seus minutos entram na carga (3.4).
+    - Modo Recuperacao: o anel TREINOS considera apenas os blocos que sobraram
+      depois dos ajustes; a rotina do tornozelo continua valendo (versao leve).
+    - Excecoes de agenda e planos versionados (plan_versions) alteram as metas do dia.
+ d) Visual
+    - Aneis grandes com valor no centro e, logo abaixo, a proxima acao em uma linha
+      ("Falta: rotina do tornozelo - 10 min") com um botao primario.
+    - Cores e desenho PROPRIOS do app (azul primario, ciano e verde-agua), sempre com
+      texto e icone; animacao de 800 ms; respeitar "reduzir animacoes".
+    - NAO copiar o desenho, as cores nem os nomes dos aneis de terceiros; textos
+      proprios: "Seu dia" e "Falta fazer". Nao sincroniza com Apple Fitness/Watch.
+ e) Onde aparece: Hoje (entre o cartao de decisao do dia e o cartao Treino de hoje)
+    e Evolucao > Resumo (semana).
+ f) Tecnico: lib/coach/aneis.ts com computeAneis(contexto, dia) puro e testado.
+    Testes: segunda a domingo, parcial, descanso, modo Folga, jogo, excecoes.
+ Aceitacao:
+  [ ] Cada anel abre a pendencia correta e atualiza ao salvar.
+  [ ] Domingo e modo Folga mostram "Descanso" sem meta.
+  [ ] Terca mostra o anel de jogo e abre o card de jogo.
+
+24.2 TREINO GUIADO: REFINAMENTOS (ETAPA 7; complementa a secao 5)
+ Decisao: ja estava previsto; adotar os refinamentos abaixo.
+ a) UM unico botao principal que muda conforme a etapa:
+      "Concluir serie" -> "Descansar" (timer correndo; "Pular descanso" como botao
+      secundario) -> "Proxima serie" -> ... -> "Proximo exercicio" -> "Finalizar
+      treino".
+ b) Progresso por etapas no topo (exercicio n de m e serie n de m).
+ c) Ao finalizar: o app reune duracao e series marcadas, pede o esforco (0-10) e a
+    confirmacao e grava session_log + set_logs de uma vez, sem preencher nada de
+    novo. O registro manual de sessao (8.5) continua existindo para quem nao usar o
+    guiado e vem pre-preenchido quando houver dados.
+ d) Transicoes suaves entre as etapas (fade curto) e tela acesa (5.9).
+ Aceitacao:
+  [ ] O botao principal segue a maquina de estados acima sem nenhum campo repetido.
+  [ ] Finalizar grava tudo em um toque (apos confirmar o esforco).
+
+24.3 CARGA DA SEMANA COM DETALHES POR DIA (ETAPA 9) E AJUSTE DE TRANSPARENCIA
+ Decisao: adotar, e ajustar a exibicao da prontidao (ver item e).
+ a) Evolucao > Carga: grafico de barras por dia (segunda a domingo) empilhado por
+    tipo (Funcional, Forca, Velocidade, Tornozelo, Jogo) com filtros por tipo (chips).
+ b) Tocar em um dia abre o sheet "O que compos o dia": cada sessao ou jogo com
+    duracao, esforco informado e carga (esforco x minutos); na mesma linha do tempo,
+    sono (faixa) e dor (check-in e pos-jogo) daquele dia; atalho "Ver no calendario".
+ c) Comparativo: carga da semana atual vs media das 4 semanas anteriores (valores e
+    variacao), com o botao "Como calculamos" (formula da secao 3.4, as sessoes e os
+    jogos usados e as 4 semanas de referencia).
+ d) Regras: usar so registros reais; sem registro mostrar "sem registro"; minimo de 3
+    semanas de historico para variacao e alerta; nunca transformar dados em "% de
+    recuperacao" nem em diagnostico. A estimativa e do Meu Personal (calculo proprio e
+    transparente), nao uma copia da metodologia de nenhum fabricante.
+ e) Ajuste na prontidao (secao 3.3): a pontuacao 0-100 e INTERNA, usada so para
+    escolher o modo do dia. Na interface mostrar o MODO (Completo, Reduzido,
+    Recuperacao, Folga) e a lista de motivos. Se a pontuacao aparecer no "Por que?",
+    rotula-la "pontuacao interna do app; nao e medida fisiologica".
+ Aceitacao:
+  [ ] Tocar em cada dia lista as sessoes e jogos que compoem o total.
+  [ ] "Como calculamos" mostra a formula e os dados usados.
+  [ ] Nenhuma tela exibe "% de recuperacao".
+
+24.4 CARD DE JOGO COM 3 ETAPAS (ETAPA 6; regra R17 na etapa 8)
+ Decisao: adotar. Substitui o cartao "Proximo jogo" da Hoje e o cartao de jogo da
+ Semana (C7).
+ a) Componente GameCard (Hoje, Semana e /jogo/[id]) com 3 passos em stepper:
+    1) ANTES: "Iniciar aquecimento" (abre /jogo/pre com timer); checklist de refeicao,
+       lanche e tornozeleira; fica ativo 4 h antes do jogo.
+    2) DEPOIS: "Registrar jogo": minutos jogados, esforco percebido (0-10), dor
+       (0-10), gatilho e notas. Disponivel do fim previsto do jogo ate 12 h depois do
+       inicio.
+    3) DIA SEGUINTE: "Como seu tornozelo respondeu?": e o check-in do dia, VINCULADO ao
+       jogo (checkins.jogo_id). Mostra "Dor depois do jogo: 3 -> hoje: 2".
+ b) Visual: card com 3 passos; o passo pendente em destaque (borda ciano e botao
+    primario); passos concluidos com check e resumo de uma linha.
+ c) Historico unico por jogo: tela /jogo/[id] com linha do tempo (aquecimento feito e
+    duracao, tornozeleira, resultado do jogo, dia seguinte, sono, nota e, quando
+    existir, diario do centroavante). Lista de jogos em Evolucao > Jogos.
+ d) Dados: games.id estavel; games.status (agendado, jogado, cancelado);
+    pre_game_logs.game_id; checkins.jogo_id (migracao 0005).
+ e) Conexoes: R04, R09 e R17; insights I1 e I3 passam a usar esses vinculos.
+ f) Testes: estado do card por horario (antes, durante, depois, dia seguinte), virada
+    de semana, jogo cancelado e jogo extra.
+ Aceitacao:
+  [ ] O card mostra a etapa correta em cada horario (terca 20h30 e sabado 14h30).
+  [ ] O check-in do dia seguinte fica vinculado ao jogo e aparece no historico.
+  [ ] /jogo/[id] mostra a linha do tempo completa.
+
+24.5 CALENDARIO QUE EXPLICA CADA DIA (ETAPA 9)
+ Decisao: adotar a parte principal; "comparar dois dias" fica ADIADO (opcional na
+ etapa 14).
+ a) Evolucao > Calendario: mes compacto com indicadores por dia: ponto azul = treino
+    planejado; check = treino feito; icone de bola = jogo; ponto verde, amarelo ou
+    vermelho = dor do check-in; icone de lua = descanso.
+ b) Tocar em uma data abre "Planejado x realizado": blocos planejados e o status de
+    cada um, sessoes (duracao e esforco), jogo (minutos, esforco, dor), sono, dor, nota,
+    modo do dia e a decisao do coach daquele dia.
+ c) Navegar entre meses; destacar hoje; filtros (Treino, Jogo, Dor).
+ d) Tecnico: funcao unica getDiaResumo(data) reutilizada por Hoje, Semana, Evolucao e
+    anéis, para que todas as telas contem a mesma historia.
+ Aceitacao:
+  [ ] Cada data mostra planejado x realizado coerente com Semana e Hoje.
+  [ ] Dias sem registro mostram o planejado e "sem registro", sem erro.
+
+24.6 SEQUENCIA DO DIA (ETAPA 7)
+ Decisao: adotar como parte do treino guiado (nome proprio: "Sequencia do dia").
+ a) No cartao "Treino de hoje": botao "Iniciar sequencia" quando houver 2 ou mais
+    blocos encadeaveis no mesmo periodo (ex.: manha: Tornozelo -> Forca -> Mobilidade).
+ b) Mostra o tempo total e a lista de blocos conectados com a duracao de cada um.
+    Entre os blocos, uma tela curta de transicao ("Proximo: Forca de pernas, 45 min")
+    com "Pular bloco".
+ c) Retomar de onde parou (tabela execution_state, migracao 0006).
+ d) Regra: usa SOMENTE os blocos previstos no plano do dia; nao adiciona atividade nem
+    carga. Ajustes do modo do dia (reduzir series, trocar exercicio de impacto) sao
+    mostrados ANTES de comecar e so valem se o Gabriel confirmar.
+ e) Cada bloco gera a sua sessao; no final, um resumo do conjunto.
+ Aceitacao:
+  [ ] A sequencia conduz os blocos sem voltar a Hoje, e retoma apos fechar o app.
+  [ ] Nenhuma atividade e adicionada alem das do plano.
+
+24.7 EVOLUCAO POR EXERCICIO E COMPARACAO DE SESSOES (ETAPA 9; dados da etapa 7)
+ Decisao: adotar; amplia o insight I8.
+ a) Ficha do exercicio (Biblioteca, detalhe do dia e treino guiado): pequeno grafico
+    com series, repeticoes, carga (quando houver) e esforco por sessao, e recordes
+    pessoais.
+ b) Botao "Comparar sessoes": escolhe 2 sessoes equivalentes (sugestao: a ultima e a de
+    4 semanas atras) e mostra lado a lado series, repeticoes, carga, esforco, dor durante
+    o exercicio e observacoes. Uma frase objetiva gerada por regra, ex.: "Mesmas
+    repeticoes com esforco menor (7 -> 6)."
+ c) Regras: so com registros reais de set_logs (minimo de 3 sessoes para o grafico e 2
+    para comparar); nunca inferir do treino planejado; se faltar carga ou repeticoes,
+    mostrar "sem registro".
+ d) Conexoes: alimenta a progressao (6.1), o insight I8 e o contexto da IA (13.4).
+ Aceitacao:
+  [ ] A comparacao usa apenas dados registrados e mostra a frase correta.
+  [ ] Sem dados suficientes, o app diz quantas sessoes faltam.
+
+24.8 O QUE NAO ADOTAR E CUIDADOS
+ - Sincronizacao com Apple Fitness ou Apple Watch: fora do escopo (so os Atalhos
+   opcionais da secao 12.4).
+ - Copiar cores, desenho, nomes ("Atividade", "Pilhas", "Fitness+") ou textos da Apple:
+   proibido; as referencias servem so de inspiracao de apresentacao.
+ - "Porcentagem de recuperacao" ou qualquer pontuacao pseudo-cientifica exibida ao
+   usuario: proibido (ver 24.3 e).
+ - Gamificacao agressiva (sequencias punitivas, culpa): nao; os aneis orientam a
+   proxima acao.
+ - Comparar dois dias no calendario: adiado.
+
+24.9 IMPACTO NAS ETAPAS (resumo)
+  Etapa 6: aneis acionaveis (24.1), card de jogo de 3 etapas (24.4), migracao 0005
+           com games.status, checkins.jogo_id e pre_game_logs.game_id.
+  Etapa 7: refinamentos do treino guiado (24.2) e Sequencia do dia (24.6); religar
+           o anel TREINOS e o anel TORNOZELO ao treino guiado.
+  Etapa 8: regras R17 (check-in vinculado ao jogo) e R18 (aneis em dia de descanso);
+           exibicao do modo sem porcentagem (24.3 e).
+  Etapa 9: carga tocavel (24.3), calendario (24.5) e evolucao por exercicio com
+           comparacao (24.7).
+  Etapa 14: opcional, comparar dois dias no calendario.
+================================================================================
+FIM DA ESPECIFICACAO DA FASE 2
+================================================================================

@@ -100,7 +100,8 @@ export default function HojePage() {
 
       {seg.nivel === "bloqueio" && (
         <Banner variante="alerta">
-          <strong>Hoje não aumente a carga.</strong> Se a dor persistir, procure ortopedista ou fisioterapeuta.
+          <strong>Hoje não aumente a carga.</strong> Se a dor persistir, procure ortopedista ou
+          fisioterapeuta.
         </Banner>
       )}
       {seg.dorPersistente && seg.nivel !== "bloqueio" && (
@@ -126,7 +127,12 @@ export default function HojePage() {
             </Button>
           </div>
         ) : (
-          <Button tamanho="g" className="w-full" icone={<ClipboardCheck className="size-5" />} onClick={() => setCheckinAberto(true)}>
+          <Button
+            tamanho="g"
+            className="w-full"
+            icone={<ClipboardCheck className="size-5" />}
+            onClick={() => setCheckinAberto(true)}
+          >
             Fazer check-in
           </Button>
         )}
@@ -157,7 +163,12 @@ export default function HojePage() {
         </p>
       </GlassCard>
 
-      <CheckinSheet aberto={checkinAberto} onFechar={() => setCheckinAberto(false)} data={hoje} existente={checkinHoje} />
+      <CheckinSheet
+        aberto={checkinAberto}
+        onFechar={() => setCheckinAberto(false)}
+        data={hoje}
+        existente={checkinHoje}
+      />
     </main>
   );
 }

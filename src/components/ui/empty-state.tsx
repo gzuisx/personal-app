@@ -25,7 +25,15 @@ export function IlustracaoVazia() {
       <circle cx="112" cy="58" r="30" fill="url(#ev-grad)" opacity="0.18" />
       <circle cx="112" cy="58" r="22" fill="none" stroke="url(#ev-grad)" strokeWidth="3" />
       <polygon points="112,46 122,53 118,65 106,65 102,53" fill="url(#ev-grad)" />
-      <line x1="10" y1="104" x2="150" y2="104" stroke="var(--border-glass)" strokeWidth="2" strokeLinecap="round" />
+      <line
+        x1="10"
+        y1="104"
+        x2="150"
+        y2="104"
+        stroke="var(--border-glass)"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }

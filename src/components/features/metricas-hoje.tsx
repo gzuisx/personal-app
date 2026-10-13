@@ -12,7 +12,15 @@ function quando(dias: number) {
   return `há ${dias} dias`;
 }
 
-export function MetricasHoje({ checkins, sessoes, hoje }: { checkins: Checkin[]; sessoes: Sessao[]; hoje: string }) {
+export function MetricasHoje({
+  checkins,
+  sessoes,
+  hoje,
+}: {
+  checkins: Checkin[];
+  sessoes: Sessao[];
+  hoje: string;
+}) {
   const ultimo = ultimoCheckin(checkins, hoje);
   const comSono = [...checkins]
     .filter((c) => c.data <= hoje && c.sonoFaixa)

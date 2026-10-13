@@ -47,7 +47,14 @@ export default function SemanaPage() {
   const dias = diasDaSemana(addDias(hoje, offset * 7));
   const planos = dias.map(diaDoPlano);
   const fase = faseDoPlano(dias[0] > hoje ? dias[0] : dias[6] < hoje ? dias[6] : hoje);
-  const titulo = offset === 0 ? "Esta semana" : offset === -1 ? "Semana passada" : offset === 1 ? "Próxima semana" : `${dias[0].slice(8)}/${dias[0].slice(5, 7)} a ${dias[6].slice(8)}/${dias[6].slice(5, 7)}`;
+  const titulo =
+    offset === 0
+      ? "Esta semana"
+      : offset === -1
+        ? "Semana passada"
+        : offset === 1
+          ? "Próxima semana"
+          : `${dias[0].slice(8)}/${dias[0].slice(5, 7)} a ${dias[6].slice(8)}/${dias[6].slice(5, 7)}`;
 
   const faixa: DiaFaixa[] = planos.map((p, i) => ({
     iso: p.iso,
@@ -102,7 +109,9 @@ export default function SemanaPage() {
 
       <p className="t-rotulo inline-flex rounded-full border border-borda bg-vidro-forte px-4 py-2 text-texto2">
         Tornozelo: fase {fase.fase} ·{" "}
-        {fase.semanasNaFase ? `semana ${fase.semanaNaFase} de ${fase.semanasNaFase}` : `semana ${fase.semanaNaFase}`}
+        {fase.semanasNaFase
+          ? `semana ${fase.semanaNaFase} de ${fase.semanasNaFase}`
+          : `semana ${fase.semanaNaFase}`}
       </p>
 
       <div className="space-y-3">

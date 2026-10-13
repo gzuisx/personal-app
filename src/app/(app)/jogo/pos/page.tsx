@@ -17,7 +17,10 @@ import { dataExtensoISO, horaTexto, ultimoJogo } from "@/lib/tempo";
 import { GATILHO_ROTULO, type Gatilho } from "@/lib/tipos";
 import { useAgora } from "@/lib/use-agora";
 
-const gatilhos = (Object.keys(GATILHO_ROTULO) as Gatilho[]).map((k) => ({ valor: k, rotulo: GATILHO_ROTULO[k] }));
+const gatilhos = (Object.keys(GATILHO_ROTULO) as Gatilho[]).map((k) => ({
+  valor: k,
+  rotulo: GATILHO_ROTULO[k],
+}));
 
 export default function PosJogoPage() {
   const router = useRouter();
@@ -102,11 +105,19 @@ export default function PosJogoPage() {
 
       <GlassCard titulo="Minutos jogados">
         <div className="flex items-center justify-center gap-3">
-          <Button variante="secundario" aria-label="Menos 5 minutos" onClick={() => setMinutos((m) => Math.max(0, m - 5))}>
+          <Button
+            variante="secundario"
+            aria-label="Menos 5 minutos"
+            onClick={() => setMinutos((m) => Math.max(0, m - 5))}
+          >
             <Minus className="size-5" aria-hidden="true" />5
           </Button>
           <p className="t-h1 num min-w-28 text-center">{minutos} min</p>
-          <Button variante="secundario" aria-label="Mais 5 minutos" onClick={() => setMinutos((m) => Math.min(120, m + 5))}>
+          <Button
+            variante="secundario"
+            aria-label="Mais 5 minutos"
+            onClick={() => setMinutos((m) => Math.min(120, m + 5))}
+          >
             <Plus className="size-5" aria-hidden="true" />5
           </Button>
         </div>

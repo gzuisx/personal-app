@@ -22,8 +22,7 @@ export default function PersonalPage() {
             <h2 className="t-h2 text-texto">Seu personal com IA</h2>
           </div>
           <p className="t-corpo max-w-[300px] text-texto2">
-            Em breve: converse com seu personal, receba propostas de evolução e ajuste o treino por
-            aqui.
+            Em breve: converse com seu personal, receba propostas de evolução e ajuste o treino por aqui.
           </p>
         </GlassCard>
 

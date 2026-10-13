@@ -83,8 +83,7 @@ export function FormularioLogin() {
           {carregando ? "Enviando..." : "Enviar link de acesso"}
         </Button>
         <p className="t-pq text-texto2">
-          Você receberá um e-mail com o link. No iPhone, se o link não abrir o app, digite o código
-          do e-mail.
+          Você receberá um e-mail com o link. No iPhone, se o link não abrir o app, digite o código do e-mail.
         </p>
       </form>
     );
@@ -93,8 +92,8 @@ export function FormularioLogin() {
   return (
     <form onSubmit={entrarComCodigo} className="space-y-4">
       <p className="t-corpo text-texto2">
-        Enviamos um e-mail para <strong className="text-texto">{email}</strong>. Toque no link ou
-        digite o código aqui.
+        Enviamos um e-mail para <strong className="text-texto">{email}</strong>. Toque no link ou digite o
+        código aqui.
       </p>
       <input
         type="text"

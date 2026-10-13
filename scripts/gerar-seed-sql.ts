@@ -6,7 +6,15 @@ import { EXERCICIOS, diaDoPlano } from "../src/lib/seed/plano";
 const q = (v: string | null | undefined) => (v == null ? "null" : `'${v.replaceAll("'", "''")}'`);
 
 // Semana 1 do plano (fase 1), segunda a domingo.
-const SEMANA = ["2026-10-12", "2026-10-13", "2026-10-14", "2026-10-15", "2026-10-16", "2026-10-17", "2026-10-18"];
+const SEMANA = [
+  "2026-10-12",
+  "2026-10-13",
+  "2026-10-14",
+  "2026-10-15",
+  "2026-10-16",
+  "2026-10-17",
+  "2026-10-18",
+];
 
 const dias = SEMANA.map(diaDoPlano);
 

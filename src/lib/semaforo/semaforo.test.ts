@@ -35,7 +35,9 @@ describe("semáforo do tornozelo", () => {
   });
 
   it("ontem aparece como 'ontem'", () => {
-    expect(avaliarSemaforo({ checkins: [ck("2026-10-19", 1)], hoje, agora }).motivo).toBe("Dor 1 de 10 ontem.");
+    expect(avaliarSemaforo({ checkins: [ck("2026-10-19", 1)], hoje, agora }).motivo).toBe(
+      "Dor 1 de 10 ontem.",
+    );
   });
 
   it("amarelo com dor 4 e 5", () => {

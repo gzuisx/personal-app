@@ -236,7 +236,9 @@ export default function PerfilPage() {
           </div>
           <div className="min-w-0">
             <p className="t-h2 truncate">{perfil.nome}</p>
-            <p className="t-corpo truncate text-texto2">{modo === "local" ? "Modo local" : (email ?? "Conectado")}</p>
+            <p className="t-corpo truncate text-texto2">
+              {modo === "local" ? "Modo local" : (email ?? "Conectado")}
+            </p>
           </div>
         </div>
       </GlassCard>
@@ -244,14 +246,28 @@ export default function PerfilPage() {
       <GlassCard indice={1} titulo="Meus dados">
         <div className="space-y-3">
           <Campo rotulo="Nome">
-            <input className={campo} value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} />
+            <input
+              className={campo}
+              value={form.nome}
+              onChange={(e) => setForm({ ...form, nome: e.target.value })}
+            />
           </Campo>
           <div className="grid grid-cols-3 gap-3">
             <Campo rotulo="Idade">
-              <input className={campo} inputMode="numeric" value={form.idade} onChange={(e) => setForm({ ...form, idade: e.target.value })} />
+              <input
+                className={campo}
+                inputMode="numeric"
+                value={form.idade}
+                onChange={(e) => setForm({ ...form, idade: e.target.value })}
+              />
             </Campo>
             <Campo rotulo="Peso (kg)">
-              <input className={campo} inputMode="decimal" value={form.peso} onChange={(e) => setForm({ ...form, peso: e.target.value })} />
+              <input
+                className={campo}
+                inputMode="decimal"
+                value={form.peso}
+                onChange={(e) => setForm({ ...form, peso: e.target.value })}
+              />
             </Campo>
             <Campo rotulo="Altura (cm)">
               <input
@@ -264,7 +280,11 @@ export default function PerfilPage() {
             </Campo>
           </div>
           <Campo rotulo="Posição">
-            <input className={campo} value={form.posicao} onChange={(e) => setForm({ ...form, posicao: e.target.value })} />
+            <input
+              className={campo}
+              value={form.posicao}
+              onChange={(e) => setForm({ ...form, posicao: e.target.value })}
+            />
           </Campo>
           <Button className="w-full" disabled={!dadosMudaram} onClick={salvarDados}>
             Salvar dados
@@ -312,14 +332,19 @@ export default function PerfilPage() {
                       {r.tipo} · lado {r.lado}
                     </p>
                     <p className="t-corpo mt-1 text-texto2">{r.status}</p>
-                    <p className="t-pq mt-1 text-texto2">Dor atual: {dor === null ? "sem registro" : `${dor} de 10`}</p>
+                    <p className="t-pq mt-1 text-texto2">
+                      Dor atual: {dor === null ? "sem registro" : `${dor} de 10`}
+                    </p>
                   </div>
                   {!principal && (
                     <button
                       type="button"
                       aria-label={`Remover restrição ${r.regiao}`}
                       onClick={() =>
-                        atualizarPerfil({ ...perfil, restricoes: perfil.restricoes.filter((x) => x.id !== r.id) })
+                        atualizarPerfil({
+                          ...perfil,
+                          restricoes: perfil.restricoes.filter((x) => x.id !== r.id),
+                        })
                       }
                       className="-m-1 flex size-11 shrink-0 items-center justify-center rounded-full text-texto2"
                     >
@@ -331,12 +356,21 @@ export default function PerfilPage() {
             );
           })}
         </ul>
-        <Button variante="secundario" className="mt-3 w-full" icone={<Plus className="size-5" />} onClick={() => setNovaAberta(true)}>
+        <Button
+          variante="secundario"
+          className="mt-3 w-full"
+          icone={<Plus className="size-5" />}
+          onClick={() => setNovaAberta(true)}
+        >
           Adicionar restrição
         </Button>
       </GlassCard>
 
-      <GlassCard indice={4} titulo="Regras de segurança" acao={<Shield className="size-6 text-realce-t" aria-hidden="true" />}>
+      <GlassCard
+        indice={4}
+        titulo="Regras de segurança"
+        acao={<Shield className="size-6 text-realce-t" aria-hidden="true" />}
+      >
         <p className="t-corpo mb-4 text-texto2">
           Definem quando o app bloqueia o aumento de carga para proteger o tornozelo.
         </p>
@@ -346,7 +380,9 @@ export default function PerfilPage() {
             valor={regras.limiteBloqueio}
             min={1}
             max={10}
-            onChange={(v) => setRegras({ ...regras, limiteBloqueio: v, limiteAtencao: Math.min(regras.limiteAtencao, v) })}
+            onChange={(v) =>
+              setRegras({ ...regras, limiteBloqueio: v, limiteAtencao: Math.min(regras.limiteAtencao, v) })
+            }
           />
           <Stepper
             rotulo="Dor de atenção"
@@ -357,11 +393,19 @@ export default function PerfilPage() {
           />
           <div className="space-y-2">
             <p className="t-corpo">Inchaço bloqueia</p>
-            <ToggleSimNao rotuloAria="Inchaço bloqueia" valor={regras.inchacoBloqueia} onChange={(v) => setRegras({ ...regras, inchacoBloqueia: v })} />
+            <ToggleSimNao
+              rotuloAria="Inchaço bloqueia"
+              valor={regras.inchacoBloqueia}
+              onChange={(v) => setRegras({ ...regras, inchacoBloqueia: v })}
+            />
           </div>
           <div className="space-y-2">
             <p className="t-corpo">“Falhou” bloqueia</p>
-            <ToggleSimNao rotuloAria="Falhou bloqueia" valor={regras.falhouBloqueia} onChange={(v) => setRegras({ ...regras, falhouBloqueia: v })} />
+            <ToggleSimNao
+              rotuloAria="Falhou bloqueia"
+              valor={regras.falhouBloqueia}
+              onChange={(v) => setRegras({ ...regras, falhouBloqueia: v })}
+            />
           </div>
           <Button className="w-full" disabled={!regrasMudaram} onClick={() => setConfirmarRegras(true)}>
             Salvar regras
@@ -391,19 +435,33 @@ export default function PerfilPage() {
           </div>
           <div>
             <p className="t-rotulo mb-2 text-texto2">Reduzir animações</p>
-            <ToggleSimNao rotuloAria="Reduzir animações" valor={reduzirAnimacoes} onChange={setReduzirAnimacoes} />
+            <ToggleSimNao
+              rotuloAria="Reduzir animações"
+              valor={reduzirAnimacoes}
+              onChange={setReduzirAnimacoes}
+            />
           </div>
         </div>
       </GlassCard>
 
       <GlassCard indice={6} titulo="Dados">
         <div className="space-y-3">
-          <Button variante="secundario" className="w-full" icone={<Download className="size-5" />} onClick={exportarJson}>
+          <Button
+            variante="secundario"
+            className="w-full"
+            icone={<Download className="size-5" />}
+            onClick={exportarJson}
+          >
             Exportar meus dados (JSON)
           </Button>
           {modo === "supabase" && (
             <form action="/auth/sair" method="post">
-              <Button type="submit" variante="secundario" className="w-full" icone={<LogOut className="size-5" />}>
+              <Button
+                type="submit"
+                variante="secundario"
+                className="w-full"
+                icone={<LogOut className="size-5" />}
+              >
                 Sair
               </Button>
             </form>
@@ -411,7 +469,9 @@ export default function PerfilPage() {
         </div>
       </GlassCard>
 
-      <p className="t-pq px-1 text-texto2">Este app não substitui avaliação de ortopedista ou fisioterapeuta.</p>
+      <p className="t-pq px-1 text-texto2">
+        Este app não substitui avaliação de ortopedista ou fisioterapeuta.
+      </p>
 
       <ConfirmDialog
         aberto={confirmarRegras}
@@ -446,7 +506,10 @@ export default function PerfilPage() {
             rotuloAria="Lado"
             valor={nova.lado}
             onChange={(lado) => setNova({ ...nova, lado })}
-            opcoes={(["direito", "esquerdo", "ambos", "não se aplica"] as const).map((l) => ({ valor: l, rotulo: l }))}
+            opcoes={(["direito", "esquerdo", "ambos", "não se aplica"] as const).map((l) => ({
+              valor: l,
+              rotulo: l,
+            }))}
           />
         </section>
         <section className="space-y-2">

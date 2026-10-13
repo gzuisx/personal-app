@@ -27,7 +27,11 @@ export function ProximoJogoCard({ agora, jogos, indice }: { agora: Date; jogos: 
   const registrado = ult ? jogos.some((j) => j.inicio === ult.inicio.toISOString() && j.dor !== null) : false;
 
   return (
-    <GlassCard indice={indice} titulo="Próximo jogo" acao={<Trophy className="size-6 text-aviso-t" aria-hidden="true" />}>
+    <GlassCard
+      indice={indice}
+      titulo="Próximo jogo"
+      acao={<Trophy className="size-6 text-aviso-t" aria-hidden="true" />}
+    >
       <p className="t-h2">
         {dia}, {horaTexto(prox.slot.hora, prox.slot.min)}
       </p>

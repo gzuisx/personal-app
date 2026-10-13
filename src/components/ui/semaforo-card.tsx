@@ -38,7 +38,10 @@ export function SemaforoCard({ cor, motivo, aviso, children, indice }: Props) {
             transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
           />
           <motion.span
-            className={cn("relative flex size-16 items-center justify-center rounded-full text-sobre", v.fundo)}
+            className={cn(
+              "relative flex size-16 items-center justify-center rounded-full text-sobre",
+              v.fundo,
+            )}
             animate={{ scale: [1, forca, 1] }}
             transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
           >

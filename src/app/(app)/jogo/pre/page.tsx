@@ -58,7 +58,8 @@ export default function PreJogoPage() {
                     </span>
                     <div className="min-w-0">
                       <p className="t-h3">
-                        {f.titulo} <span className="num t-corpo text-texto2">· {formatarTempo(f.segundos * 1000)}</span>
+                        {f.titulo}{" "}
+                        <span className="num t-corpo text-texto2">· {formatarTempo(f.segundos * 1000)}</span>
                       </p>
                       <p className="t-corpo text-texto2">{f.instrucao}</p>
                     </div>
@@ -116,7 +117,12 @@ export default function PreJogoPage() {
               >
                 {rodando ? "Pausar" : "Continuar"}
               </Button>
-              <Button variante="secundario" className="flex-1" icone={<SkipForward className="size-5" />} onClick={proxima}>
+              <Button
+                variante="secundario"
+                className="flex-1"
+                icone={<SkipForward className="size-5" />}
+                onClick={proxima}
+              >
                 Pular fase
               </Button>
             </div>

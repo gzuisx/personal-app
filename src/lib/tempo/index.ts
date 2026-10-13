@@ -10,15 +10,7 @@ export const DURACAO_JOGO_MIN = 80;
 export const JANELA_PRE_JOGO_H = 4;
 export const JANELA_POS_JOGO_H = 12;
 
-export const DIAS_SEMANA = [
-  "domingo",
-  "segunda",
-  "terça",
-  "quarta",
-  "quinta",
-  "sexta",
-  "sábado",
-] as const;
+export const DIAS_SEMANA = ["domingo", "segunda", "terça", "quarta", "quinta", "sexta", "sábado"] as const;
 
 export const MESES = [
   "janeiro",
@@ -252,10 +244,25 @@ export function lembretesPreJogo(agora: Date, jogo: OcorrenciaJogo): Lembrete[] 
   if (agora.getTime() >= jogo.inicio.getTime()) return [];
   const l = jogo.slot.lembretes;
   const todos: Lembrete[] = [
-    { id: "refeicao", hora: l.refeicao, titulo: "Refeição principal", texto: "Faça a refeição principal agora. Não pule a refeição antes do jogo." },
+    {
+      id: "refeicao",
+      hora: l.refeicao,
+      titulo: "Refeição principal",
+      texto: "Faça a refeição principal agora. Não pule a refeição antes do jogo.",
+    },
     { id: "lanche", hora: l.lanche, titulo: "Lanche leve", texto: "Hora do lanche leve antes do jogo." },
-    { id: "ativacao", hora: l.ativacao, titulo: "Ativação do tornozelo", texto: "Faça a ativação do tornozelo (10 a 12 min). Use a tornozeleira nas primeiras semanas." },
-    { id: "aquecimento", hora: l.aquecimento, titulo: "Aquecimento em campo", texto: "Vá para o aquecimento em campo: corrida leve e progressivas." },
+    {
+      id: "ativacao",
+      hora: l.ativacao,
+      titulo: "Ativação do tornozelo",
+      texto: "Faça a ativação do tornozelo (10 a 12 min). Use a tornozeleira nas primeiras semanas.",
+    },
+    {
+      id: "aquecimento",
+      hora: l.aquecimento,
+      titulo: "Aquecimento em campo",
+      texto: "Vá para o aquecimento em campo: corrida leve e progressivas.",
+    },
   ];
   return todos
     .filter((x) => {

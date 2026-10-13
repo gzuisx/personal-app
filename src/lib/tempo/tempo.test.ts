@@ -66,8 +66,8 @@ describe("contagem regressiva", () => {
     expect(contagemRegressiva(40 * min)).toBe("em 40 min");
     expect(contagemRegressiva(135 * min)).toBe("em 2 h 15 min");
     expect(contagemRegressiva(120 * min)).toBe("em 2 h");
-    expect(contagemRegressiva((27 * 60) * min)).toBe("em 1 d 3 h");
-    expect(contagemRegressiva((24 * 60) * min)).toBe("em 1 d");
+    expect(contagemRegressiva(27 * 60 * min)).toBe("em 1 d 3 h");
+    expect(contagemRegressiva(24 * 60 * min)).toBe("em 1 d");
   });
 });
 
@@ -77,7 +77,7 @@ describe("próximo jogo", () => {
     expect(j.data).toBe("2026-10-13");
     expect(j.slot.nome).toBe("Terça");
     expect(contagemRegressiva(j.ms)).toBe("em 1 d 10 h");
-    expect(j.ms).toBe((34.5 * 60) * 60_000);
+    expect(j.ms).toBe(34.5 * 60 * 60_000);
   });
 
   it("depois do jogo de terça vem o de sábado", () => {

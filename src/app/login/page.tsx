@@ -4,11 +4,7 @@ import { Logo } from "@/components/ui/logo";
 import { temSupabase } from "@/lib/supabase/config";
 import { FormularioLogin } from "./formulario";
 
-export default async function LoginPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ erro?: string }>;
-}) {
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ erro?: string }> }) {
   if (!temSupabase) redirect("/hoje");
   const { erro } = await searchParams;
 

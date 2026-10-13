@@ -23,7 +23,9 @@ export function Timer({ duracao, rodando, onFim, rotulo, tamanho = 200 }: Props)
   const [restante, setRestante] = useState(total);
   const restanteRef = useRef(total);
   const onFimRef = useRef(onFim);
-  onFimRef.current = onFim;
+  useEffect(() => {
+    onFimRef.current = onFim;
+  });
 
   useEffect(() => {
     if (!rodando || restanteRef.current <= 0) return;

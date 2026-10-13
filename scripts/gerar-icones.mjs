@@ -8,7 +8,10 @@ await mkdir(saida, { recursive: true });
 
 // Logotipo original: arco ascendente terminando em um ponto, em quadrado azul.
 // "cheio" = fundo ocupa toda a imagem (maskable / ícone iOS). "escala" reduz a marca.
-const svg = ({ cheio, escala }) => `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+const svg = ({
+  cheio,
+  escala,
+}) => `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
   <defs>
     <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#3A80FF"/>
@@ -24,7 +27,10 @@ const svg = ({ cheio, escala }) => `<svg xmlns="http://www.w3.org/2000/svg" widt
 </svg>`;
 
 const gerar = (nome, tamanho, opcoes) =>
-  sharp(Buffer.from(svg(opcoes))).resize(tamanho, tamanho).png().toFile(path.join(saida, nome));
+  sharp(Buffer.from(svg(opcoes)))
+    .resize(tamanho, tamanho)
+    .png()
+    .toFile(path.join(saida, nome));
 
 await gerar("icon-192.png", 192, { cheio: true, escala: 1 });
 await gerar("icon-512.png", 512, { cheio: true, escala: 1 });

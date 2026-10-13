@@ -81,8 +81,12 @@ describe("avaliação de segurança", () => {
   });
 
   it("inchaço e 'falhou' bloqueiam", () => {
-    expect(avaliarSeguranca({ checkins: [ck(HOJE, 1, { inchaco: true })], hoje: HOJE }).nivel).toBe("bloqueio");
-    expect(avaliarSeguranca({ checkins: [ck(HOJE, 1, { falhou: true })], hoje: HOJE }).nivel).toBe("bloqueio");
+    expect(avaliarSeguranca({ checkins: [ck(HOJE, 1, { inchaco: true })], hoje: HOJE }).nivel).toBe(
+      "bloqueio",
+    );
+    expect(avaliarSeguranca({ checkins: [ck(HOJE, 1, { falhou: true })], hoje: HOJE }).nivel).toBe(
+      "bloqueio",
+    );
   });
 
   it("bloqueio vale para a semana: melhora no dia seguinte ainda não libera o aumento", () => {
@@ -140,9 +144,15 @@ describe("avaliação de segurança", () => {
 
 describe("sequência de dias verdes", () => {
   it("conta dias seguidos liberados até hoje", () => {
-    const lista = ["2026-10-14", "2026-10-15", "2026-10-16", "2026-10-17", "2026-10-18", "2026-10-19", "2026-10-20"].map(
-      (d) => ck(d, 1),
-    );
+    const lista = [
+      "2026-10-14",
+      "2026-10-15",
+      "2026-10-16",
+      "2026-10-17",
+      "2026-10-18",
+      "2026-10-19",
+      "2026-10-20",
+    ].map((d) => ck(d, 1));
     expect(diasVerdesSeguidos(lista, "2026-10-20")).toBe(7);
   });
 

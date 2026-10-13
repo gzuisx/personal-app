@@ -28,7 +28,10 @@ const icone = (n: number) => {
 
 const energias = [1, 2, 3, 4, 5].map((n) => ({ valor: n, rotulo: String(n), icone: icone(n) }));
 const sonos = (Object.keys(SONO_ROTULO) as SonoFaixa[]).map((k) => ({ valor: k, rotulo: SONO_ROTULO[k] }));
-const gatilhos = (Object.keys(GATILHO_ROTULO) as Gatilho[]).map((k) => ({ valor: k, rotulo: GATILHO_ROTULO[k] }));
+const gatilhos = (Object.keys(GATILHO_ROTULO) as Gatilho[]).map((k) => ({
+  valor: k,
+  rotulo: GATILHO_ROTULO[k],
+}));
 
 export function CheckinSheet({ aberto, onFechar, data, existente }: Props) {
   const { salvarCheckin } = useDados();
@@ -107,7 +110,14 @@ export function CheckinSheet({ aberto, onFechar, data, existente }: Props) {
         <>
           <section className="space-y-2">
             <h3 className="t-h3">Dor no tornozelo direito</h3>
-            <EscalaDor valor={dor} onChange={(v) => { setDor(v); setSemDor(false); }} rotuloAria="Dor no tornozelo direito" />
+            <EscalaDor
+              valor={dor}
+              onChange={(v) => {
+                setDor(v);
+                setSemDor(false);
+              }}
+              rotuloAria="Dor no tornozelo direito"
+            />
             {semDor && (
               <p role="alert" className="t-pq text-perigo-t">
                 Escolha um valor para salvar.
@@ -127,7 +137,12 @@ export function CheckinSheet({ aberto, onFechar, data, existente }: Props) {
 
           <section className="space-y-2">
             <h3 className="t-h3">Energia</h3>
-            <ChipGroup rotuloAria="Energia de 1 a 5" opcoes={energias} valor={energia} onChange={setEnergia} />
+            <ChipGroup
+              rotuloAria="Energia de 1 a 5"
+              opcoes={energias}
+              valor={energia}
+              onChange={setEnergia}
+            />
           </section>
 
           <section className="space-y-2">
@@ -138,7 +153,12 @@ export function CheckinSheet({ aberto, onFechar, data, existente }: Props) {
           {dor !== null && dor >= 1 && (
             <section className="space-y-2">
               <h3 className="t-h3">Gatilho da dor</h3>
-              <ChipGroup rotuloAria="Gatilho da dor" opcoes={gatilhos} valor={gatilho} onChange={setGatilho} />
+              <ChipGroup
+                rotuloAria="Gatilho da dor"
+                opcoes={gatilhos}
+                valor={gatilho}
+                onChange={setGatilho}
+              />
             </section>
           )}
 

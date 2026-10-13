@@ -19,9 +19,7 @@ export function Chip({ selecionado, onClick, disabled, className, children }: Ch
       onClick={onClick}
       className={cn(
         "inline-flex h-11 min-w-11 select-none items-center justify-center gap-2 rounded-full border px-4 text-[15px] font-medium transition-[transform,background-color,border-color] duration-100 ease-out active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50",
-        selecionado
-          ? "border-primario bg-primario text-white"
-          : "border-borda bg-vidro-forte text-texto2",
+        selecionado ? "border-primario bg-primario text-white" : "border-borda bg-vidro-forte text-texto2",
         className,
       )}
     >
@@ -82,9 +80,7 @@ export function ChipGroupMulti<T extends string | number>({
           <Chip
             key={String(o.valor)}
             selecionado={ativo}
-            onClick={() =>
-              onChange(ativo ? valores.filter((v) => v !== o.valor) : [...valores, o.valor])
-            }
+            onClick={() => onChange(ativo ? valores.filter((v) => v !== o.valor) : [...valores, o.valor])}
           >
             {o.icone}
             {o.rotulo}

@@ -45,14 +45,22 @@ export function DiaCard({ dia, hoje, rotuloCarga, sessoes, indice }: Props) {
           <div className="min-w-0">
             <p className="t-rotulo flex items-center gap-2 text-texto2">
               {dia.nome}, {numero}
-              {ehHoje && <span className="rounded-full bg-primario px-2.5 py-1 text-[13px] leading-none font-semibold text-white">Hoje</span>}
+              {ehHoje && (
+                <span className="rounded-full bg-primario px-2.5 py-1 text-[13px] leading-none font-semibold text-white">
+                  Hoje
+                </span>
+              )}
               {concluido && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-ok px-2.5 py-1 text-[13px] leading-none font-semibold text-sobre">
                   <Check className="size-3.5" aria-hidden="true" />
                   Concluído
                 </span>
               )}
-              {folga && <span className="rounded-full border border-borda px-2.5 py-1 text-[13px] leading-none">Folga</span>}
+              {folga && (
+                <span className="rounded-full border border-borda px-2.5 py-1 text-[13px] leading-none">
+                  Folga
+                </span>
+              )}
             </p>
             <h2 className="t-h3 mt-1">{dia.titulo}</h2>
           </div>

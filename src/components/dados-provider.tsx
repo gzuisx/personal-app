@@ -4,14 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { criarRepo, type Repo } from "@/lib/repo";
 import type { ConfigSeguranca } from "@/lib/safety";
 import { addDias, dataISO } from "@/lib/tempo";
-import {
-  DADOS_VAZIOS,
-  type Checkin,
-  type DadosApp,
-  type Jogo,
-  type Perfil,
-  type Sessao,
-} from "@/lib/tipos";
+import { DADOS_VAZIOS, type Checkin, type DadosApp, type Jogo, type Perfil, type Sessao } from "@/lib/tipos";
 
 type Status = "carregando" | "pronto" | "erro";
 
@@ -105,7 +98,10 @@ export function DadosProvider({ children }: { children: React.ReactNode }) {
         ),
       salvarSessao: (s) =>
         aplicar(
-          (d) => ({ ...d, sessoes: substituir(d.sessoes, s, (a, b) => a.data === b.data && a.bloco === b.bloco) }),
+          (d) => ({
+            ...d,
+            sessoes: substituir(d.sessoes, s, (a, b) => a.data === b.data && a.bloco === b.bloco),
+          }),
           () => repo.salvarSessao(s),
         ),
       salvarJogo: (j) =>
@@ -118,8 +114,16 @@ export function DadosProvider({ children }: { children: React.ReactNode }) {
           }),
           () => repo.salvarJogo(j),
         ),
-      salvarSeguranca: (c) => aplicar((d) => ({ ...d, seguranca: c }), () => repo.salvarSeguranca(c)),
-      salvarPerfil: (p) => aplicar((d) => ({ ...d, perfil: p }), () => repo.salvarPerfil(p)),
+      salvarSeguranca: (c) =>
+        aplicar(
+          (d) => ({ ...d, seguranca: c }),
+          () => repo.salvarSeguranca(c),
+        ),
+      salvarPerfil: (p) =>
+        aplicar(
+          (d) => ({ ...d, perfil: p }),
+          () => repo.salvarPerfil(p),
+        ),
       alternarMarco: (chave) => {
         const atual = ref.current.marcos.find((m) => m.chave === chave);
         const novo = { chave, concluidoEm: atual?.concluidoEm ? null : dataISO(new Date()) };

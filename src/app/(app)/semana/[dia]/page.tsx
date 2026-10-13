@@ -17,7 +17,13 @@ import { cn } from "@/lib/cn";
 import { rotuloCarga } from "@/lib/carga";
 import { sessaoDoBloco } from "@/lib/derivados";
 import { avaliarSeguranca } from "@/lib/safety";
-import { ROTULO_PERIODO, blocoTreinavel, diaDoPlano, type Bloco, type ExercicioNoBloco } from "@/lib/seed/plano";
+import {
+  ROTULO_PERIODO,
+  blocoTreinavel,
+  diaDoPlano,
+  type Bloco,
+  type ExercicioNoBloco,
+} from "@/lib/seed/plano";
 import { dataExtensoISO, dataISO, horaTexto } from "@/lib/tempo";
 import { useAgora } from "@/lib/use-agora";
 
@@ -39,7 +45,10 @@ function Exercicio({ e }: { e: ExercicioNoBloco }) {
           <span className="t-corpo num text-realce-t">{carga}</span>
         </span>
         <ChevronDown
-          className={cn("size-5 shrink-0 text-texto2 transition-transform duration-200", aberto && "rotate-180")}
+          className={cn(
+            "size-5 shrink-0 text-texto2 transition-transform duration-200",
+            aberto && "rotate-180",
+          )}
           aria-hidden="true"
         />
       </button>
@@ -82,7 +91,13 @@ export default function DetalheDiaPage() {
 
   const hoje = dataISO(agora);
   const dia = diaDoPlano(iso);
-  const seg = avaliarSeguranca({ checkins: dados.checkins, jogos: dados.jogos, hoje, agora, config: dados.seguranca });
+  const seg = avaliarSeguranca({
+    checkins: dados.checkins,
+    jogos: dados.jogos,
+    hoje,
+    agora,
+    config: dados.seguranca,
+  });
 
   function abrir(b: Bloco) {
     setBlocoSheet(b);
@@ -109,9 +124,7 @@ export default function DetalheDiaPage() {
               {ROTULO_PERIODO[b.periodo]}
               {b.horario ? ` · ${b.horario}` : ""}
             </p>
-            <h2 className="t-h2 mt-0.5">
-              {b.instrutor ? "Sessão do instrutor" : b.titulo}
-            </h2>
+            <h2 className="t-h2 mt-0.5">{b.instrutor ? "Sessão do instrutor" : b.titulo}</h2>
             {b.instrutor && <p className="t-corpo text-texto2">{b.titulo}</p>}
             <div className="mt-2 flex flex-wrap items-center gap-2">
               {b.duracaoMin > 0 && (

@@ -86,9 +86,7 @@ export function BottomSheet({ aberto, onFechar, titulo, children, rodape }: Prop
                 <X className="size-6" aria-hidden="true" />
               </button>
             </div>
-            <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 pb-4">
-              {children}
-            </div>
+            <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 pb-4">{children}</div>
             {rodape && (
               <div
                 className="border-t border-borda px-5 pt-3"
