@@ -2,14 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 
 type Etapa = "email" | "codigo";
 
 const campo =
-  "h-14 w-full rounded-2xl border border-white/15 bg-white/5 px-4 text-lg outline-none focus:border-green-400";
-const botao =
-  "h-14 w-full rounded-2xl bg-green-500 text-lg font-semibold text-black active:scale-[0.98] disabled:opacity-50";
+  "h-14 w-full rounded-[16px] border border-borda bg-vidro-forte px-4 text-[17px] text-texto outline-none placeholder:text-texto3 focus:border-realce";
 
 export function FormularioLogin() {
   const router = useRouter();
@@ -25,12 +24,16 @@ export function FormularioLogin() {
     setErro(null);
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithOtp({
-      email,
+      email: email.trim(),
       options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
     });
     setCarregando(false);
     if (error) {
-      setErro("Não deu para enviar o e-mail. Confira o endereço e tente de novo.");
+      setErro(
+        error.status === 429
+          ? "Muitos pedidos. Aguarde alguns minutos e tente de novo."
+          : "Não foi possível enviar o e-mail. Confira o endereço ou tente de novo em alguns minutos.",
+      );
       return;
     }
     setEtapa("codigo");
@@ -42,7 +45,7 @@ export function FormularioLogin() {
     setErro(null);
     const supabase = createClient();
     const { error } = await supabase.auth.verifyOtp({
-      email,
+      email: email.trim(),
       token: codigo.trim(),
       type: "email",
     });
@@ -58,29 +61,40 @@ export function FormularioLogin() {
   if (etapa === "email") {
     return (
       <form onSubmit={enviarLink} className="space-y-4">
-        <input
-          type="email"
-          required
-          autoComplete="email"
-          inputMode="email"
-          placeholder="seu@email.com"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className={campo}
-        />
-        {erro && <p className="text-red-300">{erro}</p>}
-        <button type="submit" disabled={carregando} className={botao}>
+        <label className="block space-y-2">
+          <span className="t-rotulo text-texto2">Seu e-mail</span>
+          <input
+            type="email"
+            required
+            autoComplete="email"
+            inputMode="email"
+            placeholder="seu@email.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className={campo}
+          />
+        </label>
+        {erro && (
+          <p role="alert" className="t-corpo text-perigo">
+            {erro}
+          </p>
+        )}
+        <Button type="submit" tamanho="g" carregando={carregando} className="w-full">
           {carregando ? "Enviando..." : "Enviar link de acesso"}
-        </button>
+        </Button>
+        <p className="t-pq text-texto2">
+          Você receberá um e-mail com o link. No iPhone, se o link não abrir o app, digite o código
+          do e-mail.
+        </p>
       </form>
     );
   }
 
   return (
     <form onSubmit={entrarComCodigo} className="space-y-4">
-      <p className="text-white/80">
-        Enviamos um e-mail para <strong>{email}</strong>. Toque no link ou digite o código
-        aqui.
+      <p className="t-corpo text-texto2">
+        Enviamos um e-mail para <strong className="text-texto">{email}</strong>. Toque no link ou
+        digite o código aqui.
       </p>
       <input
         type="text"
@@ -88,25 +102,30 @@ export function FormularioLogin() {
         inputMode="numeric"
         autoComplete="one-time-code"
         placeholder="Código do e-mail"
+        aria-label="Código do e-mail"
         value={codigo}
         onChange={(e) => setCodigo(e.target.value)}
-        className={`${campo} text-center tracking-widest`}
+        className={`${campo} text-center tracking-[0.3em]`}
       />
-      {erro && <p className="text-red-300">{erro}</p>}
-      <button type="submit" disabled={carregando} className={botao}>
-        {carregando ? "Entrando..." : "Entrar com o código"}
-      </button>
-      <button
-        type="button"
+      {erro && (
+        <p role="alert" className="t-corpo text-perigo">
+          {erro}
+        </p>
+      )}
+      <Button type="submit" tamanho="g" carregando={carregando} className="w-full">
+        {carregando ? "Entrando..." : "Entrar"}
+      </Button>
+      <Button
+        variante="fantasma"
+        className="w-full"
         onClick={() => {
           setEtapa("email");
           setCodigo("");
           setErro(null);
         }}
-        className="h-12 w-full text-white/70"
       >
         Usar outro e-mail
-      </button>
+      </Button>
     </form>
   );
 }

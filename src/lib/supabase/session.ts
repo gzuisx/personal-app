@@ -1,9 +1,12 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { temSupabase } from "@/lib/supabase/config";
 
 const ROTAS_PUBLICAS = ["/login", "/auth"];
 
 export async function atualizarSessao(request: NextRequest) {
+  if (!temSupabase) return NextResponse.next({ request });
+
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(

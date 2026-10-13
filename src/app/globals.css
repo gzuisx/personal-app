@@ -1,20 +1,228 @@
 @import "tailwindcss";
 
+/* ---------- Tokens (tema escuro é o padrão) ---------- */
 :root {
-  --fundo: #0b1410;
-  --texto: #f2f7f4;
-  --verde: #22c55e;
+  --bg-0: #030b1f;
+  --bg-1: #061a4a;
+  --bg-2: #0a3a9c;
+  --surface-glass: rgba(255, 255, 255, 0.08);
+  --surface-glass-strong: rgba(8, 20, 58, 0.78);
+  --surface-solid: #0b1f55;
+  --border-glass: rgba(255, 255, 255, 0.14);
+  --primary: #1f6bff;
+  --primary-hover: #3a80ff;
+  --primary-press: #1555d6;
+  --accent: #4db8ff;
+  --text: #ffffff;
+  --text-2: #b8c7e6;
+  --text-3: #8ea2cc;
+  --success: #2ecc71;
+  --warning: #f5c542;
+  --danger: #ff5a5f;
+  --on-status: #03102e;
+  --focus-ring: #4db8ff;
+  color-scheme: dark;
 }
 
-html,
-body {
-  background: var(--fundo);
-  color: var(--texto);
-  -webkit-tap-highlight-color: transparent;
+/* ---------- Tema claro (manual ou automático) ---------- */
+:root[data-theme="claro"] {
+  --bg-0: #f3f7ff;
+  --bg-1: #e6eeff;
+  --bg-2: #d6e4ff;
+  --surface-glass: rgba(255, 255, 255, 0.72);
+  --surface-glass-strong: #ffffff;
+  --surface-solid: #ffffff;
+  --border-glass: #d5def2;
+  --text: #0b1b3f;
+  --text-2: #4a5b82;
+  --text-3: #5d6d93;
+  --primary: #1a5fe6;
+  --focus-ring: #1a5fe6;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: light) {
+  :root[data-theme="auto"] {
+    --bg-0: #f3f7ff;
+    --bg-1: #e6eeff;
+    --bg-2: #d6e4ff;
+    --surface-glass: rgba(255, 255, 255, 0.72);
+    --surface-glass-strong: #ffffff;
+    --surface-solid: #ffffff;
+    --border-glass: #d5def2;
+    --text: #0b1b3f;
+    --text-2: #4a5b82;
+    --text-3: #5d6d93;
+    --primary: #1a5fe6;
+    --focus-ring: #1a5fe6;
+    color-scheme: light;
+  }
+}
+
+@theme inline {
+  --color-bg0: var(--bg-0);
+  --color-bg1: var(--bg-1);
+  --color-bg2: var(--bg-2);
+  --color-vidro: var(--surface-glass);
+  --color-vidro-forte: var(--surface-glass-strong);
+  --color-solido: var(--surface-solid);
+  --color-borda: var(--border-glass);
+  --color-primario: var(--primary);
+  --color-primario-hover: var(--primary-hover);
+  --color-primario-press: var(--primary-press);
+  --color-realce: var(--accent);
+  --color-texto: var(--text);
+  --color-texto2: var(--text-2);
+  --color-texto3: var(--text-3);
+  --color-ok: var(--success);
+  --color-aviso: var(--warning);
+  --color-perigo: var(--danger);
+  --color-sobre: var(--on-status);
+  --font-sans: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
+  --shadow-cartao: 0 8px 24px rgba(0, 0, 0, 0.35);
+  --shadow-brilho: 0 0 24px rgba(31, 107, 255, 0.45);
+  --radius-cartao: 24px;
+  --radius-campo: 16px;
+  --radius-sheet: 28px;
+}
+
+/* ---------- Tipografia (mínimo absoluto: 13 px) ---------- */
+@utility t-display {
+  font-size: 2rem;
+  line-height: 2.5rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+@utility t-h1 {
+  font-size: 1.625rem;
+  line-height: 2rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+@utility t-h2 {
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+  font-weight: 600;
+}
+@utility t-h3 {
+  font-size: 1.0625rem;
+  line-height: 1.5rem;
+  font-weight: 600;
+}
+@utility t-corpo {
+  font-size: 0.9375rem;
+  line-height: 1.375rem;
+  font-weight: 400;
+}
+@utility t-pq {
+  font-size: 0.8125rem;
+  line-height: 1.125rem;
+  font-weight: 400;
+}
+@utility t-rotulo {
+  font-size: 0.8125rem;
+  line-height: 1rem;
+  font-weight: 500;
+}
+@utility t-num {
+  font-size: 2.75rem;
+  line-height: 3rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+@utility num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Contêiner de página: área segura + espaço para a barra flutuante */
+@utility pagina {
+  margin-inline: auto;
+  max-width: 480px;
+  padding-inline: 20px;
+  padding-top: calc(env(safe-area-inset-top) + 20px);
+  padding-bottom: calc(120px + env(safe-area-inset-bottom));
+}
+@utility pagina-fluxo {
+  margin-inline: auto;
+  max-width: 480px;
+  padding-inline: 20px;
+  padding-top: calc(env(safe-area-inset-top) + 20px);
+  padding-bottom: calc(32px + env(safe-area-inset-bottom));
+}
+
+/* ---------- Base ---------- */
+html {
+  background: #030b1f;
+  -webkit-text-size-adjust: 100%;
+}
+:root[data-theme="claro"] {
+  background: var(--bg-0);
 }
 
 body {
   min-height: 100dvh;
-  padding-top: env(safe-area-inset-top);
-  padding-bottom: env(safe-area-inset-bottom);
+  background: transparent;
+  color: var(--text);
+  font-family: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.9375rem;
+  line-height: 1.375rem;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.fundo-app {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(180deg, var(--bg-0) 0%, var(--bg-1) 45%, var(--bg-2) 100%);
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* Vidro com desfoque: só na barra inferior (e no máximo 2 cartões por tela). */
+.vidro-blur {
+  background: var(--surface-glass-strong);
+  -webkit-backdrop-filter: blur(16px) saturate(120%);
+  backdrop-filter: blur(16px) saturate(120%);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .vidro-blur {
+    background: var(--surface-solid);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+.skeleton {
+  background: linear-gradient(
+    100deg,
+    var(--surface-glass) 30%,
+    rgba(255, 255, 255, 0.18) 50%,
+    var(--surface-glass) 70%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s linear infinite;
+}
+
+/* Opção "Reduzir animações" do Perfil */
+:root[data-reduzir="1"] *,
+:root[data-reduzir="1"] *::before,
+:root[data-reduzir="1"] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
 }

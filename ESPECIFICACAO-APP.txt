@@ -1,0 +1,747 @@
+================================================================================
+ESPECIFICACAO COMPLETA DO APP "MEU PERSONAL" (nome provisorio)
+App pessoal de acompanhamento de treino de futebol, com foco no tornozelo
+Versao para o MODO AUTONOMO (etapas 1 a 5)
+================================================================================
+
+0. COMO USAR ESTE ARQUIVO
+--------------------------------------------------------------------------------
+- Este arquivo e a FONTE DE VERDADE sobre como o app deve ser: visual, telas,
+  botoes, opcoes, gatilhos, widgets, animacoes, cores, tema, tipografia,
+  imagens, dados e regras.
+- Leia o arquivo INTEIRO antes de comecar. Releia a secao da etapa atual antes
+  de iniciar cada etapa.
+- Se este arquivo e o prompt autonomo divergirem em visual ou comportamento do
+  produto, vale este arquivo. Se divergirem em seguranca, limites e
+  autorizacoes (secao 4), vale o mais restritivo.
+- Quando algo nao estiver especificado aqui, escolha a opcao mais simples,
+  coerente com o resto do app, e anote a decisao em PROGRESSO.md.
+- Idioma de toda a interface, dos textos, dos commits e do PROGRESSO.md:
+  portugues do Brasil (pt-BR). Codigo e nomes de variaveis podem ficar em
+  ingles ou portugues, mas de forma consistente.
+- Fuso horario de TODA a logica de datas e horarios: America/Sao_Paulo.
+
+1. VISAO GERAL E OBJETIVOS
+--------------------------------------------------------------------------------
+1.1 O que e
+Um PWA (site instalavel na Tela de Inicio do iPhone) de uso pessoal, para uma
+unica pessoa, que funciona como um personal trainer de bolso: mostra o treino
+do dia, registra como o corpo respondeu, protege o tornozelo direito e mostra
+a evolucao. Nas etapas futuras ganha um personal com IA (Claude via API).
+
+1.2 Objetivos do usuario (Gabriel)
+- Recuperar o tornozelo direito (pe dominante) em ate 100%: hoje ele e fraco e
+  doi em certos movimentos; quando chuta de mal jeito a dor dura de 5 a 10 min.
+- Aumentar velocidade e arranque.
+- Aumentar forca de posterior de coxa, panturrilha e coxa.
+- Melhorar conducao de bola e visao de jogo (treinadas em campo; o app ajuda
+  com habitos e registro, nao com exercicios de academia).
+- Chegar em janeiro de 2027 em alta performance.
+
+1.3 Objetivos do app
+- Responder uma pergunta so na tela inicial: "o que eu faco agora?".
+- Registrar em 30 segundos ou menos (so toques, quase sem digitar).
+- Proteger o tornozelo: regras de seguranca no codigo, nao so em texto.
+- Ser moderno, bonito, fluido e rapido no iPhone, com animacoes suaves.
+- Ser util desde a primeira etapa: cada etapa deixa o app utilizavel.
+
+1.4 Perfil do usuario (usar como dados iniciais e valores de exemplo)
+- Nome: Gabriel. 21 anos. 87 kg. Posicao: atacante (centroavante).
+- Altura: nao informada (campo editavel no Perfil, vazio).
+- Joga 2 vezes por semana, society (grama sintetica), cerca de 80 min:
+  terca 20h30 e sabado 14h30.
+- Funcional com instrutor: segunda, quarta e sexta, 18h30 as 19h30 (intensidade
+  flexivel; combinar quarta e sexta como leves).
+- Trabalha em casa de segunda a quarta; presencial quinta e sexta (1 h de
+  deslocamento, sai por volta das 17h). Acorda por volta das 7h.
+- Lesao: torcao do tornozelo direito ha cerca de 3 anos, sem fisioterapia.
+  Provavel instabilidade cronica. O app recomenda avaliacao com ortopedista ou
+  fisioterapeuta (SUS/UBS ou clinicas-escola de faculdades) e nunca diagnostica.
+
+2. PRINCIPIOS DE PRODUTO
+--------------------------------------------------------------------------------
+1. Uma pergunta por tela. A tela Hoje nao e um painel cheio de numeros.
+2. Toque antes de digitar. Botoes grandes, uso com uma mao.
+3. Seguranca primeiro: dor alta, inchaco ou "falhou" bloqueiam aumento de carga.
+4. Honestidade: nada de metricas inventadas. Sem dados, mostrar estado vazio.
+5. Beleza com funcao: animacao ajuda a entender (feedback, transicao), nunca
+   atrapalha nem pesa no aparelho.
+6. Dados do usuario sao dele: segredo, privado, exportavel.
+
+3. ESCOPO DESTA NOITE (ETAPAS 1 A 5) E O QUE FICA DE FORA
+--------------------------------------------------------------------------------
+FAZER: etapa 1 (fundacao visual), 2 (plano e tela Hoje), 3 (check-in, registro
+de sessao e regras de seguranca), 4 (jogos, modo pre e pos-jogo, semaforo),
+5 (evolucao com graficos).
+NAO FAZER NESTA NOITE: etapa 6 (biblioteca de exercicios com imagens/animacoes
+reais), etapa 7 (IA / API do Claude), notificacoes push, uso offline, relatorio
+em PDF, check-in por voz, testes de campo, diario do centroavante.
+Mesmo assim, deixar os ganchos preparados (ex.: espaco reservado para midia do
+exercicio, aba Personal com placeholder), sem implementar a funcao.
+
+4. AUTORIZACOES E LIMITES (git, GitHub, Vercel, Supabase)
+--------------------------------------------------------------------------------
+4.1 Autorizado (o usuario deu autorizacao total para estas ferramentas, que
+devem estar logadas neste computador):
+- git: init, commit, branch, tag, restaurar para o ultimo commit estavel.
+- GitHub CLI (gh): criar repositorio PRIVADO, definir remote, push.
+- Vercel CLI: vincular o projeto, configurar variaveis de ambiente, deploy.
+- Supabase CLI: vincular o projeto, criar e aplicar migracoes (db push), criar
+  tabelas, politicas de seguranca por linha (RLS) e dados de exemplo.
+- npm: instalar dependencias do projeto. Instalar as CLIs acima se faltarem.
+Se uma CLI nao estiver logada: NAO tente contornar nem pedir segredos. Anote
+em PROGRESSO.md ("pendente: login da Vercel") e continue trabalhando local.
+Verificacoes de login: "gh auth status", "npx vercel whoami",
+"npx supabase projects list". No PowerShell do Windows, se "npx" der erro de
+scripts desabilitados, use "npx.cmd".
+
+4.2 Procedimentos
+- GitHub: se nao houver remote, "gh repo create personal-app --private
+  --source=. --remote=origin --push". Nunca criar repositorio publico.
+- Vercel: apos cada etapa concluida e com build ok, "npx vercel --prod" (ou o
+  fluxo ja configurado). Variaveis NEXT_PUBLIC_SUPABASE_URL e
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: ler do .env.local e adicionar na Vercel SEM
+  imprimir os valores no terminal nem em logs.
+- Supabase: migracoes em supabase/migrations com numeracao sequencial
+  (0001 ja existe; criar 0002, 0003...). Aplicar com "npx supabase db push".
+  Ao criar tabelas novas, ativar RLS e criar politicas por user_id.
+- Commits: pequenos e frequentes. Formato: "tipo(etapa-N): descricao curta",
+  ex.: "feat(etapa-1): design system e navegacao inferior".
+
+4.3 PROIBIDO (sem excecao)
+- Apagar projeto, banco, tabelas com dados ou dados existentes.
+- "supabase db reset" em ambiente remoto; "git push --force"; "git reset --hard"
+  em commits ja enviados.
+- Imprimir, commitar ou enviar a chave service_role / secret. Ela nunca vai
+  para codigo de cliente e nunca para o git. .env.local fica no .gitignore.
+- Alterar arquivos fora da pasta do projeto (exceto instalar as CLIs).
+- Implementar a IA (API do Claude) ou a biblioteca de imagens nesta noite.
+- Copiar nome, logotipo, fotos ou textos de qualquer app ou imagem de
+  referencia. Usar material de terceiros sem licenca livre.
+
+5. STACK E ESTRUTURA DO PROJETO
+--------------------------------------------------------------------------------
+5.1 Stack (usar o que ja esta instalado; nao trocar de framework)
+- Next.js (App Router) + React + TypeScript + Tailwind CSS.
+- Supabase (Auth com link magico + Postgres + RLS).
+- Vercel (hospedagem).
+- Fonte: Poppins via next/font/google (licenca livre).
+- Icones: lucide-react.
+- Animacoes: biblioteca "motion" (import de "motion/react").
+- Graficos: Recharts (ou SVG proprio se Recharts pesar ou falhar no build).
+- Testes: Vitest (logica pura: seguranca, semaforo, contagem, saudacao, cargas).
+- Datas: usar Intl/Date com timeZone "America/Sao_Paulo" (date-fns opcional).
+
+5.2 Camada de dados (importante para funcionar sem Supabase)
+- Criar lib/repo com uma interface (ex.: Repo) e DUAS implementacoes:
+  a) supabaseRepo: usa o Supabase quando as variaveis de ambiente existem.
+  b) localRepo: usa localStorage quando nao ha Supabase (modo local, sem
+     login), com dados de exemplo. Banner discreto "Modo local: seus dados
+     ficam so neste aparelho".
+- As telas nunca chamam o Supabase direto: sempre via repo.
+
+5.3 Estrutura sugerida (adaptar ao que ja existe)
+  app/
+    (auth)/login/page.tsx
+    (app)/layout.tsx            -> fundo degrade, barra inferior, transicoes
+    (app)/hoje/page.tsx
+    (app)/semana/page.tsx
+    (app)/semana/[dia]/page.tsx
+    (app)/personal/page.tsx
+    (app)/evolucao/page.tsx
+    (app)/perfil/page.tsx
+    (app)/jogo/pre/page.tsx     -> modo pre-jogo
+    (app)/jogo/pos/page.tsx     -> modo pos-jogo
+    manifest.ts, icon, apple-icon
+  components/ui/                -> componentes base (secao 7)
+  components/features/          -> componentes de tela
+  lib/design/tokens.ts          -> tokens em TS (espelham o CSS)
+  lib/safety/                   -> regras de seguranca (+ testes)
+  lib/semaforo/                 -> calculo do semaforo (+ testes)
+  lib/tempo/                    -> saudacao, contagem, fuso, proximo jogo
+  lib/carga/                    -> rotulo de carga relativa aos jogos
+  lib/repo/                     -> interface + supabaseRepo + localRepo
+  lib/seed/                     -> plano, exercicios, rotinas (secao 12)
+  supabase/migrations/
+  scripts/gerar-icones.mjs      -> ja existe; reaproveitar
+  referencias/                  -> imagens de inspiracao (somente leitura)
+  PROGRESSO.md, PLANO-NOITE.md, CLAUDE.md, ESPECIFICACAO-APP.txt
+
+6. DESIGN SYSTEM
+--------------------------------------------------------------------------------
+6.1 Identidade
+- Nome provisorio: "Meu Personal". Subtitulo da splash: "Seu treino. Seu
+  tornozelo. Seu ritmo."
+- Logotipo ORIGINAL em SVG: marca simples = um arco ascendente (sugere
+  evolucao) terminando em um ponto, dentro de um quadrado arredondado azul, +
+  wordmark "Meu Personal" em Poppins 600. Nao usar halteres como marca.
+- Estilo geral: escuro, profundo, azul eletrico, cartoes de vidro com cantos
+  bem arredondados, tipografia geometrica arredondada, muito respiro.
+- Imagens de referencia (pasta referencias/): usar APENAS como inspiracao de
+  estilo (atmosfera azul escura, vidro, barra flutuante em pilula, botoes em
+  pilula). Nao copiar nome, logotipo, fotos, textos nem composicao exata.
+
+6.2 Cores (tokens CSS em :root e espelhados em lib/design/tokens.ts)
+TEMA ESCURO (padrao):
+  --bg-0: #030B1F          (topo do fundo)
+  --bg-1: #061A4A          (meio)
+  --bg-2: #0A3A9C          (base do degrade)
+  Fundo da pagina: linear-gradient(180deg, #030B1F 0%, #061A4A 45%, #0A3A9C 100%),
+  fixo (background-attachment: fixed ou camada fixed), body com cor de reserva
+  #030B1F para evitar flash branco.
+  --surface-glass: rgba(255,255,255,0.08)       (vidro leve, sem texto miudo)
+  --surface-glass-strong: rgba(8,20,58,0.78)    (cartoes com texto)
+  --surface-solid: #0B1F55                      (fallback sem blur)
+  --border-glass: rgba(255,255,255,0.14)
+  --primary: #1F6BFF   --primary-hover: #3A80FF   --primary-press: #1555D6
+  --accent: #4DB8FF    (realces, graficos, foco)
+  --text: #FFFFFF      --text-2: #B8C7E6      --text-3: #8EA2CC
+  --success: #2ECC71   --warning: #F5C542   --danger: #FF5A5F
+  --on-status: #03102E (texto sobre fundo verde/amarelo/vermelho)
+  --focus-ring: #4DB8FF (2px, offset 2px)
+TEMA CLARO (opcional, no Perfil; implementar via atributo data-theme="claro"):
+  --bg-0: #F3F7FF  --bg-1: #E6EEFF  --bg-2: #D6E4FF
+  --surface-glass: rgba(255,255,255,0.72)  --surface-glass-strong: #FFFFFF
+  --border-glass: #D5DEF2
+  --text: #0B1B3F  --text-2: #4A5B82  --text-3: #6B7BA0
+  primary/accent/status iguais ao escuro (ajustar contraste se necessario).
+Opcoes de tema no Perfil: Escuro (padrao) | Claro | Automatico (segue o sistema).
+O tema escuro e o foco; so entregar o claro se sobrar tempo na etapa 1, sem
+atrasar as demais. Se nao entregar, anotar em PROGRESSO.md.
+
+6.3 Tipografia (Poppins; pesos 400, 500, 600, 700)
+  display   32/40  peso 700   (numeros grandes, saudacao em destaque)
+  h1        26/32  peso 600   (titulo de tela)
+  h2        20/28  peso 600   (titulo de secao/cartao)
+  h3        17/24  peso 600
+  corpo     15/22  peso 400
+  corpo-pq  13/18  peso 400   (MINIMO absoluto de fonte no app: 13 px)
+  rotulo    13/16  peso 500
+  numero-gg 44/48  peso 700   (valores de dor, contagem)
+  Usar font-variant-numeric: tabular-nums em numeros, timers e graficos.
+  Espacamento de letras: 0 (titulos grandes podem usar -0.01em).
+
+6.4 Espacamento, raios, sombras, vidro
+- Grade de 4 px: 4, 8, 12, 16, 20, 24, 32, 40, 48.
+- Margem lateral da pagina: 20 px. Padding de cartao: 16 a 20 px. Gap entre
+  cartoes: 12 a 16 px.
+- Raios: cartao 24; botao e chip = pilula (9999); campo 16; sheet 28 (topo);
+  barra inferior pilula.
+- Sombras: cartao 0 8px 24px rgba(0,0,0,0.35); brilho primario
+  0 0 24px rgba(31,107,255,0.45) (so botao principal e item ativo).
+- Vidro: backdrop-filter: blur(16px) saturate(120%) SOMENTE na barra inferior
+  e em no maximo 2 cartoes visiveis por tela. Os demais cartoes usam fundo
+  semi-opaco (--surface-glass-strong) com borda 1px --border-glass, parecendo
+  vidro sem custo de blur. Sempre prever fallback sem blur.
+
+6.5 Icones
+- lucide-react, traco 2 px, tamanho 24 (barra) e 20 (listas). Icone nunca e a
+  unica informacao: sempre acompanhado de texto ou aria-label.
+- Mapa de icones: Hoje=Home, Semana=CalendarDays, Personal=Sparkles,
+  Evolucao=BarChart3, Perfil=User, Dor=Activity, Sono=Moon, Carga=Dumbbell
+  (apenas como icone interno, nao como marca), Jogo=Trophy ou CircleDot,
+  Check=Check, Alerta=AlertTriangle, Tornozelo=Footprints.
+
+6.6 Imagens e midia
+- NAO usar fotos de banco de imagem nem imagens copiadas da internet.
+- Nesta noite: ilustracoes e fundos gerados por codigo (SVG, gradientes,
+  formas abstratas, brilho radial azul), icones lucide e o logotipo SVG.
+- Cada exercicio tem um ESPACO DE MIDIA reservado (proporcao 16:9, cantos 16,
+  fundo vidro, icone de silhueta e texto "Demonstracao em breve"). A midia real
+  (videos curtos do proprio usuario ou material com licenca livre registrada)
+  entra na etapa 6. Preparar o campo media_url (nulo por padrao) no modelo.
+- Usar next/image onde houver imagem; SVGs inline para ilustracoes pequenas.
+- Estados vazios com ilustracao SVG simples (bola + grafico, sem personagens).
+
+6.7 Animacoes (biblioteca motion)
+Padroes: duracao 150 a 400 ms; easing cubic-bezier(0.22, 1, 0.36, 1); mola
+(spring) com stiffness 400 e damping 30 para o indicador da barra inferior.
+Lista de animacoes obrigatorias:
+  a) Splash: logotipo com escala 0.9 -> 1 e fade, brilho radial pulsando
+     suavemente, 1,2 s, depois navega para /hoje (ou /login).
+  b) Transicao de tela: fade + deslocamento vertical de 12 px, 250 ms.
+  c) Entrada dos cartoes: sequencia com atraso de 60 ms entre eles.
+  d) Botoes e chips: ao toque, scale 0.97 em 100 ms; ao soltar, volta com mola.
+  e) Barra inferior: o circulo branco da aba ativa desliza entre as abas com
+     mola (layoutId do motion).
+  f) Anel de progresso: preenche de 0 ate o valor em 800 ms.
+  g) Contagem numerica (count-up) em 600 ms para dor, sono, carga.
+  h) Semaforo: pulso suave (escala 1 -> 1.06 -> 1 em 2,4 s, em loop); no
+     vermelho o pulso e um pouco mais forte, sempre sem piscar rapido.
+  i) Check-in salvo: ícone de check "se desenhando" (stroke) + brilho verde +
+     toast. Sheet sobe com mola em 320 ms.
+  j) Graficos: linha se desenha em 900 ms; barras crescem com atraso em escada.
+  k) Skeleton com brilho deslizante (shimmer) enquanto carrega.
+  l) Toast: entra por cima e some sozinho em 3 s.
+  m) Timer do pre-jogo: anel circular que esvazia em tempo real.
+Reduzir movimento: respeitar prefers-reduced-motion E ter uma opcao "Reduzir
+animacoes" no Perfil. Quando ativo: sem deslocamentos, sem escala, sem pulso;
+manter apenas fades curtos (100 ms).
+Nunca animar propriedades que causam reflow pesado; usar transform e opacity.
+
+6.8 Acessibilidade
+- Contraste de texto >= 4.5:1 (>= 3:1 para texto grande e icones). Onde houver
+  texto pequeno, usar --surface-glass-strong, nunca vidro transparente.
+- Fonte minima 13 px. Areas de toque >= 44 x 44 px.
+- Foco visivel (--focus-ring). Ordem de tabulacao logica. aria-label em icones.
+- Semaforo e estados de alerta: cor + icone + texto, nunca so cor.
+- <html lang="pt-BR">. Respeitar Dynamic Type quando possivel (usar rem).
+
+6.9 Desempenho e iPhone
+- Respeitar a area segura: env(safe-area-inset-top/bottom). meta viewport com
+  viewport-fit=cover.
+- Evitar muitas camadas de blur; sem sombras gigantes sobrepostas.
+- Imagens otimizadas; carregar graficos (Recharts) com import dinamico.
+- Meta de build: sem erros de TypeScript e sem warnings graves.
+
+7. COMPONENTES (components/ui) E SEUS ESTADOS
+--------------------------------------------------------------------------------
+1. GlassCard: variantes "leve" (surface-glass), "forte" (texto), "destaque"
+   (borda e brilho primario). Props: titulo opcional, acao opcional, onClick.
+2. Button: variantes primario (azul, pilula, brilho), secundario (contorno),
+   fantasma (so texto), perigo (vermelho). Tamanhos m (48 px) e g (56 px).
+   Estados: normal, pressionado, desabilitado, carregando (spinner).
+3. Chip / ChipGroup: selecao unica ou multipla; chip selecionado = fundo
+   primario + texto branco; nao selecionado = vidro + borda.
+4. ToggleSimNao: dois botoes grandes "Sim" / "Nao".
+5. EscalaDor: 11 chips de 0 a 10 em grade ou rolagem horizontal, com cor
+   progressiva (verde ate 3, amarelo 4-5, vermelho 6+) e rotulo abaixo
+   ("sem dor" ... "dor forte").
+6. BottomNav: pilula flutuante com 5 abas (secao 8.1).
+7. Header: saudacao + data (Hoje) ou titulo + botao voltar (telas internas).
+8. MetricTile: icone, valor grande (count-up), unidade, tendencia (seta).
+9. ProgressRing: anel com valor central e rotulo.
+10. SemaforoCard: cor, icone, titulo, motivo em uma frase, botao de acao.
+11. BottomSheet: arrasta para fechar, fundo escurecido, handle visivel.
+12. Toast: sucesso, aviso, erro.
+13. Skeleton: linhas e cartoes.
+14. EmptyState: ilustracao SVG + titulo + texto + botao opcional.
+15. Timer: contagem regressiva com anel (pre-jogo e descansos).
+16. DayStrip: faixa da semana (D S T Q Q S S) com dia selecionado em destaque,
+    marcador de jogo e marcador de treino feito.
+17. MidiaPlaceholder: espaco 16:9 do exercicio (secao 6.6).
+18. Banner: modo local, offline (apenas aviso), alerta de seguranca.
+19. Splash.
+Todos os componentes: tipados em TypeScript, acessiveis e com estados de
+carregando, vazio e erro quando fizer sentido.
+
+8. NAVEGACAO E TELAS
+--------------------------------------------------------------------------------
+8.1 Barra de navegacao inferior (BottomNav)
+- Pilula flutuante: largura calc(100% - 32px), maximo 420 px, altura 64 px,
+  bottom = safe-area-inset-bottom + 12 px, centralizada, com blur (unico uso
+  garantido de blur). Fundo --surface-glass-strong com borda --border-glass.
+- 5 abas: Hoje, Semana, Personal, Evolucao, Perfil. Icone 24 px. A aba ativa
+  tem um circulo branco de 44 px atras do icone (icone em --primary) e o
+  circulo desliza entre as abas (mola). Rotulo visivel apenas na aba ativa,
+  ao lado do icone ou abaixo, com no minimo 13 px; nas demais, aria-label.
+- Todas as telas reservam padding inferior de 120 px + safe-area para a barra
+  nao cobrir conteudo.
+- Esconder a barra nas telas de fluxo (splash, login, pre-jogo em andamento).
+
+8.2 Splash e login
+- Splash (1,2 s): fundo degrade, logotipo animado. Em seguida: se houver sessao
+  ou modo local, vai para /hoje; senao /login.
+- Login (so com Supabase): campo e-mail, botao primario "Enviar link de
+  acesso", texto de apoio ("Voce recebera um e-mail com o link; no iPhone, se
+  o link nao abrir o app, digite o codigo do e-mail"), segundo passo com campo
+  de codigo de 6 digitos e botao "Entrar". Estados: enviando, enviado, erro
+  (mensagem clara), limite de e-mails atingido ("Aguarde alguns minutos").
+  Sem cadastro publico: se o e-mail nao for autorizado, mostrar mensagem
+  generica.
+- Modo local (sem Supabase): pular login e mostrar banner de modo local.
+
+8.3 Tela HOJE (/hoje) - a mais importante
+Ordem dos blocos, de cima para baixo:
+ a) Header: "Bom dia/Boa tarde/Boa noite, Gabriel" (05h-11h59 bom dia;
+    12h-17h59 boa tarde; demais boa noite) + data por extenso ("terca, 13 de
+    outubro") + botao de sino desativado (reservado para etapa futura).
+ b) SemaforoCard (cartao de destaque, o unico com brilho): circulo grande com
+    a cor do dia (verde/amarelo/vermelho) com pulso animado; titulo
+    ("Tornozelo: verde"); frase do motivo ("Dor 2 de 10 ha 3 dias"); botao
+    primario "Fazer check-in" (ou "Check-in feito" com check, desabilitado e
+    com opcao "Editar"). Vermelho: mostrar banner de alerta com texto "Hoje
+    nao aumente a carga. Se a dor persistir, procure ortopedista ou
+    fisioterapeuta."
+ c) Cartao PROXIMO JOGO: dia e hora ("Terca, 20h30"), contagem regressiva
+    ("em 1 d 3 h" / "em 2 h 15 min" / "agora"), botao "Modo pre-jogo" que
+    aparece/ativa a partir de 4 h antes do jogo; depois do jogo, botao "Como
+    foi o jogo?" (abre o pos-jogo) ate 12 h depois.
+ d) Cartao TREINO DE HOJE: titulo do dia ("Quarta: pernas e funcional leve"),
+    rotulo de carga relativa aos jogos (secao 10.4), lista dos blocos do dia
+    (Manha / Noite), cada bloco com: nome, duracao, tag (Tornozelo, Forca,
+    Velocidade, Funcional, Jogo, Recuperacao, Folga), botao de status com 3
+    estados: Fazer / Feito / Parcial. Tocar no bloco abre o detalhe do dia.
+    Tocar em Feito abre o registro de sessao (8.4).
+ e) Tres MetricTiles em linha: Dor (ultimo valor do check-in + tendencia),
+    Sono (ultima faixa), Carga (esforco medio dos ultimos 7 dias). Sem dados:
+    mostrar "—" e legenda "sem registro".
+ f) Dica do dia (cartao pequeno, texto fixo rotativo da lista de dicas, secao
+    12.7), com no maximo 2 linhas.
+Estados: carregando (skeleton), vazio, erro com botao "Tentar de novo".
+
+8.4 Check-in de 30 segundos (BottomSheet aberto a partir da Hoje)
+Titulo "Check-in de hoje". Campos, todos por toque:
+ 1. Dor no tornozelo direito: EscalaDor 0 a 10 (obrigatorio).
+ 2. Inchaco: ToggleSimNao (padrao Nao).
+ 3. Falhou (cedeu/virou): ToggleSimNao (padrao Nao).
+ 4. Energia: 5 niveis com icone de bateria (1 a 5).
+ 5. Sono da ultima noite: chips "menos de 5 h", "5 a 6 h", "7 a 8 h",
+    "mais de 8 h".
+ 6. Gatilho da dor (so aparece se dor >= 1): chips "Chute", "Giro",
+    "Terreno", "Nenhum", "Nao sei" (selecao unica).
+ 7. Observacao opcional (ate 200 caracteres), recolhida por padrao ("Adicionar
+    nota").
+Botao fixo no rodape do sheet: "Salvar check-in" (tamanho g). Validacao: dor
+obrigatoria. Um check-in por dia (data local America/Sao_Paulo); se ja existir,
+abrir com os valores preenchidos e salvar atualiza.
+Ao salvar: animacao de check, toast "Check-in salvo", fecha o sheet, a Hoje e o
+semaforo atualizam na hora (atualizacao otimista).
+
+8.5 Registro de sessao (BottomSheet aberto ao marcar bloco como Feito/Parcial)
+ - Resultado: chips "Feito", "Parcial", "Nao fiz".
+ - Esforco percebido 0 a 10 (mesma escala visual, cores neutras azuis).
+ - Duracao em minutos (valor sugerido = duracao planejada; botoes -5 / +5).
+ - Notas opcionais.
+ - Botao "Salvar sessao". Grava em session_logs. Atualiza o bloco na Hoje e as
+   metricas de carga.
+
+8.6 Tela SEMANA (/semana)
+ - Header "Semana" + seletor de semana (anterior / atual / proxima) por chevrons.
+ - DayStrip no topo (S T Q Q S S D) com hoje em destaque e marcador de jogo
+   (ponto) nos dias de jogo e de check (ponto verde) nos dias com treino feito.
+ - Lista de 7 cartoes de dia. Cada cartao: dia/data, blocos resumidos (Manha,
+   Noite), tags, rotulo de carga relativa aos jogos, estado (Hoje, Concluido,
+   Folga). Jogos aparecem como cartao especial com horario.
+ - Tocar em um dia abre /semana/[dia] (detalhe do dia, 8.7).
+ - Fase do tornozelo atual e semana do plano mostradas no topo em um chip
+   ("Tornozelo: fase 1 · semana 1 de 3").
+
+8.7 Detalhe do dia (/semana/[dia])
+ - Titulo do dia + rotulo de carga + botao voltar.
+ - Para cada bloco: lista de exercicios com nome, series x repeticoes,
+   observacao curta e MidiaPlaceholder 16:9 (preparado para etapa 6). Cada
+   exercicio expande/recolhe com animacao suave.
+ - Bloco de funcional: card unico "Sessao do instrutor" (sem exercicios), com
+   campo para o usuario anotar o que foi feito.
+ - Botao "Marcar bloco como feito" em cada bloco.
+
+8.8 Tela PERSONAL (/personal) - placeholder nesta noite
+ - Ilustracao SVG, titulo "Seu personal com IA", texto "Em breve: converse
+   com seu personal, receba propostas de evolucao e ajuste o treino por aqui."
+ - Campo de mensagem DESABILITADO e 3 chips de exemplo (ex.: "Meu tornozelo
+   esta melhor, posso evoluir?", "So tenho 20 min hoje", "Quero focar em
+   posterior"), desabilitados, com legenda "disponivel em breve".
+ - Nenhuma chamada de API nesta tela.
+
+8.9 Tela EVOLUCAO (/evolucao) - detalhes na etapa 5 (secao 14.5)
+
+8.10 Tela PERFIL (/perfil)
+ - Cabecalho: avatar com iniciais, nome, e-mail (ou "Modo local").
+ - Dados: nome, idade (21), peso (87 kg), altura (vazia), posicao
+   (atacante/centroavante), todos editaveis.
+ - Focos atuais (chips multiplos, ativaveis): Tornozelo direito, Velocidade,
+   Arranque, Forca de posterior, Panturrilha, Coxa, Conducao de bola, Visao de
+   jogo. Padrao: todos ativos, com Tornozelo como prioridade 1 (marcado).
+ - Restricoes: lista com "Tornozelo direito" ativo (status: em recuperacao,
+   inicio ~3 anos atras, dor atual); botao "Adicionar restricao" (regiao,
+   lado, tipo: lesao ou ponto fraco, nivel de dor, status).
+ - Regras de seguranca: limites editaveis (dor que bloqueia = 6, dor de
+   atencao = 4, inchaco bloqueia, "falhou" bloqueia), com confirmacao em
+   dialogo ("Tem certeza? Isso muda quando o app protege seu tornozelo").
+ - Aparencia: Tema (Escuro/Claro/Automatico), Reduzir animacoes (liga/desliga).
+ - Dados: botao "Exportar meus dados (JSON)"; "Sair".
+ - Texto fixo de apoio: "Este app nao substitui avaliacao de ortopedista ou
+   fisioterapeuta."
+
+9. DADOS (TABELAS) - SEMPRE COM user_id E RLS
+--------------------------------------------------------------------------------
+Ja existem (migracao 0001): profiles, restrictions, plans, workouts,
+session_logs, games, checkins. Conferir os campos reais antes de criar
+migracoes novas; nao recriar o que existe.
+Migracao 0002 (etapa 2): exercises (id, user_id, nome, grupo, tipo [tornozelo,
+forca, velocidade, mobilidade, funcional], observacoes, media_url nulo).
+Acrescentar o que faltar para o plano: workout_exercises (workout_id,
+exercise_id, ordem, series, repeticoes, observacao) ou campo JSON equivalente
+em workouts.
+Migracao 0003 (etapa 3): colunas necessarias em checkins (dor 0-10, inchaco,
+falhou, energia 1-5, sono_faixa, gatilho, observacao, data) e em session_logs
+(resultado, esforco 0-10, duracao_min, notas); tabela safety_settings
+(limite_bloqueio, limite_atencao, inchaco_bloqueia, falhou_bloqueia).
+Migracao 0004 (etapas 4 e 5): games (data, minutos_jogados, dor_depois,
+gatilho, notas); milestones (descricao, criterio, concluido_em);
+tabela ankle_phase ou campo em profiles com a fase atual.
+Regras: toda tabela com user_id uuid referenciando auth.users, RLS ativada,
+politicas select/insert/update/delete somente para auth.uid() = user_id.
+Seeds do plano entram por script/migracao idempotente (nao duplicar ao rodar de
+novo).
+
+10. REGRAS DE NEGOCIO
+--------------------------------------------------------------------------------
+10.1 Regras de seguranca do tornozelo (lib/safety, com testes Vitest)
+ entrada: ultimo(s) check-in(s) e configuracoes. saida: nivel e permissao.
+ - BLOQUEIO (nao aumentar carga naquela semana): dor >= limite_bloqueio
+   (padrao 6), OU inchaco = sim, OU falhou = sim.
+ - ATENCAO (manter carga, nao progredir): dor entre limite_atencao (padrao 4)
+   e limite_bloqueio - 1 (padrao 5).
+ - LIBERADO (pode progredir): dor <= 3 e sem inchaco e sem falha.
+ - Dor "persistente": se em 3 check-ins consecutivos a dor for >= 4, mostrar
+   sugestao de avaliacao profissional.
+ - Mensagens padrao (pt-BR) para cada nivel; sempre incluir "procure
+   ortopedista ou fisioterapeuta" nos niveis de bloqueio.
+ - Edicao dos limites so no Perfil, com confirmacao.
+10.2 Semaforo do tornozelo (lib/semaforo, com testes)
+ - Considera os check-ins dos ultimos 3 dias (o mais recente pesa mais) e as
+   dores pos-jogo.
+ - Vermelho: dor >= 6, inchaco ou falhou no check-in mais recente.
+ - Amarelo: dor 4-5, ou dor pos-jogo >= 4 nas ultimas 48 h.
+ - Verde: dor <= 3 e sem inchaco/falha.
+ - Sem check-in hoje: mostrar o ultimo estado com aviso "faca o check-in de
+   hoje" (cor neutra azul se nao houver nenhum dado).
+ - Motivo em uma frase, gerado do dado real (ex.: "Dor 2 de 10 ha 3 dias").
+10.3 Fase do tornozelo
+ - Fase 1 (semanas 1-3, 13/10 a 2/11): base. Fase 2 (semanas 4-7, 3/11 a
+   30/11): estabilidade. Fase 3 (a partir de 1/12 ate 28/12): acao de jogo.
+ - O app mostra a fase atual conforme a data e a lista de exercicios da fase.
+ - Avancar de fase NAO e automatico: so quando semaforo estiver verde nos
+   ultimos 7 dias; nesta noite apenas mostrar o criterio ("para avancar:
+   semaforo verde por 7 dias") sem proposta de IA.
+10.4 Rotulo de carga relativa aos jogos (lib/carga)
+ Calcular as horas ate o proximo jogo a partir do inicio do dia:
+ - Dia do jogo: "Dia de jogo".
+ - 24 h antes: "Recuperacao ativa" (pouco volume e intensidade).
+ - 48 h antes: "Velocidade e potencia" (intervalos longos).
+ - 72 h antes: "Pico de volume da semana".
+ - Dia seguinte ao jogo: "Recuperacao pos-jogo".
+ - Domingo: "Folga".
+ Com dois jogos (terca e sabado), usar o mais proximo; o plano fixo da secao 12
+ tem prioridade sobre o rotulo quando houver conflito (o rotulo e informativo).
+10.5 Carga semanal (para o MetricTile)
+ - Carga = media do esforco percebido (0-10) das sessoes dos ultimos 7 dias
+   com resultado Feito ou Parcial. Sem sessoes: "—".
+10.6 Sono: converter faixas para valores medios (4,5 / 5,5 / 7,5 / 8,5 h) apenas
+ para calculo de media e graficos, mostrando sempre a faixa original.
+
+11. GATILHOS E LEMBRETES (DENTRO DO APP NESTA NOITE)
+--------------------------------------------------------------------------------
+Sem notificacoes push nesta noite. Gatilhos sao banners/cartoes que aparecem na
+tela Hoje conforme horario local (America/Sao_Paulo):
+ - Check-in pendente: apos 06h, se nao houve check-in no dia -> cartao
+   destacado "Faca seu check-in de hoje".
+ - Pre-jogo (terca): 17h30 lembrete da refeicao principal; 19h15 lanche leve;
+   19h30 ativacao do tornozelo; 19h45 aquecimento em campo; ativo ate o jogo.
+ - Pre-jogo (sabado): 11h30 refeicao principal; 13h lanche... conforme tabela
+   abaixo; 13h ativacao; 13h45 aquecimento.
+   Tabela: terca (jogo 20h30): refeicao 17h30, lanche 19h15, ativacao 19h30,
+   aquecimento 19h45. Sabado (jogo 14h30): refeicao 11h30, lanche 13h15,
+   ativacao 13h, aquecimento 13h45.
+ - Pos-jogo: ate 12 h depois do inicio do jogo -> "Como foi o jogo?" e lembrete
+   "Coma proteina e carboidrato em ate 1-2 h".
+ - Domingo noite: cartao "Semana encerrada" com resumo curto (treinos feitos,
+   dor media) e link para Evolucao.
+ - Alerta de seguranca: se nivel = bloqueio, banner fixo no topo da Hoje ate
+   novo check-in com dor menor.
+Todo gatilho deve poder ser dispensado (botao X) por aquele dia.
+
+12. PLANO DE TREINO COMPLETO (DADOS DE SEED, lib/seed)
+--------------------------------------------------------------------------------
+12.1 Semana
+ Segunda  - Manha: tornozelo 10 min + forca de superiores e core (40 min).
+            Noite 18h30-19h30: funcional leve a moderado, com bola (instrutor).
+ Terca    - Manha: tornozelo 10 min + mobilidade. Jogo 20h30 (aquecimento 19h45).
+ Quarta   - Manha: tornozelo 10 min + forca de pernas (45 min).
+            Noite: funcional leve (cardio continuo suave, com bola).
+            Se as pernas estiverem muito pesadas do jogo, fazer 2 series.
+ Quinta   - Manha: tornozelo 15 min (antes de sair para o trabalho).
+            Por volta das 19h: velocidade e arranque (35 min).
+ Sexta    - Manha: tornozelo + mobilidade (15 min).
+            Noite: funcional como recuperacao ativa.
+ Sabado   - Ativacao de tornozelo 13h. Jogo 14h30 (aquecimento 13h45).
+ Domingo  - Folga total (no maximo caminhada e 10 min de mobilidade).
+12.2 Tornozelo - Fase 1 (semanas 1 a 3)
+ - Equilibrio em um pe so (direito): 3 x 30 s; depois de olhos fechados.
+ - Elastico: pe para fora, para dentro e para cima, 3 x 15, lento (o movimento
+   para fora - fibulares - e o que mais protege contra torcao).
+ - Panturrilha no degrau, descendo em 3 s: 3 x 12.
+ - Joelho na parede (mobilidade do tornozelo): 2 x 10.
+12.3 Tornozelo - Fase 2 (semanas 4 a 7)
+ - Panturrilha em um pe so, joelho esticado e depois dobrado: 3 x 10.
+ - Equilibrio sobre almofada passando a bola contra a parede.
+ - Agachamento em uma perna e saltinhos no lugar: 3 x 10.
+12.4 Tornozelo - Fase 3 (semana 8 em diante)
+ - Saltos e aterrissagens em um pe so.
+ - Saltos laterais e mudancas de direcao.
+ - 2 a 3 vezes por semana, como manutencao.
+12.5 Forca de pernas (quarta)
+ - Stiff / levantamento terra romeno: 3 x 8.
+ - Flexora (elastico, slider ou nordica assistida): 3 x 6-8 (2 series nas
+   semanas 1 e 2).
+ - Afundo bulgaro ou step-up: 3 x 8 por perna.
+ - Panturrilha em pe e sentado: 3 x 12-15, lenta.
+ - Elevacao de quadril: 3 x 8-10.
+ Carga: deixar 2 repeticoes de reserva em cada serie.
+12.6 Superiores e core (segunda), sem impacto nas pernas
+ - Supino ou flexao 3 x 8-10; remada 3 x 8-10; desenvolvimento 3 x 8-10;
+   prancha 3 x 30-45 s; abdominal com rotacao 3 x 12. 2 repeticoes de reserva.
+12.7 Velocidade e arranque (quinta)
+ - Aquecimento de 15 min: mobilidade, corrida leve, skipping, 2 a 3
+   progressivas.
+ - 6 a 8 arrancadas de 10 a 20 m, 1 a 2 min de pausa; variar a saida (parado,
+   de costas, depois de girar, depois de deslocamento lateral).
+ - Fechamento: 3 a 4 arrancadas seguidas de finalizacao em condicao de jogo.
+ - Progressao: semanas 1-2 a 80-85%; semanas 3-6 a 90-95%; semana 7+ a 100%.
+ - Se a dor do tornozelo passar de 3/10, parar a sessao e fazer so a rotina do
+   tornozelo.
+12.8 Aquecimento pre-jogo (10 a 12 min) - usado no modo pre-jogo
+ 1) Elastico: fora 1x15, dentro 1x15, cima 1x15 (~2 min 15 s no total).
+ 2) Equilibrio 30 s em cada perna (1 min).
+ 3) Corrida leve (3 min).
+ 4) Mobilidade dinamica (2 min).
+ 5) 2 a 3 progressivas ate quase a velocidade maxima (1 a 2 min).
+ Lembrete: usar tornozeleira com estabilizador nas primeiras semanas.
+12.9 Dicas do dia (lista fixa para o cartao da Hoje)
+ - "Olhe por cima do ombro antes de receber a bola: saiba onde esta o zagueiro."
+ - "Nao pule a refeicao antes do jogo."
+ - "Durma e acorde em horario fixo: recuperar e treinar."
+ - "Assista a gols de centroavantes prestando atencao so ao movimento sem bola."
+ - "Dor ate 3 em 10 e aceitavel, desde que passe em 24 h."
+ - "Depois do jogo, anote duas decisoes boas e duas que poderiam melhorar."
+12.10 Mensagens fixas de conducao de bola e visao de jogo (cartao opcional na
+ Semana): conducao treina no funcional com bola de segunda e sexta; visao de
+ jogo = scan antes de receber + estudo de movimento sem bola.
+
+13. PWA E CONFIGURACAO
+--------------------------------------------------------------------------------
+- manifest: name "Meu Personal", short_name "Meu Personal", display
+  "standalone", orientation "portrait", start_url "/hoje", theme_color e
+  background_color #030B1F, lang "pt-BR".
+- Icones 192, 512 e maskable 512, apple-touch-icon 180 (gerar a partir do
+  logotipo SVG com scripts/gerar-icones.mjs).
+- Meta tags iOS: apple-mobile-web-app-capable, status-bar-style
+  black-translucent, viewport-fit=cover, themeColor.
+- Sem service worker nesta noite (offline fica para a fase 4).
+- Variaveis de ambiente: NEXT_PUBLIC_SUPABASE_URL e
+  NEXT_PUBLIC_SUPABASE_ANON_KEY. Nada de segredos no cliente.
+
+14. DETALHE E CRITERIOS DE ACEITACAO POR ETAPA
+--------------------------------------------------------------------------------
+Antes de cada etapa: reler a secao correspondente. Ao fim de cada etapa:
+"npm run build" sem erros, testes passando, PROGRESSO.md atualizado, commit,
+push (se gh logado), deploy (se Vercel logada).
+
+14.1 ETAPA 1 - Fundacao visual
+Fazer: tokens de design (CSS + TS); fonte Poppins; fundo degrade fixo;
+componentes da secao 7; BottomNav com 5 abas e animacao do indicador; splash;
+rotas /hoje, /semana, /personal, /evolucao, /perfil e login com conteudo de
+exemplo; transicoes entre telas; manifest e icones; reducao de movimento
+(sistema + opcao no Perfil); logotipo SVG original; estados vazio/carregando.
+Aceitacao:
+ [ ] Build ok e TypeScript sem erros.
+ [ ] As 5 abas navegam com animacao e o indicador desliza.
+ [ ] Fonte minima 13 px em todo o app; areas de toque >= 44 px.
+ [ ] Nenhum conteudo coberto pela barra inferior.
+ [ ] Funciona com prefers-reduced-motion.
+ [ ] Visual consistente em todas as telas (mesmos tokens, sem cores soltas).
+ [ ] PWA instalavel (manifest e icones validos).
+
+14.2 ETAPA 2 - Plano e tela Hoje
+Fazer: migracao 0002; seeds do plano (secao 12); repo (supabase + local);
+tela Hoje (secao 8.3 blocos a, c-parcial, d, e com valores de exemplo, f);
+tela Semana e detalhe do dia (8.6 e 8.7) com MidiaPlaceholder.
+Aceitacao:
+ [ ] A Hoje mostra o treino correto do dia da semana atual (testar com datas
+     simuladas: segunda a domingo).
+ [ ] A Semana lista os 7 dias com blocos, tags, jogos e rotulos.
+ [ ] O detalhe do dia mostra exercicios, series x repeticoes e observacoes.
+ [ ] Saudacao correta por horario; data por extenso em pt-BR.
+ [ ] Funciona em modo local (sem Supabase) e com Supabase.
+
+14.3 ETAPA 3 - Check-in, sessao e seguranca
+Fazer: migracao 0003; sheet de check-in (8.4); registro de sessao (8.5);
+lib/safety com testes; limites editaveis no Perfil com confirmacao; metricas
+reais na Hoje (dor, sono, carga).
+Aceitacao:
+ [ ] Salvar check-in atualiza a Hoje na hora; um por dia (atualiza se repetir).
+ [ ] Testes Vitest cobrem: dor 0,3,4,5,6,10; inchaco; falhou; dor persistente.
+ [ ] Bloqueio mostra banner de alerta e impede "progredir" (marcar flag).
+ [ ] Sessao salva e muda o estado do bloco e a carga media.
+
+14.4 ETAPA 4 - Jogos, pre/pos-jogo e semaforo
+Fazer: tabela games e telas /jogo/pre e /jogo/pos; cartao Proximo jogo com
+contagem regressiva; gatilhos da secao 11; rotulos de carga (10.4);
+lib/semaforo com testes; SemaforoCard completo com motivo e pulso.
+Aceitacao:
+ [ ] Contagem regressiva correta (terca 20h30 / sabado 14h30, fuso
+     America/Sao_Paulo) inclusive na virada de semana.
+ [ ] Modo pre-jogo ativa 4 h antes; timer guia as 5 fases do aquecimento.
+ [ ] Pos-jogo grava em games e atualiza o semaforo e a Evolucao.
+ [ ] Semaforo muda conforme check-in/pos-jogo (testes cobrem verde, amarelo,
+     vermelho, sem dados).
+
+14.5 ETAPA 5 - Evolucao com graficos
+Fazer: tela /evolucao com: DayStrip da semana (jogos e treinos marcados);
+tres ProgressRings (treinos feitos x planejados, esforco medio, sono medio) com
+filtro Semana | Mes; grafico de linha da dor do tornozelo por semana com os
+dias de jogo destacados (pontos maiores ou colunas atras); graficos simples de
+esforco e sono; area do Tornozelo (fase atual, criterio para avancar, historico
+de dor pos-jogo em lista e a Jornada de marcos da tabela milestones, ex.:
+"30 dias sem dor acima de 3", "primeiro jogo sem dor depois do chute",
+"sprint a 100% sem dor", cada um com data de conclusao ou "em andamento");
+estados vazios amigaveis; animacoes de entrada dos graficos.
+Aceitacao:
+ [ ] Mostra dados reais de checkins, session_logs e games; sem dados, mostra
+     estado vazio sem erro.
+ [ ] Graficos legiveis no iPhone (fonte >= 13 px, contraste ok, eixos claros).
+ [ ] Filtro Semana/Mes funciona. Marcos podem ser marcados como concluidos.
+
+15. FLUXO DE TRABALHO, PROGRESSO E RELATORIO
+--------------------------------------------------------------------------------
+15.1 Ordem de trabalho
+ 1. Ler CLAUDE.md, PROGRESSO.md, git log, estrutura de pastas, referencias/ e
+    este arquivo. Decidir de onde partir (nao refazer o que ja existe).
+ 2. Executar as etapas 1 a 5, uma por vez, na ordem.
+ 3. Se travar 3 vezes na mesma etapa: anotar o problema, voltar ao ultimo
+    commit estavel e seguir para a proxima etapa.
+15.2 Formato de cada entrada em PROGRESSO.md (mais recente no topo)
+ ## AAAA-MM-DD HH:MM - Etapa N: titulo
+ - Feito: (lista curta, linguagem simples)
+ - Arquivos criados/alterados: (principais)
+ - Como testar: (passos no celular ou navegador)
+ - Decisoes tomadas: (o que escolheu sem perguntar)
+ - Pendencias: (logins ausentes, falhas, o que nao deu para fazer)
+ - Proximo passo.
+15.3 Relatorio final (depois da etapa 5) em PROGRESSO.md, secao "FINAL DA NOITE":
+ - O que foi concluido por etapa (ok / parcial / nao feito).
+ - O que nao foi possivel e por que.
+ - Lista objetiva do que o Gabriel precisa fazer e testar de manha, por exemplo:
+   fazer login em alguma CLI pendente, conferir Site URL e Redirect URLs no
+   Supabase com o link da Vercel, desligar "Allow new users to sign up" depois
+   do primeiro login, instalar na Tela de Inicio do iPhone, testar cada tela,
+   preencher a altura no Perfil, registrar o primeiro check-in.
+ - Link do deploy (se houver) e do repositorio privado (se houver).
+ - Sugestoes para a etapa 6 (biblioteca de exercicios) e etapa 7 (IA).
+15.4 Ao terminar a etapa 5, PARAR. Nao iniciar etapas 6 e 7.
+
+16. PREPARACAO PARA AS PROXIMAS ETAPAS (SO PREPARAR, NAO IMPLEMENTAR)
+--------------------------------------------------------------------------------
+- Etapa 6 (biblioteca): MidiaPlaceholder e campo media_url prontos; tela
+  /biblioteca pode ser apenas rota vazia ligada a partir da Semana, sem
+  conteudo.
+- Etapa 7 (IA): aba Personal com placeholder; tabelas ai_messages,
+  ai_proposals e weekly_reviews NAO criar agora. Chave da API do Claude so no
+  servidor, em variavel de ambiente, nunca no cliente; limite mensal de gasto no
+  Console; propostas do Claude so valem apos o usuario aceitar.
+- Regra de produto da IA: o plano semanal ja existe; o Claude NAO gera plano
+  novo toda semana; so propoe evolucao (mais carga, mudar de fase do
+  tornozelo) quando os dados mostrarem melhora.
+
+17. LISTA FINAL DE QUALIDADE (CONFERIR ANTES DE ENCERRAR CADA ETAPA)
+--------------------------------------------------------------------------------
+ [ ] Build e testes passando. [ ] Sem segredos no codigo ou no git.
+ [ ] Todos os textos em pt-BR, sem erros de acento. [ ] Fonte >= 13 px.
+ [ ] Contraste ok e toque >= 44 px. [ ] Animacoes suaves e reduziveis.
+ [ ] Nada coberto pela barra inferior. [ ] Funciona sem Supabase (modo local).
+ [ ] RLS ativa em toda tabela nova. [ ] PROGRESSO.md atualizado e commit feito.
+================================================================================
+FIM DA ESPECIFICACAO
+================================================================================
