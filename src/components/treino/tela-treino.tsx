@@ -36,7 +36,11 @@ import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/cn";
 import { sugerirProgressao, type SerieHistorica } from "@/lib/coach/progressao";
 import { ALERTA_SEGURANCA, avaliarSeguranca } from "@/lib/safety";
-import { diaDoPlano, type Bloco } from "@/lib/seed/plano";
+import { diaPlanejado } from "@/lib/coach/dia";
+import { ajusteDoModo } from "@/lib/coach/modo";
+import { cargasAceitas } from "@/lib/coach/propostas";
+import { useCoach, useEscolhaDoDia } from "@/lib/coach/use-coach";
+import type { Bloco } from "@/lib/seed/plano";
 import { dataISO } from "@/lib/tempo";
 import {
   AJUSTES,
@@ -104,7 +108,20 @@ export function TelaTreino({ blocoId, data, sequencia }: Props) {
   const pronto = status === "pronto" && !!agora;
   const hojeISO = agora ? dataISO(agora) : data;
   const faseTornozelo = dados.faseTornozelo.fase;
-  const dia = useMemo(() => diaDoPlano(data, { fase: faseTornozelo }), [data, faseTornozelo]);
+  const planejado = useMemo(
+    () =>
+      diaPlanejado(data, {
+        faseTornozelo: dados.faseTornozelo,
+        excecoes: dados.excecoes,
+        versoes: dados.versoes,
+      }),
+    [data, dados.faseTornozelo, dados.excecoes, dados.versoes],
+  );
+  const dia = planejado.dia;
+  const coachTodo = useCoach(agora, dados);
+  // Sem check-in de hoje a pontuação é só uma estimativa: não reduz o treino por conta dela.
+  const coach = coachTodo && dados.checkins.some((c) => c.data === hojeISO) ? coachTodo : null;
+  const escolha = useEscolhaDoDia(data);
 
   const seg = useMemo(
     () =>
@@ -133,21 +150,37 @@ export function TelaTreino({ blocoId, data, sequencia }: Props) {
     return [bloco];
   }, [bloco, sequencia, dia, dados.sessoes]);
 
-  // ---- modo do dia provisório (a etapa 8 troca isto pelo motor do coach)
-  const modoSugerido: Ajuste =
-    seg?.nivel === "bloqueio" ? "recuperacao" : seg?.nivel === "atencao" ? "reduzido" : "completo";
-  const ajusteAtual = ajuste ?? modoSugerido;
+  // ---- modo do dia: escolha do Gabriel (Ajustar treino) > sugestão do coach > segurança
+  const modoSugerido: Ajuste = coach
+    ? coach.decisao.modo === "completo" || coach.decisao.modo === "reduzido"
+      ? planejado.ajusteSugerido === "sem_academia"
+        ? "sem_academia"
+        : ajusteDoModo(coach.decisao.modo)
+      : ajusteDoModo(coach.decisao.modo)
+    : seg?.nivel === "bloqueio"
+      ? "recuperacao"
+      : seg?.nivel === "atencao"
+        ? "reduzido"
+        : "completo";
+  const ajusteAtual = ajuste ?? escolha?.ajuste ?? modoSugerido;
+  const minutos = ajuste ? undefined : escolha?.minutos;
+  const podeProgredirHoje = coach ? coach.decisao.podeProgredir : !!seg?.podeProgredir;
 
-  const sugeridos = useMemo(
-    () =>
-      sugeridosDaUltimaSessao(
-        dados.series,
-        blocosAlvo.flatMap((b) => b.exercicios.map((e) => e.slug)),
-        hojeISO,
-        idExecucao,
-      ),
-    [dados.series, blocosAlvo, hojeISO, idExecucao],
-  );
+  const sugeridos = useMemo(() => {
+    const base = sugeridosDaUltimaSessao(
+      dados.series,
+      blocosAlvo.flatMap((b) => b.exercicios.map((e) => e.slug)),
+      hojeISO,
+      idExecucao,
+    );
+    // Progressão aceita (5.5): abre já com a carga nova, só se a segurança liberar hoje.
+    if (!podeProgredirHoje) return base;
+    const aceitas = cargasAceitas(dados.propostas, dados.series);
+    for (const [slug, kg] of Object.entries(aceitas)) {
+      if (base[slug]) base[slug] = base[slug].map((x) => ({ ...x, cargaKg: kg }));
+    }
+    return base;
+  }, [dados.series, dados.propostas, blocosAlvo, hojeISO, idExecucao, podeProgredirHoje]);
 
   const previa = useMemo(
     () =>
@@ -157,12 +190,13 @@ export function TelaTreino({ blocoId, data, sequencia }: Props) {
             data,
             blocos: blocosAlvo,
             ajuste: ajusteAtual,
+            minutos,
             sequencia,
             agora: 0,
             sugeridos,
           })
         : null,
-    [pronto, blocosAlvo, data, ajusteAtual, sequencia, sugeridos, idExecucao],
+    [pronto, blocosAlvo, data, ajusteAtual, minutos, sequencia, sugeridos, idExecucao],
   );
 
   // ---- persistência
@@ -278,8 +312,14 @@ export function TelaTreino({ blocoId, data, sequencia }: Props) {
         {seg?.nivel === "bloqueio" && <Banner variante="alerta">{ALERTA_SEGURANCA}</Banner>}
 
         <GlassCard variante="destaque" titulo="Modo do dia">
-          <p className="t-h2">{AJUSTES.find((a) => a.valor === ajusteAtual)?.rotulo}</p>
-          <p className="t-corpo text-texto2">{AJUSTES.find((a) => a.valor === ajusteAtual)?.descricao}</p>
+          <p className="t-h2">
+            {minutos ? `Só ${minutos} min` : AJUSTES.find((a) => a.valor === ajusteAtual)?.rotulo}
+          </p>
+          <p className="t-corpo text-texto2">
+            {minutos
+              ? "O essencial do plano para esse tempo. Fica registrado como parcial."
+              : AJUSTES.find((a) => a.valor === ajusteAtual)?.descricao}
+          </p>
           <button
             type="button"
             onClick={() => setPorque(true)}
@@ -453,14 +493,15 @@ export function TelaTreino({ blocoId, data, sequencia }: Props) {
           series: historico,
           faixa: { min: item.alvo.min, max: item.alvo.max },
           seriesPlano: item.series,
-          podeProgredir: seg.podeProgredir,
+          podeProgredir: seg.podeProgredir && podeProgredirHoje,
+          prontidaoOk: coach ? coach.decisao.prontidao.pontuacao >= 75 : undefined,
         })
       : null;
 
   const alvo = item.alvo;
   const opcoes = opcoesDeTroca(item, {
     fase: faseTornozelo,
-    podeProgredir: !!seg?.podeProgredir,
+    podeProgredir: podeProgredirHoje,
     semAcademia: e.ajuste === "sem_academia",
     dorImpacto: e.dorPendente !== null && e.dorPendente > 3,
   });

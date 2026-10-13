@@ -1,6 +1,7 @@
 // Motor do treino guiado (seção 5 e 24.2): máquina de estados pura, serializável e testada.
 // A tela só mostra o estado e chama estas funções; tudo que precisa persistir está em EstadoTreino.
 import { CATALOGO_POR_ID, exigeAcademia, usaCargaExterna, type ItemCatalogo } from "../seed/catalogo";
+import { montarEssencial } from "../coach/agenda";
 import type { Bloco, ExercicioNoBloco } from "../seed/plano";
 
 export type Ajuste = "completo" | "reduzido" | "20min" | "sem_academia" | "recuperacao";
@@ -115,6 +116,8 @@ export type EstadoTreino = {
   /** AAAA-MM-DD */
   data: string;
   ajuste: Ajuste;
+  /** "Só tenho X min" usado ao montar o treino */
+  minutos?: number;
   /** true quando vários blocos do dia foram encadeados (Sequência do dia) */
   sequencia: boolean;
   blocos: BlocoTreino[];
@@ -278,12 +281,15 @@ export function criarTreino(entrada: {
   data: string;
   blocos: Bloco[];
   ajuste?: Ajuste;
+  /** "Só tenho X min": monta o essencial do plano para esse tempo */
+  minutos?: number;
   sequencia?: boolean;
   agora: number;
   sugeridos?: Record<string, SugeridoSerie[]>;
 }): EstadoTreino | null {
   const ajuste = entrada.ajuste ?? "completo";
-  const blocosComExercicios = entrada.blocos.filter((b) => b.exercicios.length > 0);
+  const blocosOriginais = entrada.minutos ? montarEssencial(entrada.blocos, entrada.minutos) : entrada.blocos;
+  const blocosComExercicios = blocosOriginais.filter((b) => b.exercicios.length > 0);
   if (!blocosComExercicios.length) return null;
 
   const todos: Item[] = blocosComExercicios.flatMap((b, bi) =>
@@ -305,6 +311,7 @@ export function criarTreino(entrada: {
     id: entrada.id,
     data: entrada.data,
     ajuste,
+    minutos: entrada.minutos,
     sequencia: !!entrada.sequencia && blocos.length > 1,
     blocos,
     itens: reindexados,
@@ -604,9 +611,11 @@ export function resumoDoTreino(e: EstadoTreino, agora: number): ResumoTreino {
     const resultado: ResultadoBloco =
       feitas === 0
         ? "nao_fiz"
-        : feitas >= planejado && !e.pulados.some((p) => e.itens[p.item]?.blocoIdx === bi)
-          ? "feito"
-          : "parcial";
+        : e.minutos
+          ? "parcial"
+          : feitas >= planejado && !e.pulados.some((p) => e.itens[p.item]?.blocoIdx === bi)
+            ? "feito"
+            : "parcial";
     const duracaoMin = feitas > 0 ? b.duracaoMin : 0;
     return {
       id: b.id,

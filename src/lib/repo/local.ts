@@ -90,6 +90,29 @@ export function criarLocalRepo(chave: string = CHAVE_LOCAL): Repo {
     async limparExecucao() {
       gravar({ ...ler(), execucao: null });
     },
+    async salvarExcecao(e) {
+      const d = ler();
+      gravar({ ...d, excecoes: upsert(d.excecoes, e, (a, b) => a.id === b.id) });
+    },
+    async removerExcecao(id) {
+      const d = ler();
+      gravar({ ...d, excecoes: d.excecoes.filter((x) => x.id !== id) });
+    },
+    async salvarRotina(r) {
+      gravar({ ...ler(), rotina: r });
+    },
+    async salvarProposta(p) {
+      const d = ler();
+      gravar({ ...d, propostas: upsert(d.propostas, p, (a, b) => a.id === b.id) });
+    },
+    async salvarVersao(v) {
+      const d = ler();
+      gravar({ ...d, versoes: upsert(d.versoes, v, (a, b) => a.id === b.id) });
+    },
+    async registrarAuditoria(a) {
+      const d = ler();
+      gravar({ ...d, auditoria: [a, ...d.auditoria].slice(0, 100) });
+    },
     async salvarSeguranca(c) {
       gravar({ ...ler(), seguranca: c });
     },

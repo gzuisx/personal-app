@@ -1,5 +1,6 @@
 "use client";
 
+import { RotinaCard } from "@/components/features/rotina-card";
 import { useEffect, useState } from "react";
 import { Download, LogOut, Minus, Plus, Shield, Trash2 } from "lucide-react";
 import { useDados } from "@/components/dados-provider";
@@ -429,6 +430,8 @@ export default function PerfilPage() {
           )}
         </div>
       </GlassCard>
+
+      <RotinaCard indice={4} />
 
       <GlassCard indice={5} titulo="Aparência">
         <div className="space-y-4">

@@ -105,6 +105,112 @@ export type Execucao = {
   atualizadoEm: string;
 };
 
+// ---------------------------------------------------------------- etapa 8: coach
+
+export type TipoExcecao =
+  | "jogo_extra"
+  | "jogo_cancelado"
+  | "trabalho_presencial_extra"
+  | "viagem"
+  | "feriado"
+  | "funcional_cancelado"
+  | "sem_academia"
+  | "exercicio_extra"
+  | "exercicio_trocado";
+
+/** Exceção de agenda (seção 11.1) ou ajuste de exercício de um dia. */
+export type ExcecaoAgenda = {
+  id: string;
+  /** AAAA-MM-DD */
+  data: string;
+  tipo: TipoExcecao;
+  /** HH:MM, para jogo extra */
+  hora?: string | null;
+  nota?: string | null;
+  /** exercicio_extra / exercicio_trocado: slug do exercício novo */
+  slug?: string | null;
+  /** exercicio_trocado: slug do exercício do plano que sai */
+  substitui?: string | null;
+  /** exercício extra ou trocado: bloco do dia onde entra */
+  bloco?: string | null;
+};
+
+export const ROTULO_EXCECAO: Record<TipoExcecao, string> = {
+  jogo_extra: "Jogo extra",
+  jogo_cancelado: "Jogo cancelado",
+  trabalho_presencial_extra: "Trabalho presencial extra",
+  viagem: "Viagem",
+  feriado: "Feriado",
+  funcional_cancelado: "Funcional cancelado",
+  sem_academia: "Dia sem academia",
+  exercicio_extra: "Exercício acrescentado",
+  exercicio_trocado: "Exercício trocado",
+};
+
+/** Horários da rotina (Perfil > Rotina). */
+export type Rotina = {
+  acordar: string;
+  dormir: string;
+  /** dias da semana (0 = domingo) em home office */
+  homeOffice: number[];
+  presencial: number[];
+  saidaPresencial: string;
+  funcionalInicio: string;
+  funcionalFim: string;
+};
+
+export const ROTINA_PADRAO: Rotina = {
+  acordar: "07:00",
+  dormir: "23:00",
+  homeOffice: [1, 2, 3],
+  presencial: [4, 5],
+  saidaPresencial: "17:00",
+  funcionalInicio: "18:30",
+  funcionalFim: "19:30",
+};
+
+export type TipoProposta = "progressao_carga" | "fase" | "descarga" | "plano";
+export type StatusProposta = "pendente" | "aceita" | "adiada" | "recusada" | "expirada";
+
+export type CriterioProposta = { texto: string; ok: boolean; progresso?: string };
+
+/** Proposta do motor de regras (sem IA). Só vale depois que o Gabriel aceita. */
+export type Proposta = {
+  id: string;
+  /** evita criar a mesma proposta duas vezes (ex.: "fase:2:2026-11-03") */
+  chaveUnica: string;
+  tipo: TipoProposta;
+  status: StatusProposta;
+  /** regra que a gerou (R06, R07, R16...) */
+  regra: string;
+  titulo: string;
+  resumo: string;
+  criterios: CriterioProposta[];
+  payload: Record<string, unknown>;
+  /** AAAA-MM-DD: quando adiada, só volta a aparecer depois desta data */
+  adiadaAte?: string | null;
+  criadaEm: string;
+  decididaEm?: string | null;
+};
+
+/** Versão do plano: aceitar uma proposta cria uma versão nova; o plano base fica guardado. */
+export type PlanoVersao = {
+  id: string;
+  chaveTemplate: string | null;
+  inicio: string;
+  fim: string | null;
+  origem: "base" | "proposta" | "manual";
+  ativo: boolean;
+  conteudo: Record<string, unknown>;
+};
+
+export type RegistroAuditoria = {
+  id: string;
+  evento: string;
+  detalhes: Record<string, unknown>;
+  criadoEm: string;
+};
+
 export type Marco = { chave: string; concluidoEm: string | null };
 
 export type MarcoDef = {
@@ -227,6 +333,11 @@ export type DadosApp = {
   sessoes: Sessao[];
   jogos: Jogo[];
   preJogos: PreJogoLog[];
+  excecoes: ExcecaoAgenda[];
+  rotina: Rotina;
+  propostas: Proposta[];
+  versoes: PlanoVersao[];
+  auditoria: RegistroAuditoria[];
   series: SerieLog[];
   execucao: Execucao | null;
   seguranca: ConfigSeguranca;
@@ -241,6 +352,11 @@ export const DADOS_VAZIOS: DadosApp = {
   sessoes: [],
   jogos: [],
   preJogos: [],
+  excecoes: [],
+  rotina: ROTINA_PADRAO,
+  propostas: [],
+  versoes: [],
+  auditoria: [],
   series: [],
   execucao: null,
   seguranca: SEGURANCA_PADRAO,

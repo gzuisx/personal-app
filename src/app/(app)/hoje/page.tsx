@@ -5,6 +5,9 @@ import { BellOff, Check, ChevronRight, ClipboardCheck, Lightbulb, Play, Smartpho
 import { useDados } from "@/components/dados-provider";
 import { AneisDoDia } from "@/components/features/aneis-do-dia";
 import { CheckinSheet } from "@/components/features/checkin-sheet";
+import { DecisaoDoDia } from "@/components/features/decisao-do-dia";
+import { MarcosDetectados } from "@/components/features/marcos-detectados";
+import { PropostasCard } from "@/components/features/propostas-card";
 import { GameCard } from "@/components/features/game-card";
 import { LembretesJogo } from "@/components/features/lembretes-jogo";
 import { MetricasHoje } from "@/components/features/metricas-hoje";
@@ -21,13 +24,16 @@ import { IconeBola } from "@/components/ui/icone-bola";
 import { SemaforoCard } from "@/components/ui/semaforo-card";
 import { SkeletonTela } from "@/components/ui/skeleton";
 import { rotuloCarga } from "@/lib/carga";
+import { excecoesParaJogos } from "@/lib/coach/agenda";
+import { diaPlanejado } from "@/lib/coach/dia";
+import { useCoach, useEscolhaDoDia } from "@/lib/coach/use-coach";
 import { checkinDoDia } from "@/lib/derivados";
 import { proximaMelhorAcao, proximoBlocoPendente } from "@/lib/hoje";
 import { jogoEmFoco } from "@/lib/jogo";
 import { hrefDoBloco } from "@/lib/rotas";
 import { sequenciaPendente } from "@/lib/treino/apoio";
 import { ALERTA_SEGURANCA, avaliarSeguranca } from "@/lib/safety";
-import { dicaDoDia, diaDoPlano, type Bloco } from "@/lib/seed/plano";
+import { dicaDoDia, type Bloco } from "@/lib/seed/plano";
 import { avaliarSemaforo } from "@/lib/semaforo";
 import { dataExtensoISO, dataISO, diasDaSemana, partesSP, saudacao } from "@/lib/tempo";
 import { useAgora } from "@/lib/use-agora";
@@ -38,6 +44,8 @@ export default function HojePage() {
   const [checkinAberto, setCheckinAberto] = useState(false);
   const [dicaAberta, setDicaAberta] = useState(false);
   const [editar, setEditar] = useState<Bloco | null>(null);
+  const coach = useCoach(agora, dados);
+  const escolha = useEscolhaDoDia(agora ? dataISO(agora) : "");
 
   // Atalho: /hoje?acao=checkin abre o check-in (usado ao terminar um treino com dor e pelos Atalhos do iPhone).
   useEffect(() => {
@@ -67,9 +75,9 @@ export default function HojePage() {
 
   const hoje = dataISO(agora);
   const { hora, diaSemana } = partesSP(agora);
-  const fase = dados.faseTornozelo.fase;
-  const dia = diaDoPlano(hoje, { fase });
-  const semana = diasDaSemana(hoje).map((d) => diaDoPlano(d, { fase }));
+  const planejado = diaPlanejado(hoje, dados);
+  const dia = planejado.dia;
+  const semana = diasDaSemana(hoje).map((d) => diaPlanejado(d, dados).dia);
   const checkinHoje = checkinDoDia(dados.checkins, hoje);
 
   const seg = avaliarSeguranca({
@@ -87,7 +95,7 @@ export default function HojePage() {
     config: dados.seguranca,
   });
 
-  const jogo = jogoEmFoco(agora, dados);
+  const jogo = jogoEmFoco(agora, dados, excecoesParaJogos(dados.excecoes));
   const acao = proximaMelhorAcao({ agora, dia, checkins: dados.checkins, sessoes: dados.sessoes, jogo });
   const proximoBloco = proximoBlocoPendente(dia, dados.sessoes, hora);
   const dica = dicaDoDia(hoje);
@@ -183,6 +191,26 @@ export default function HojePage() {
         </GlassCard>
       )}
 
+      {coach && checkinHoje && (
+        <DecisaoDoDia
+          indice={1}
+          data={hoje}
+          decisao={coach.decisao}
+          escolha={escolha}
+          onAbrirCheckin={() => setCheckinAberto(true)}
+        />
+      )}
+
+      {coach && <PropostasCard indice={2} hoje={hoje} ctx={coach.ctx} decisao={coach.decisao} />}
+
+      {coach && <MarcosDetectados chaves={coach.decisao.marcosDetectados} indice={2} />}
+
+      {coach && coach.decisao.reconhecimentos.length > 0 && (
+        <Banner variante="info">{coach.decisao.reconhecimentos.join(" ")}</Banner>
+      )}
+
+      {planejado.avisos.length > 0 && <Banner variante="info">{planejado.avisos.join(" · ")}</Banner>}
+
       {checkinHoje && acao && (
         <GlassCard indice={1} variante="leve">
           <p className="t-rotulo mb-2 text-texto2">Próxima melhor ação</p>
@@ -207,6 +235,7 @@ export default function HojePage() {
         indice={2}
         dia={dia}
         semana={semana}
+        modo={coach?.decisao.modo}
         sessoes={dados.sessoes}
         checkins={dados.checkins}
         onCheckin={() => setCheckinAberto(true)}
@@ -217,7 +246,13 @@ export default function HojePage() {
       <LembretesJogo agora={agora} indice={3} />
 
       {diaSemana === 0 && hora >= 18 && (
-        <SemanaEncerrada hoje={hoje} checkins={dados.checkins} sessoes={dados.sessoes} indice={3} />
+        <SemanaEncerrada
+          reconhecimentos={coach?.decisao.reconhecimentos}
+          hoje={hoje}
+          checkins={dados.checkins}
+          sessoes={dados.sessoes}
+          indice={3}
+        />
       )}
 
       <TreinoHojeCard
@@ -225,7 +260,11 @@ export default function HojePage() {
         dia={dia}
         rotuloCarga={rotuloCarga(hoje)}
         sessoes={dados.sessoes}
-        semProgressao={!seg.podeProgredir && seg.nivel !== "sem_dados"}
+        semProgressao={
+          coach && checkinHoje
+            ? !coach.decisao.podeProgredir
+            : !seg.podeProgredir && seg.nivel !== "sem_dados"
+        }
         proximoBloco={proximoBloco}
         hrefIniciar={proximoBloco ? hrefDoBloco(hoje, proximoBloco) : undefined}
         sequencia={sequenciaPendente(dia, dados.sessoes)}

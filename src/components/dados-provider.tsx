@@ -6,12 +6,22 @@ import { gerarDadosDemo, CHAVE_MODO_DEMO } from "@/lib/demo";
 import { criarRepo, criarRepoDemo, type Repo } from "@/lib/repo";
 import { apagarLocal, CHAVE_DEMO, gravarLocal } from "@/lib/repo/local";
 import type { ConfigSeguranca } from "@/lib/safety";
+import {
+  aceitarProposta,
+  adiarProposta,
+  novasPropostas,
+  recusarProposta,
+  type ResultadoDecisao,
+} from "@/lib/coach/propostas";
+import type { Decisao, PropostaSugerida } from "@/lib/coach/tipos";
 import { addDias, dataISO } from "@/lib/tempo";
 import {
   DADOS_VAZIOS,
   type Checkin,
   type Execucao,
   type DadosApp,
+  type ExcecaoAgenda,
+  type Rotina,
   type FaseTornozelo,
   type Jogo,
   type Perfil,
@@ -37,6 +47,21 @@ type Acoes = {
   alternarMarco: (chave: string) => Promise<void>;
   /** só pode ser chamada ao aceitar uma proposta de fase (C5) */
   definirFase: (f: FaseTornozelo) => Promise<void>;
+  salvarExcecao: (e: ExcecaoAgenda) => Promise<void>;
+  removerExcecao: (id: string) => Promise<void>;
+  salvarRotina: (r: Rotina) => Promise<void>;
+  /** cria no banco as propostas novas sugeridas pelas regras (sem repetir) */
+  sincronizarPropostas: (sugeridas: PropostaSugerida[]) => Promise<void>;
+  /** Aceitar / Adiar / Recusar; devolve o motivo quando a validação recusa */
+  decidirProposta: (
+    id: string,
+    acao: "aceitar" | "adiar" | "recusar",
+    estado: {
+      decisao: Pick<Decisao, "podeProgredir" | "modo">;
+      podeProgredirSeguranca: boolean;
+      dorHoje: number | null;
+    },
+  ) => Promise<{ ok: true } | { ok: false; motivo: string }>;
   exportar: () => Promise<unknown>;
   recarregar: () => void;
   ativarDemo: () => void;
@@ -225,6 +250,65 @@ export function DadosProvider({ children }: { children: React.ReactNode }) {
           (d) => ({ ...d, faseTornozelo: f }),
           () => repo.salvarFase(f),
         ),
+      salvarExcecao: (e) =>
+        aplicar(
+          (d) => ({ ...d, excecoes: substituir(d.excecoes, e, (a, b) => a.id === b.id) }),
+          () => repo.salvarExcecao(e),
+        ),
+      removerExcecao: (id) =>
+        aplicar(
+          (d) => ({ ...d, excecoes: d.excecoes.filter((x) => x.id !== id) }),
+          () => repo.removerExcecao(id),
+        ),
+      salvarRotina: (r) =>
+        aplicar(
+          (d) => ({ ...d, rotina: r }),
+          () => repo.salvarRotina(r),
+        ),
+      sincronizarPropostas: async (sugeridas) => {
+        const novas = novasPropostas(ref.current.propostas, sugeridas, dataISO(new Date()), () =>
+          crypto.randomUUID(),
+        );
+        for (const p of novas) {
+          await aplicar(
+            (d) => ({ ...d, propostas: [...d.propostas, p] }),
+            () => repo.salvarProposta(p),
+          );
+        }
+      },
+      decidirProposta: async (id, acao, estado) => {
+        const p = ref.current.propostas.find((x) => x.id === id);
+        if (!p) return { ok: false, motivo: "Proposta não encontrada." };
+        const c = {
+          hoje: dataISO(new Date()),
+          agora: new Date().toISOString(),
+          novoId: () => crypto.randomUUID(),
+          ...estado,
+        };
+        const r: ResultadoDecisao =
+          acao === "aceitar"
+            ? aceitarProposta(p, c)
+            : acao === "adiar"
+              ? adiarProposta(p, c)
+              : recusarProposta(p, c);
+        if (!r.ok) return r;
+        await aplicar(
+          (d) => ({
+            ...d,
+            propostas: substituir(d.propostas, r.proposta, (a, b) => a.id === b.id),
+            versoes: r.versao ? [...d.versoes, r.versao] : d.versoes,
+            auditoria: [r.auditoria, ...d.auditoria],
+            faseTornozelo: r.novaFase ?? d.faseTornozelo,
+          }),
+          async () => {
+            await repo.salvarProposta(r.proposta);
+            if (r.versao) await repo.salvarVersao(r.versao);
+            await repo.registrarAuditoria(r.auditoria);
+            if (r.novaFase) await repo.salvarFase(r.novaFase);
+          },
+        );
+        return { ok: true };
+      },
       exportar: () => repo.exportar(),
       recarregar: () => setTentativa((n) => n + 1),
       ativarDemo: () => {

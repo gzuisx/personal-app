@@ -1,5 +1,7 @@
 "use client";
 
+import type { ExcecaoAgenda } from "@/lib/tipos";
+import { excecoesParaJogos } from "@/lib/coach/agenda";
 import { Check, ChevronRight, Clock } from "lucide-react";
 import { GlassCard } from "@/components/ui/glass-card";
 import { IconeBola } from "@/components/ui/icone-bola";
@@ -26,10 +28,10 @@ export function JogoDiaCard({
 }: {
   data: string;
   agora: Date;
-  dados: DadosDoJogo;
+  dados: DadosDoJogo & { excecoes?: ExcecaoAgenda[] };
   indice?: number;
 }) {
-  const ocorrencia = ocorrenciaDaData(data, dados.jogos);
+  const ocorrencia = ocorrenciaDaData(data, dados.jogos, excecoesParaJogos(dados.excecoes ?? []));
   if (!ocorrencia) return null;
   const estado = estadoDoJogo(agora, ocorrencia, dados);
   const l = ocorrencia.slot.lembretes;

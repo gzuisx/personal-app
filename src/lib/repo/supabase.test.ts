@@ -27,7 +27,8 @@ vi.mock("@/lib/supabase/client", () => ({
           estado.chamadas.push({ tabela, op, args });
           return q;
         };
-      for (const op of ["select", "eq", "gte", "order", "not", "in", "delete"]) q[op] = registrar(op);
+      for (const op of ["select", "eq", "gte", "order", "limit", "not", "in", "delete"])
+        q[op] = registrar(op);
       q.upsert = (...args: unknown[]) => {
         estado.chamadas.push({ tabela, op: "upsert", args });
         return Promise.resolve(

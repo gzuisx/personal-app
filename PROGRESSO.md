@@ -4,6 +4,23 @@ Entradas mais recentes no topo. Fonte de verdade: `ESPECIFICACAO-APP.txt`. Plano
 
 <!-- ENTRADAS -->
 
+## 2026-10-13 18:30 - Etapa 8: motor do coach e adaptação (noite 2)
+
+- Feito:
+  - Motor do coach em código puro e testado (`src/lib/coach/`): contexto do dia, prontidão interna (0 a 100, nunca mostrada como "% de recuperação"), carga da semana (alerta amarelo acima de 1,30 e vermelho acima de 1,50, mínimo de 3 semanas), as 18 regras R01 a R18 e a decisão do dia (Completo, Reduzido, Recuperação, Folga). Regra de ouro: com bloqueio de segurança o modo nunca é Completo e a progressão nunca é liberada (testado por propriedade em todas as combinações de dor, inchaço, falha e sono).
+  - Cartão "Decisão do dia" na Hoje (depois do check-in): modo, frase curta, alertas, ações sugeridas, "Por que?" (regra aplicada, dados com datas, o que mudaria, pontuação interna rotulada "não é medida fisiológica") e "Ajustar treino" (Completo, Reduzido, Sem academia, Recuperação, Só 15/20/30/45 min). A escolha vale para o dia, fica neste aparelho e vira o padrão do treino guiado; "Só X min" monta o essencial (tornozelo, 1 principal, 1 acessório) e registra como parcial.
+  - Propostas (Hoje e Semana): progressão de carga (R06), descarga (R07), mudança de fase (R16, com checklist de critérios e aviso para confirmar com profissional) e sugestão de plano (P2 a P4, P7). Aceitar / Adiar (uma vez, 7 dias) / Recusar. Aceitar cria uma versão do plano (`plan_versions`) e um registro em `audit_log`; fase só muda por proposta aceita. Um validador recusa proposta que aumente carga com a segurança bloqueando, ponha impacto com dor 4 ou mais, remova aquecimento ou tornozelo, mude regras de segurança ou passe dos limites de volume.
+  - Modelos de plano P1 a P7 (`src/lib/seed/templates.ts`): P1, P2, P3, P4 e P7 alteram o dia de verdade; P5 e P6 estão descritos mas ainda não alteram o dia. O plano Base nunca é editado; o modelo vale por 7 dias e depois volta sozinho.
+  - Agenda inteligente: Semana > "Ajustar semana" (jogo extra, jogo cancelado, trabalho presencial extra, viagem, feriado, funcional cancelado, dia sem academia). Jogos extras e cancelados entram na carga e nos cartões de jogo. Perfil > Rotina (horários e dias presenciais, tabela `routine`).
+  - "Sugestões para você" na Semana (recomendador por foco, lacuna de volume semanal, fase, impacto e modo do dia; Adicionar acrescenta o exercício ao dia). Progressão aceita já abre o treino guiado com a carga nova (só com a segurança liberada). Marcos detectados (R14) pedem confirmação. Reconhecimentos (R13, sono) aparecem na Hoje e no resumo de domingo. Os anéis seguem o modo do dia (Folga mostra descanso).
+  - Migração 0007 aplicada no Supabase (só aditiva): `calendar_overrides`, `routine`, `coach_proposals`, `audit_log`.
+- Arquivos: `src/lib/coach/*` (carga, prontidao, contexto, regras, modo, fase, marcos, agenda, dia, propostas, validador, recomendacao, ajuste-dia, use-coach), `src/lib/seed/templates.ts`, `src/components/features/{decisao-do-dia,propostas-card,ajustar-semana,rotina-card,marcos-detectados}.tsx`, `src/components/dados-provider.tsx`, `src/lib/repo/*`, `supabase/migrations/0007_coach.sql`, `e2e/coach.spec.ts`.
+- Como testar: faça o check-in na Hoje com dor 1 (modo Completo) e depois com dor 7 (Recuperação, alerta); toque em "Por que?" e em "Ajustar treino" > "20 min" e abra o treino; na Semana use "Ajustar semana" e "Sugestões para você"; em Perfil edite a Rotina.
+- Decisões tomadas: sem check-in de hoje a pontuação é só estimativa (70), então o treino e o cartão seguem a segurança e não reduzem o treino; o cartão "Decisão do dia" só aparece depois do check-in. A escolha de "Ajustar treino" fica no `localStorage` do aparelho (conveniência), não no banco. A proposta de progressão aceita vale até o exercício ser treinado de novo. Limite de aumento por proposta: 10%. P5 e P6 só descritos. Os reconhecimentos aparecem também em banner na Hoje, além do resumo de domingo. O `audit_log` entrou já na migração 0007 (a especificação previa a 0008).
+- Pendências: gravação real no Supabase das tabelas novas e a ordem de versões não foram testadas com login (só modo local e demonstração); `routine`/`calendar_overrides` ainda não alimentam lembretes (etapa 10).
+- Teste automático: 342 testes de lógica (18 regras, modo, fase, agenda, propostas, validador, recomendador, templates) e 54 de interface passando; ESLint, tsc e build limpos.
+- Próximo passo: etapa 9 (testes de campo, metas, diário do centroavante, insights e Evolução).
+
 ## 2026-10-13 14:10 - Etapa 7: treino guiado e registro de séries (noite 2)
 
 - Feito:

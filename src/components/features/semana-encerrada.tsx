@@ -14,7 +14,9 @@ export function SemanaEncerrada({
   checkins,
   sessoes,
   indice,
+  reconhecimentos = [],
 }: {
+  reconhecimentos?: string[];
   hoje: string;
   checkins: Checkin[];
   sessoes: Sessao[];
@@ -46,6 +48,11 @@ export function SemanaEncerrada({
         {feitos} {feitos === 1 ? "treino feito" : "treinos feitos"}
         {dor !== null ? ` · dor média ${dor.toFixed(1).replace(".", ",")} de 10` : " · sem check-ins"}
       </p>
+      {reconhecimentos.map((r) => (
+        <p key={r} className="t-corpo mt-2 text-ok-t">
+          {r}
+        </p>
+      ))}
       <ButtonLink href="/evolucao" variante="secundario" className="mt-3 w-full">
         Ver evolução
       </ButtonLink>

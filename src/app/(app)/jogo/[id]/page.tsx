@@ -1,5 +1,6 @@
 "use client";
 
+import { excecoesParaJogos } from "@/lib/coach/agenda";
 import { useState } from "react";
 import { notFound, useParams } from "next/navigation";
 import { Check, Circle, Minus } from "lucide-react";
@@ -34,7 +35,7 @@ export default function JogoPage() {
     );
   }
 
-  const ocorrencia = ocorrenciaDaData(id, dados.jogos);
+  const ocorrencia = ocorrenciaDaData(id, dados.jogos, excecoesParaJogos(dados.excecoes));
   if (!ocorrencia) {
     return (
       <main className="pagina">

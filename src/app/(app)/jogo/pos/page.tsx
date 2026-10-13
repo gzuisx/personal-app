@@ -1,5 +1,6 @@
 "use client";
 
+import { excecoesParaJogos } from "@/lib/coach/agenda";
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Minus, Plus, Utensils } from "lucide-react";
@@ -40,7 +41,7 @@ function PosJogo() {
   const jogoParam = params.get("jogo");
   const jogo =
     jogoParam && /^\d{4}-\d{2}-\d{2}$/.test(jogoParam)
-      ? ocorrenciaDaData(jogoParam, dados.jogos)
+      ? ocorrenciaDaData(jogoParam, dados.jogos, excecoesParaJogos(dados.excecoes))
       : agora
         ? ultimoJogo(agora)
         : null;

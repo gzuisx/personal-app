@@ -4,11 +4,13 @@ import {
   JANELA_POS_JOGO_H,
   JANELA_PRE_JOGO_H,
   JOGOS_SEMANAIS,
+  jogosNoPeriodo,
   addDias,
   dataISO,
   instanteSP,
   proximoJogo,
   ultimoJogo,
+  type ExcecoesDeJogo,
   type OcorrenciaJogo,
 } from "../tempo";
 import type { Checkin, Jogo, PreJogoLog } from "../tipos";
@@ -45,9 +47,19 @@ export type EstadoJogo = {
 const MS_HORA = 3_600_000;
 const MS_MIN = 60_000;
 
-export function ocorrenciaDaData(data: string, jogos: Jogo[] = []): OcorrenciaJogo | null {
+export function ocorrenciaDaData(
+  data: string,
+  jogos: Jogo[] = [],
+  excecoes?: ExcecoesDeJogo,
+): OcorrenciaJogo | null {
+  // jogos fixos (terça e sábado), com jogo extra e jogo cancelado aplicados
+  const doCalendario = jogosNoPeriodo(data, data, excecoes)[0];
+  if (doCalendario) return doCalendario;
+  // jogo cancelado que já tinha sido registrado: mostra o registro
   const slot = JOGOS_SEMANAIS.find((j) => j.diaSemana === new Date(`${data}T12:00:00Z`).getUTCDay());
-  if (slot) return { slot, data, inicio: instanteSP(data, slot.hora, slot.min) };
+  if (slot && !excecoes?.cancelados?.includes(data)) {
+    return { slot, data, inicio: instanteSP(data, slot.hora, slot.min) };
+  }
   // jogo extra já registrado em um dia sem jogo fixo
   const extra = jogos.find((j) => dataISO(new Date(j.inicio)) === data);
   if (extra) {
@@ -119,9 +131,9 @@ export function estadoDoJogo(agora: Date, ocorrencia: OcorrenciaJogo, dados: Dad
 }
 
 /** O jogo que o card da Hoje deve mostrar agora. */
-export function jogoEmFoco(agora: Date, dados: DadosDoJogo): EstadoJogo {
-  const prox = proximoJogo(agora);
-  const ult = ultimoJogo(agora);
+export function jogoEmFoco(agora: Date, dados: DadosDoJogo, excecoes?: ExcecoesDeJogo): EstadoJogo {
+  const prox = proximoJogo(agora, excecoes);
+  const ult = ultimoJogo(agora, excecoes);
   if (ult && ult.inicio.getTime() !== prox.inicio.getTime()) {
     const estado = estadoDoJogo(agora, ult, dados);
     const hoje = dataISO(agora);

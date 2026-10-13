@@ -185,10 +185,48 @@ function ocorrencia(slot: JogoSlot, data: string): OcorrenciaJogo {
   return { slot, data, inicio: instanteSP(data, slot.hora, slot.min) };
 }
 
+/**
+ * Exceções de agenda que mexem nos jogos (seção 11.1): jogos extras (data e hora HH:MM)
+ * e datas de jogos cancelados.
+ */
+export type ExcecoesDeJogo = {
+  extras?: { data: string; hora?: string | null }[];
+  cancelados?: string[];
+};
+
+function somarMinutos(hora: number, min: number, delta: number) {
+  const total = hora * 60 + min + delta;
+  return { h: Math.floor((((total % 1440) + 1440) % 1440) / 60), m: ((total % 60) + 60) % 60 };
+}
+
+/** Jogo extra: os lembretes seguem a mesma lógica dos jogos fixos, em horários relativos ao início. */
+function slotDoExtra(data: string, hora?: string | null): JogoSlot {
+  const [h, m] = (hora ?? "20:00").split(":").map(Number);
+  const fmt = (x: { h: number; m: number }) => `${dois(x.h)}:${dois(x.m)}`;
+  return {
+    diaSemana: diaSemanaISO(data),
+    nome: "Jogo extra",
+    hora: h,
+    min: m,
+    lembretes: {
+      refeicao: fmt(somarMinutos(h, m, -180)),
+      lanche: fmt(somarMinutos(h, m, -75)),
+      ativacao: fmt(somarMinutos(h, m, -60)),
+      aquecimento: fmt(somarMinutos(h, m, -45)),
+    },
+  };
+}
+
 /** Todas as ocorrências de jogo entre duas datas (inclusive), em ordem. */
-export function jogosNoPeriodo(de: string, ate: string): OcorrenciaJogo[] {
+export function jogosNoPeriodo(de: string, ate: string, excecoes?: ExcecoesDeJogo): OcorrenciaJogo[] {
   const lista: OcorrenciaJogo[] = [];
   for (let d = de; d <= ate; d = addDias(d, 1)) {
+    const extra = excecoes?.extras?.find((x) => x.data === d);
+    if (extra) {
+      lista.push(ocorrencia(slotDoExtra(d, extra.hora), d));
+      continue;
+    }
+    if (excecoes?.cancelados?.includes(d)) continue;
     const slot = JOGOS_SEMANAIS.find((j) => j.diaSemana === diaSemanaISO(d));
     if (slot) lista.push(ocorrencia(slot, d));
   }
@@ -196,9 +234,9 @@ export function jogosNoPeriodo(de: string, ate: string): OcorrenciaJogo[] {
 }
 
 /** Próximo jogo (ou o que está em andamento). */
-export function proximoJogo(agora: Date): OcorrenciaJogo & { ms: number } {
+export function proximoJogo(agora: Date, excecoes?: ExcecoesDeJogo): OcorrenciaJogo & { ms: number } {
   const hoje = dataISO(agora);
-  for (const o of jogosNoPeriodo(addDias(hoje, -1), addDias(hoje, 8))) {
+  for (const o of jogosNoPeriodo(addDias(hoje, -1), addDias(hoje, 14), excecoes)) {
     const fim = o.inicio.getTime() + DURACAO_JOGO_MIN * MS_MIN;
     if (fim > agora.getTime()) return { ...o, ms: o.inicio.getTime() - agora.getTime() };
   }
@@ -206,9 +244,11 @@ export function proximoJogo(agora: Date): OcorrenciaJogo & { ms: number } {
 }
 
 /** Jogo mais recente que já começou (até 8 dias atrás). */
-export function ultimoJogo(agora: Date): OcorrenciaJogo | null {
+export function ultimoJogo(agora: Date, excecoes?: ExcecoesDeJogo): OcorrenciaJogo | null {
   const hoje = dataISO(agora);
-  const lista = jogosNoPeriodo(addDias(hoje, -8), hoje).filter((o) => o.inicio.getTime() <= agora.getTime());
+  const lista = jogosNoPeriodo(addDias(hoje, -8), hoje, excecoes).filter(
+    (o) => o.inicio.getTime() <= agora.getTime(),
+  );
   return lista.length ? lista[lista.length - 1] : null;
 }
 

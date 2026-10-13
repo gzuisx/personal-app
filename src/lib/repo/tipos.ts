@@ -3,6 +3,11 @@ import type {
   Checkin,
   DadosApp,
   Execucao,
+  ExcecaoAgenda,
+  PlanoVersao,
+  Proposta,
+  RegistroAuditoria,
+  Rotina,
   FaseTornozelo,
   Jogo,
   Marco,
@@ -26,6 +31,14 @@ export interface Repo {
   /** treino em andamento (no máximo um) e sua limpeza ao finalizar ou descartar */
   salvarExecucao(e: Execucao): Promise<void>;
   limparExecucao(): Promise<void>;
+  /** exceções de agenda e ajustes de exercício do dia */
+  salvarExcecao(e: ExcecaoAgenda): Promise<void>;
+  removerExcecao(id: string): Promise<void>;
+  salvarRotina(r: Rotina): Promise<void>;
+  /** propostas do motor de regras e o registro de cada decisão */
+  salvarProposta(p: Proposta): Promise<void>;
+  salvarVersao(v: PlanoVersao): Promise<void>;
+  registrarAuditoria(a: RegistroAuditoria): Promise<void>;
   salvarSeguranca(c: ConfigSeguranca): Promise<void>;
   /** perfil e restrições */
   salvarPerfil(p: Perfil): Promise<void>;

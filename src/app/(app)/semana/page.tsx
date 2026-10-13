@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useDados } from "@/components/dados-provider";
+import { AjustarSemana } from "@/components/features/ajustar-semana";
+import { PropostasCard } from "@/components/features/propostas-card";
 import { DiaCard, diaConcluido } from "@/components/features/dia-card";
 import { JogoDiaCard } from "@/components/features/jogo-dia-card";
 import { Button } from "@/components/ui/button";
@@ -13,7 +15,8 @@ import { Header } from "@/components/ui/header";
 import { SkeletonTela } from "@/components/ui/skeleton";
 import { rotuloCarga } from "@/lib/carga";
 import { faseGuardada } from "@/lib/seed/fase";
-import { diaDoPlano } from "@/lib/seed/plano";
+import { diaPlanejado } from "@/lib/coach/dia";
+import { useCoach } from "@/lib/coach/use-coach";
 import { DIAS_SEMANA, addDias, dataISO, diasDaSemana } from "@/lib/tempo";
 import { useAgora } from "@/lib/use-agora";
 
@@ -24,6 +27,7 @@ export default function SemanaPage() {
   const { status, erro, recarregar, dados } = useDados();
   const [offset, setOffset] = useState(0);
   const [selecionado, setSelecionado] = useState<string | null>(null);
+  const coach = useCoach(agora, dados);
 
   if (!agora || status === "carregando") {
     return (
@@ -46,7 +50,7 @@ export default function SemanaPage() {
 
   const hoje = dataISO(agora);
   const dias = diasDaSemana(addDias(hoje, offset * 7));
-  const planos = dias.map((d) => diaDoPlano(d, { fase: dados.faseTornozelo.fase }));
+  const planos = dias.map((d) => diaPlanejado(d, dados).dia);
   const fase = faseGuardada(dados.faseTornozelo, dias[0] > hoje ? dias[0] : dias[6] < hoje ? dias[6] : hoje);
   const titulo =
     offset === 0
@@ -114,6 +118,12 @@ export default function SemanaPage() {
           ? `semana ${fase.semanaNaFase} de ${fase.semanasNaFase}`
           : `semana ${fase.semanaNaFase}`}
       </p>
+
+      {coach && <PropostasCard indice={1} hoje={hoje} ctx={coach.ctx} decisao={coach.decisao} />}
+
+      {coach && offset >= 0 && (
+        <AjustarSemana dias={dias} hoje={hoje} ctx={coach.ctx} decisao={coach.decisao} />
+      )}
 
       <div className="space-y-3">
         {planos.map((p, i) => (

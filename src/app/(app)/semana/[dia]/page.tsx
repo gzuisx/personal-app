@@ -1,5 +1,6 @@
 "use client";
 
+import { diaPlanejado } from "@/lib/coach/dia";
 import { useEffect, useState } from "react";
 import { notFound, useParams } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
@@ -22,13 +23,7 @@ import { rotuloCarga } from "@/lib/carga";
 import type { Sessao } from "@/lib/tipos";
 import { sessaoDoBloco } from "@/lib/derivados";
 import { avaliarSeguranca } from "@/lib/safety";
-import {
-  ROTULO_PERIODO,
-  blocoTreinavel,
-  diaDoPlano,
-  type Bloco,
-  type ExercicioNoBloco,
-} from "@/lib/seed/plano";
+import { ROTULO_PERIODO, blocoTreinavel, type Bloco, type ExercicioNoBloco } from "@/lib/seed/plano";
 import { dataExtensoISO, dataISO, horaTexto } from "@/lib/tempo";
 import { useAgora } from "@/lib/use-agora";
 
@@ -149,7 +144,8 @@ export default function DetalheDiaPage() {
   }
 
   const hoje = dataISO(agora);
-  const dia = diaDoPlano(iso, { fase: dados.faseTornozelo.fase });
+  const planejado = diaPlanejado(iso, dados);
+  const dia = planejado.dia;
   const seg = avaliarSeguranca({
     checkins: dados.checkins,
     jogos: dados.jogos,
@@ -169,6 +165,11 @@ export default function DetalheDiaPage() {
       <p className="t-rotulo inline-flex rounded-full border border-borda bg-vidro-forte px-4 py-2 text-texto2">
         Carga: {rotuloCarga(iso)}
       </p>
+      {planejado.avisos.length > 0 && (
+        <p className="t-corpo rounded-2xl border border-borda bg-vidro-forte p-3 text-texto2">
+          {planejado.avisos.join(" · ")}
+        </p>
+      )}
       {!seg.podeProgredir && seg.nivel !== "sem_dados" && iso >= hoje && (
         <p className="t-corpo rounded-2xl border border-aviso/60 bg-vidro-forte p-3 text-aviso-t">
           Não aumente a carga hoje. Mantenha séries e repetições iguais às últimas sessões.
