@@ -1,0 +1,20 @@
+@import "tailwindcss";
+
+:root {
+  --fundo: #0b1410;
+  --texto: #f2f7f4;
+  --verde: #22c55e;
+}
+
+html,
+body {
+  background: var(--fundo);
+  color: var(--texto);
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  min-height: 100dvh;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
