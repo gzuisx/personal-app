@@ -1,5 +1,6 @@
 "use client";
 
+import { FocoCard } from "@/components/features/foco-card";
 import { RotinaCard } from "@/components/features/rotina-card";
 import { useEffect, useState } from "react";
 import { Download, LogOut, Minus, Plus, Shield, Trash2 } from "lucide-react";
@@ -304,6 +305,8 @@ export default function PerfilPage() {
           </Button>
         </div>
       </GlassCard>
+
+      <FocoCard indice={2} />
 
       <GlassCard indice={2} titulo="Focos atuais">
         <ChipGroupMulti

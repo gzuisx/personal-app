@@ -1,3 +1,4 @@
+import type { FocoLesao } from "@/lib/foco";
 import type { ConfigSeguranca } from "@/lib/safety";
 import type {
   Checkin,
@@ -53,5 +54,9 @@ export interface Repo {
   salvarMarco(m: Marco): Promise<void>;
   /** só deve ser chamada ao aceitar uma proposta de fase (C5) */
   salvarFase(f: FaseTornozelo): Promise<void>;
+  /** grava um foco de lesão (ex.: a fase do foco mudou por proposta aceita) */
+  salvarFoco(f: FocoLesao): Promise<void>;
+  /** troca o foco ativo: o atual vira inativo (fica no histórico) e o novo passa a valer. Só por ação do Gabriel. */
+  trocarFoco(novo: FocoLesao): Promise<void>;
   exportar(): Promise<unknown>;
 }

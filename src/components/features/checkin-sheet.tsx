@@ -11,6 +11,7 @@ import { ChipGroup, ChipGroupMulti } from "@/components/ui/chip";
 import { EscalaDor } from "@/components/ui/escala-dor";
 import { ToggleSimNao } from "@/components/ui/toggle-sim-nao";
 import { useToast } from "@/components/ui/toast";
+import { ehTornozelo, rotulosDoFoco } from "@/lib/foco";
 import {
   DURACAO_DOR_ROTULO,
   GATILHO_ROTULO,
@@ -62,7 +63,11 @@ const duracoes = (Object.keys(DURACAO_DOR_ROTULO) as DuracaoDor[]).map((k) => ({
 }));
 
 export function CheckinSheet({ aberto, onFechar, data, existente, contexto }: Props) {
-  const { salvarCheckin } = useDados();
+  const { salvarCheckin, dados } = useDados();
+  const foco = dados.foco;
+  const rotulos = rotulosDoFoco(foco);
+  const outroFoco = !ehTornozelo(foco);
+  const [dorTorn, setDorTorn] = useState<number | null>(null);
   const toast = useToast();
   const [dor, setDor] = useState<number | null>(null);
   const [inchaco, setInchaco] = useState(false);
@@ -83,6 +88,7 @@ export function CheckinSheet({ aberto, onFechar, data, existente, contexto }: Pr
   useEffect(() => {
     if (!aberto) return;
     setDor(existente?.dor ?? null);
+    setDorTorn(existente?.dorTornozelo ?? null);
     setInchaco(existente?.inchaco ?? false);
     setFalhou(existente?.falhou ?? false);
     setEnergia(existente?.energia ?? null);
@@ -109,12 +115,15 @@ export function CheckinSheet({ aberto, onFechar, data, existente, contexto }: Pr
       await salvarCheckin({
         data,
         dor,
+        // com outro foco, o tornozelo continua no check-in (manutenção; também bloqueia)
+        dorTornozelo: outroFoco ? (dorTorn ?? 0) : null,
+        focoRegiao: foco.regiao,
         inchaco,
         falhou,
         energia,
         sonoFaixa: sono,
         gatilho: dor >= 1 ? gatilho : null,
-        regioes: dor >= 1 ? regs : [],
+        regioes: dor >= 1 && !outroFoco ? regs : [],
         movimentos: dor >= 1 ? movs : [],
         duracaoDor: dor >= 1 ? duracao : null,
         posteriorApertou: posterior,
@@ -150,14 +159,14 @@ export function CheckinSheet({ aberto, onFechar, data, existente, contexto }: Pr
         <>
           {contexto && <Banner variante="info">{contexto}</Banner>}
           <section className="space-y-2">
-            <h3 className="t-h3">Dor no tornozelo direito</h3>
+            <h3 className="t-h3">{rotulos.dor}</h3>
             <EscalaDor
               valor={dor}
               onChange={(v) => {
                 setDor(v);
                 setSemDor(false);
               }}
-              rotuloAria="Dor no tornozelo direito"
+              rotuloAria={rotulos.dor}
             />
             {semDor && (
               <p role="alert" className="t-pq text-perigo-t">
@@ -166,13 +175,23 @@ export function CheckinSheet({ aberto, onFechar, data, existente, contexto }: Pr
             )}
           </section>
 
+          {outroFoco && (
+            <section className="space-y-2">
+              <h3 className="t-h3">Dor no tornozelo direito</h3>
+              <p className="t-pq text-texto2">
+                O tornozelo continua protegido: dor de 6 ou mais também bloqueia.
+              </p>
+              <EscalaDor valor={dorTorn} onChange={setDorTorn} rotuloAria="Dor no tornozelo direito" />
+            </section>
+          )}
+
           <section className="space-y-2">
             <h3 className="t-h3">Inchaço</h3>
             <ToggleSimNao valor={inchaco} onChange={setInchaco} rotuloAria="Inchaço" />
           </section>
 
           <section className="space-y-2">
-            <h3 className="t-h3">Falhou (cedeu ou virou)</h3>
+            <h3 className="t-h3">{rotulos.falhou}</h3>
             <ToggleSimNao valor={falhou} onChange={setFalhou} rotuloAria="Falhou" />
           </section>
 
@@ -205,10 +224,12 @@ export function CheckinSheet({ aberto, onFechar, data, existente, contexto }: Pr
 
           {dor !== null && dor >= 1 && (
             <>
-              <section className="space-y-2">
-                <h3 className="t-h3">Onde doeu</h3>
-                <ChipGroupMulti rotuloAria="Onde doeu" opcoes={regioes} valores={regs} onChange={setRegs} />
-              </section>
+              {!outroFoco && (
+                <section className="space-y-2">
+                  <h3 className="t-h3">Onde doeu</h3>
+                  <ChipGroupMulti rotuloAria="Onde doeu" opcoes={regioes} valores={regs} onChange={setRegs} />
+                </section>
+              )}
               <section className="space-y-2">
                 <h3 className="t-h3">Movimento que doeu</h3>
                 <ChipGroupMulti

@@ -13,6 +13,8 @@ const rotas = [
   "/jogo/2026-10-13",
   "/jogo/pre",
   "/jogo/pos",
+  "/biblioteca",
+  "/biblioteca/stiff",
 ];
 
 for (const tema of ["escuro", "claro"] as const) {

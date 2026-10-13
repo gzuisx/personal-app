@@ -1,6 +1,7 @@
 import { SEGURANCA_PADRAO, type ConfigSeguranca } from "./safety";
 import { INICIO_PLANO } from "./seed/fase";
 import type { EsforcoSerie, EstadoTreino } from "./treino/motor";
+import type { FocoLesao } from "./foco";
 
 export type Gatilho = "chute" | "giro" | "terreno" | "nenhum" | "nao_sei";
 export type SonoFaixa = "menos_5" | "5_6" | "7_8" | "mais_8";
@@ -22,7 +23,12 @@ export type DuracaoDor = "menos_1min" | "5_10min" | "dia_todo";
 export type Checkin = {
   /** AAAA-MM-DD (um por dia) */
   data: string;
+  /** dor na região do foco de lesão do dia (o tornozelo direito, enquanto ele for o foco) */
   dor: number;
+  /** dor no tornozelo direito quando o foco é outra região (manutenção; também bloqueia) */
+  dorTornozelo?: number | null;
+  /** região do foco quando o check-in foi feito (null = tornozelo, registros antigos) */
+  focoRegiao?: string | null;
   inchaco: boolean;
   falhou: boolean;
   energia: number | null;
@@ -350,6 +356,21 @@ export type DadosApp = {
   marcos: Marco[];
   marcosDefs: MarcoDef[];
   faseTornozelo: FaseTornozelo;
+  /** foco de lesão ativo (no máximo um) */
+  foco: FocoLesao;
+  /** histórico de focos, incluindo o ativo */
+  focos: FocoLesao[];
+};
+
+const FOCO_VAZIO: FocoLesao = {
+  id: "foco-tornozelo-direito",
+  regiao: "tornozelo",
+  lado: "direito",
+  inicio: INICIO_PLANO,
+  fase: 1,
+  faseInicio: INICIO_PLANO,
+  ativo: true,
+  notas: null,
 };
 
 export const DADOS_VAZIOS: DadosApp = {
@@ -372,6 +393,8 @@ export const DADOS_VAZIOS: DadosApp = {
   marcos: [],
   marcosDefs: MARCOS_DEFINICOES,
   faseTornozelo: { fase: 1, inicio: INICIO_PLANO },
+  foco: FOCO_VAZIO,
+  focos: [FOCO_VAZIO],
 };
 
 export const SONO_ROTULO: Record<SonoFaixa, string> = {

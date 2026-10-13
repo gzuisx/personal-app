@@ -2,13 +2,13 @@
 // R01 a R18. Todas são funções puras. Nenhuma regra libera progressão quando a segurança bloqueia.
 import { ALERTA_SEGURANCA } from "../safety";
 import { CATALOGO_POR_ID, usaCargaExterna } from "../seed/catalogo";
-import { treinosPlanejados } from "../seed/plano";
+import { nomeDoFoco, treinosPlanejados } from "../seed/plano";
 import { addDias, dataISO, diffDias, instanteSP, ultimoJogo } from "../tempo";
 import { SONO_ROTULO, type Checkin } from "../tipos";
 import { parseAlvo } from "../treino/motor";
 import { excecoesParaJogos } from "./agenda";
 import { categoriaDoBloco, variacaoDeCarga } from "./carga";
-import { avaliarFase, AVISO_FASE } from "./fase";
+import { avaliarFaseDoFoco, AVISO_FASE } from "./fase";
 import { calcularProntidao, modoDaProntidao } from "./prontidao";
 import { sugerirProgressao, type SerieHistorica } from "./progressao";
 import type { CoachContext, Efeitos, PorQue, Prontidao, PropostaSugerida, RegraDisparada } from "./tipos";
@@ -587,9 +587,13 @@ const R15: RegraDef = {
 
 const R16: RegraDef = {
   id: "R16",
-  titulo: "Tornozelo apto a avançar de fase",
+  titulo: "Foco de lesão apto a avançar de fase",
   avaliar(ctx) {
-    const av = avaliarFase({
+    const regiao = ctx.foco?.regiao ?? "tornozelo";
+    const outro = regiao !== "tornozelo";
+    const nome = ctx.foco && outro ? ` (${nomeDoFoco(ctx.foco.regiao, ctx.foco.lado)})` : "";
+    const av = avaliarFaseDoFoco({
+      regiao,
       fase: ctx.fase.fase,
       diasVerdes: ctx.diasVerdes,
       series: ctx.series,
@@ -601,11 +605,14 @@ const R16: RegraDef = {
     const prop: PropostaSugerida = {
       tipo: "fase",
       regra: "R16",
-      titulo: `Avançar para a fase ${av.proxima}`,
+      titulo: `Avançar para a fase ${av.proxima}${nome}`,
       resumo: `Todos os critérios da fase ${av.faseAtual} foram atendidos. ${AVISO_FASE}`,
-      chave: `fase:${av.faseAtual}->${av.proxima}`,
+      // o tornozelo mantém a chave e o payload de antes
+      chave: outro ? `fase:${regiao}:${av.faseAtual}->${av.proxima}` : `fase:${av.faseAtual}->${av.proxima}`,
       criterios: av.criterios,
-      payload: { de: av.faseAtual, para: av.proxima },
+      payload: outro
+        ? { de: av.faseAtual, para: av.proxima, regiao }
+        : { de: av.faseAtual, para: av.proxima },
     };
     return {
       mensagem: `Os critérios da fase ${av.faseAtual} foram atendidos. Quer avançar para a fase ${av.proxima}?`,

@@ -24,6 +24,8 @@ export function validarProposta(
     decisao: Pick<Decisao, "podeProgredir" | "modo">;
     podeProgredirSeguranca: boolean;
     dorHoje: number | null;
+    /** região do foco de lesão ativo (padrão: tornozelo) */
+    regiaoFoco?: string;
   },
 ): ResultadoValidacao {
   const { payload } = p;
@@ -67,6 +69,11 @@ export function validarProposta(
       return recusa("A fase só muda quando todos os critérios estão atendidos.");
     }
     if (!ctx.podeProgredirSeguranca) return recusa("Com a segurança bloqueando, a fase não avança.");
+    // propostas antigas (sem região) são do tornozelo
+    const regiao = typeof payload.regiao === "string" ? payload.regiao : "tornozelo";
+    if (regiao !== (ctx.regiaoFoco ?? "tornozelo")) {
+      return recusa("Essa proposta é de outro foco de lesão.");
+    }
     const de = payload.de;
     const para = payload.para;
     if (typeof de !== "number" || typeof para !== "number" || para !== de + 1) {

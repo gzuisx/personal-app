@@ -99,7 +99,12 @@ describe("decidir", () => {
   });
   it("aceitar fase devolve a nova fase", () => {
     const r = aceitarProposta(nova(sugFase), ctx());
-    expect(r.ok && r.novaFase).toEqual({ fase: 2, inicio: "2026-10-14" });
+    expect(r.ok && r.novaFase).toEqual({ fase: 2, inicio: "2026-10-14", regiao: "tornozelo" });
+  });
+  it("proposta de fase de outro foco é recusada", () => {
+    const r = aceitarProposta(nova(sugFase), ctx({ regiaoFoco: "posterior_coxa" }));
+    expect(r.ok).toBe(false);
+    expect(!r.ok && r.motivo).toMatch(/outro foco/);
   });
   it("aceitar é recusado pelo validador quando a segurança bloqueia", () => {
     const r = aceitarProposta(nova(sugFase), ctx({ podeProgredirSeguranca: false }));

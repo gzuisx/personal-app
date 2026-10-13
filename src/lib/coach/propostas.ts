@@ -65,7 +65,7 @@ export type ResultadoDecisao =
       versao?: PlanoVersao;
       auditoria: RegistroAuditoria;
       /** só quando uma proposta de fase é aceita */
-      novaFase?: { fase: FaseNum; inicio: string };
+      novaFase?: { fase: FaseNum; inicio: string; regiao: string };
     };
 
 type Contexto = {
@@ -73,6 +73,7 @@ type Contexto = {
   decisao: Pick<Decisao, "podeProgredir" | "modo">;
   podeProgredirSeguranca: boolean;
   dorHoje: number | null;
+  regiaoFoco?: string;
   novoId: () => string;
   agora: string;
 };
@@ -137,7 +138,11 @@ export function aceitarProposta(p: Proposta, c: Contexto): ResultadoDecisao {
   };
   const novaFase =
     p.tipo === "fase" && typeof p.payload.para === "number"
-      ? { fase: p.payload.para as FaseNum, inicio: c.hoje }
+      ? {
+          fase: p.payload.para as FaseNum,
+          inicio: c.hoje,
+          regiao: typeof p.payload.regiao === "string" ? p.payload.regiao : "tornozelo",
+        }
       : undefined;
   return { ok: true, proposta: aceita, versao, auditoria: auditoria(c, "proposta_aceita", p), novaFase };
 }

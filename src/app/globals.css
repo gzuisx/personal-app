@@ -242,3 +242,66 @@ body {
     animation: none;
   }
 }
+
+/* Demonstração animada ("boneco de nós") */
+.boneco-corpo {
+  stroke: var(--color-texto2);
+}
+.boneco-torso {
+  fill: var(--color-texto2);
+}
+.boneco-longe {
+  stroke: var(--color-texto3);
+}
+.boneco-cabeca {
+  fill: var(--color-texto2);
+}
+.boneco-rosto {
+  fill: var(--color-bg0);
+  opacity: 0.45;
+}
+.boneco-no circle {
+  fill: var(--color-bg1);
+  stroke: var(--color-texto);
+  stroke-width: 1.1;
+}
+.boneco-brilho line,
+.boneco-brilho-junta {
+  stroke: var(--color-realce);
+  fill: var(--color-realce);
+}
+.boneco-brilho .boneco-brilho-nucleo {
+  stroke: var(--color-realce-t);
+}
+.boneco-prop {
+  fill: var(--color-vidro-forte);
+  stroke: var(--color-texto3);
+  stroke-width: 1;
+}
+.boneco-chao {
+  stroke: var(--color-texto3);
+}
+.boneco-cabo {
+  stroke: var(--color-aviso-t);
+}
+.boneco-peso,
+.boneco-peso rect,
+.boneco-peso circle {
+  fill: var(--color-texto3);
+  stroke: var(--color-bg1);
+  stroke-width: 0.8;
+}
+.boneco-peso .boneco-barra {
+  stroke: var(--color-texto3);
+}
+.boneco-peso .boneco-furo {
+  fill: var(--color-bg1);
+}
+.boneco-bola {
+  fill: var(--color-texto);
+  stroke: var(--color-bg1);
+  stroke-width: 1;
+}
+.boneco-cone {
+  fill: var(--color-aviso);
+}

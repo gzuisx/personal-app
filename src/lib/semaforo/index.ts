@@ -1,6 +1,7 @@
 import {
   SEGURANCA_PADRAO,
   avaliarSeguranca,
+  dorDoCheckin,
   nivelDoCheckin,
   nivelPosJogoRecente,
   type CheckinSeg,
@@ -88,7 +89,7 @@ export function avaliarSemaforo(entrada: EntradaSemaforo): ResultadoSemaforo {
   } else if (config.inchacoBloqueia && ultimo.inchaco) {
     motivo = `Inchaço relatado ${q}.`;
   } else {
-    motivo = `Dor ${ultimo.dor} de 10 ${q}.`;
+    motivo = `Dor ${dorDoCheckin(ultimo)} de 10 ${q}.`;
   }
 
   return {

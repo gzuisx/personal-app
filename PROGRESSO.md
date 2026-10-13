@@ -4,6 +4,42 @@ Entradas mais recentes no topo. Fonte de verdade: `ESPECIFICACAO-APP.txt`. Plano
 
 <!-- ENTRADAS -->
 
+## 2026-10-13 19:50 - Etapa 11 ampliada: foco de lesão e demonstrações animadas
+
+- Feito:
+  - Foco de lesão: a rotina gira em torno da lesão principal do momento (hoje, tornozelo direito). Migração 0009 (só aditiva): tabela `injury_focus` (regiao, lado, inicio, fase, fase_inicio, ativo, notas, criado_em) com segurança por linha (select, insert, update, delete), índice por user_id e índice único que permite no máximo um foco ativo. O foco inicial é criado a partir de `profiles.fase_tornozelo` e `fase_inicio`, que continuam valendo (com o tornozelo como foco, a fase ainda é lida do perfil). Os check-ins ganharam `dor_foco` e `foco_regiao`.
+  - Trocar o foco só no Perfil (cartão "Foco de lesão" > "Trocar foco"), com confirmação, o texto padrão de segurança (seção 19.3, adaptado à região) e a sugestão de avaliação profissional. O foco anterior fica no histórico como inativo; nada é apagado. Nem a IA nem o motor trocam o foco. Avançar de fase continua só por proposta aceita (R16 agora avalia o foco ativo; proposta de outro foco é recusada pelo validador).
+  - Protocolos de reabilitação em `src/lib/seed/protocolos.ts`, fases 1 a 3, marcados "Pontos de partida, confirmar com fisioterapeuta": tornozelo (o plano atual, idêntico, coberto por teste), posterior de coxa e panturrilha, cada um com exercícios, critérios de avanço e restrições.
+  - Com outro foco, a rotina de tornozelo vira "Reabilitação: <região>" (com manutenção curta do tornozelo) e o resto do plano se adapta: exercícios que a fase não permite saem ou são trocados (ex.: posterior fase 1 tira arrancadas, flexora e nórdica e troca stiff por goblet; fase 2 troca arrancadas por skipping). Força e velocidade continuam.
+  - Segurança: dor 6 ou mais, inchaço ou "falhou" na região do foco bloqueiam o aumento de carga, igual ao tornozelo. Com outro foco, o check-in continua pedindo a dor do tornozelo, e ela também bloqueia (vale a pior das duas). As regras do tornozelo não mudaram. Bloqueios anteriores à troca continuam valendo.
+  - Catálogo: os 77 exercícios ganharam regiões trabalhadas, como fazer em 3 passos e erros comuns (`src/lib/seed/catalogo-detalhes.ts`), considerando leg press, extensora, flexora, polia, halteres e barra.
+  - Demonstração animada ("boneco de nós", fase 1): componente SVG próprio com esqueleto 2D (cabeça, pescoço, ombros, cotovelos, punhos, quadril, joelhos, tornozelos, pontas dos pés), proporções atléticas da referência `Boneco-base 3D em três vistas.png`, poses-chave por exercício interpoladas pelo app (cinemática direta e inversa, comprimento dos segmentos constante), vista de frente ou de lado por exercício, regiões trabalhadas brilhando no ritmo do esforço, aparelhos simples (degrau, banco, parede, elástico, polia, halter, barra, bola, cones). Cada demonstração dura 30 s com repetições inteiras em ritmo real, tem pausar/continuar e, com "Reduzir animações", mostra as poses-chave paradas e um botão para tocar. 69 exercícios têm pose própria; 8 usam o modelo de um parecido (marcado "modelo").
+  - Tela `/biblioteca` com busca (sem acento), filtros por tipo, por região e "Meu foco", e detalhe `/biblioteca/<exercício>` com demonstração, regiões, como fazer, cuidado e erros comuns. Aberta pela Hoje (cartão "Biblioteca de exercícios"), pela Semana (detalhe do dia: a demonstração aparece ao abrir o exercício e "Como fazer e erros comuns") e pelo treino guiado (demonstração no lugar do espaço vazio e botão "Como fazer", que abre a folha sem sair do treino).
+  - Check-in e Hoje usam os textos do foco ("Como está seu posterior de coxa?", "Dor no posterior de coxa direito", "Falhou (fisgou ou travou)"); com o tornozelo os textos são os de antes.
+- Arquivos: `supabase/migrations/0009_foco_lesao.sql`, `src/lib/foco/`, `src/lib/seed/protocolos.ts`, `src/lib/seed/catalogo-detalhes.ts`, `src/lib/demonstracao/` (esqueleto, cena, base, poses, modelos), `src/lib/biblioteca.ts`, `src/components/demonstracao/`, `src/components/biblioteca/detalhe-exercicio.tsx`, `src/components/features/foco-card.tsx`, `src/app/(app)/biblioteca/`, `e2e/etapa11.spec.ts`; ajustes em plano, coach (contexto, fase, regras, propostas, validador, prontidão), segurança, semáforo, repositórios, check-in, Hoje, Semana, treino e Perfil.
+- Como testar: ver "Para testar no iPhone (etapa 11)" abaixo.
+- Decisões tomadas:
+  - Os dados das demonstrações ficam em `src/lib/demonstracao/` (e não em `lib/demo`), porque `lib/demo.ts` já é o modo demonstração com dados fictícios.
+  - Os detalhes do catálogo (regiões, passos, erros) ficam no código, como o resto do catálogo; a tabela `exercise_catalog` do banco não mudou.
+  - Um foco novo começa na fase 1; voltar ao tornozelo retoma a fase guardada dele. A fase de cada foco tem a própria data de início (`fase_inicio`).
+  - Com outro foco, a dor do jogo continua em `games.dor_tornozelo` (nome antigo) e vale como dor do foco.
+  - O id dos blocos não mudou (`qua-tornozelo` continua sendo o bloco da reabilitação) para não quebrar sessões, anéis e carga.
+  - Na vista de lado o boneco olha para a esquerda e o lado direito fica mais perto de quem vê; joelho e cotovelo dobram sempre para o lado anatômico certo.
+  - Prancha lateral, rotação de abdominal e alguns giros com bola ficam aproximados (2D não mostra rotação); clamshell usa o modelo da abdução com elástico.
+- Pendências: demonstrações conferidas só em quadros parados e em 390 px (falta ver no iPhone em movimento); o critério de fase do posterior e da panturrilha precisa de calibração com um fisioterapeuta; "Meu foco" na biblioteca mostra os exercícios das 3 fases do protocolo; P5 e P6 seguem só descritos.
+- Teste automático: 476 testes de lógica (inclui troca de foco com e sem bloqueio, protocolos, todas as poses válidas a cada quadro, 30 s com repetições inteiras e biblioteca) e 92 de interface (inclui biblioteca, Reduzir animações, detalhe do dia, troca de foco e axe nas telas novas, nos dois temas) passando; ESLint, Prettier, tsc e build limpos.
+- Próximo passo: o Gabriel testar no iPhone; depois, etapa 10 (lembretes).
+
+### Para testar no iPhone (etapa 11)
+
+1. Hoje > "Biblioteca de exercícios": busque "panturrilha", filtre por "Posterior de coxa" e abra o Stiff. Veja a demonstração rodar 30 s, pause e continue.
+2. Perfil > Aparência > "Reduzir animações" = Sim: abra um exercício e veja as poses paradas; toque em "Tocar". Depois volte para Não.
+3. Semana > quarta: abra um exercício e veja a demonstração; toque em "Como fazer e erros comuns".
+4. Inicie um treino guiado: veja a demonstração e toque em "Como fazer"; feche a folha e continue o treino.
+5. Perfil > "Foco de lesão" > "Trocar foco": escolha Posterior de coxa, leia o aviso, confirme. Veja a Hoje ("Como está seu posterior de coxa?"), o check-in (dor do posterior e do tornozelo) e a quarta na Semana ("Reabilitação: posterior de coxa direito", sem stiff nem flexora).
+6. Troque o foco de volta para Tornozelo direito e confira que tudo voltou como antes.
+
+
 ## FINAL DA NOITE 2 (etapas 6 a 9)
 
 ### O que foi feito, por etapa

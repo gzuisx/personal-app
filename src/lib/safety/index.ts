@@ -22,10 +22,17 @@ export const SEGURANCA_PADRAO: ConfigSeguranca = {
 export type CheckinSeg = {
   /** AAAA-MM-DD */
   data: string;
+  /** dor na região do foco de lesão (o tornozelo, enquanto ele for o foco) */
   dor: number;
+  /** dor no tornozelo quando o foco é outra região: também bloqueia (as regras do tornozelo nunca afrouxam) */
+  dorTornozelo?: number | null;
   inchaco: boolean;
   falhou: boolean;
 };
+
+/** A dor que vale para a segurança: a pior entre a do foco e a do tornozelo. */
+export const dorDoCheckin = (c: Pick<CheckinSeg, "dor" | "dorTornozelo">) =>
+  Math.max(c.dor, c.dorTornozelo ?? 0);
 
 export type JogoSeg = {
   /** instante de início (ISO) */
@@ -78,17 +85,18 @@ export const DIAS_LIBERACAO_AUTOMATICA = 7;
 export const CHECKINS_BONS_EXIGIDOS = 2;
 
 export function nivelDoCheckin(
-  c: Pick<CheckinSeg, "dor" | "inchaco" | "falhou">,
+  c: Pick<CheckinSeg, "dor" | "dorTornozelo" | "inchaco" | "falhou">,
   config: ConfigSeguranca = SEGURANCA_PADRAO,
 ): Exclude<NivelSeguranca, "sem_dados"> {
+  const dor = dorDoCheckin(c);
   if (
-    c.dor >= config.limiteBloqueio ||
+    dor >= config.limiteBloqueio ||
     (config.inchacoBloqueia && c.inchaco) ||
     (config.falhouBloqueia && c.falhou)
   ) {
     return "bloqueio";
   }
-  if (c.dor >= config.limiteAtencao || c.inchaco || c.falhou) return "atencao";
+  if (dor >= config.limiteAtencao || c.inchaco || c.falhou) return "atencao";
   return "liberado";
 }
 
@@ -120,6 +128,7 @@ const dataBR = (iso: string) => `${iso.slice(8)}/${iso.slice(5, 7)}`;
 function motivoDoCheckin(c: CheckinSeg, config: ConfigSeguranca) {
   if (config.falhouBloqueia && c.falhou) return `tornozelo cedeu em ${dataBR(c.data)}`;
   if (config.inchacoBloqueia && c.inchaco) return `inchaço em ${dataBR(c.data)}`;
+  if ((c.dorTornozelo ?? 0) > c.dor) return `dor ${c.dorTornozelo} de 10 no tornozelo em ${dataBR(c.data)}`;
   return `dor ${c.dor} de 10 em ${dataBR(c.data)}`;
 }
 
@@ -213,7 +222,8 @@ export function avaliarSeguranca(entrada: EntradaSeguranca): ResultadoSeguranca 
   }
 
   const ultimos3 = ordenados.slice(0, 3);
-  const dorPersistente = ultimos3.length === 3 && ultimos3.every((c) => c.dor >= config.limiteAtencao);
+  const dorPersistente =
+    ultimos3.length === 3 && ultimos3.every((c) => dorDoCheckin(c) >= config.limiteAtencao);
 
   const podeProgredir = nivel === "liberado" && !restricaoAtiva;
   const manterCarga = nivel === "atencao" || (nivel === "liberado" && restricaoAtiva);

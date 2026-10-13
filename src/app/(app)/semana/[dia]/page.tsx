@@ -4,9 +4,10 @@ import { diaPlanejado } from "@/lib/coach/dia";
 import { useEffect, useState } from "react";
 import { notFound, useParams } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
-import { ChevronDown, Clock, Play } from "lucide-react";
+import { BookOpen, ChevronDown, Clock, Play } from "lucide-react";
 import { BotaoAcao } from "@/components/ui/botao-acao";
-import { hrefDoBloco } from "@/lib/rotas";
+import { hrefBiblioteca, hrefDoBloco } from "@/lib/rotas";
+import Link from "next/link";
 import { IconeBola } from "@/components/ui/icone-bola";
 import { useToast } from "@/components/ui/toast";
 import { useDados } from "@/components/dados-provider";
@@ -16,7 +17,7 @@ import { TagChip } from "@/components/features/tag-chip";
 import { Button } from "@/components/ui/button";
 import { GlassCard } from "@/components/ui/glass-card";
 import { Header } from "@/components/ui/header";
-import { MidiaPlaceholder } from "@/components/ui/midia-placeholder";
+import { Demonstracao } from "@/components/demonstracao/demonstracao";
 import { SkeletonTela } from "@/components/ui/skeleton";
 import { cn } from "@/lib/cn";
 import { rotuloCarga } from "@/lib/carga";
@@ -27,7 +28,7 @@ import { ROTULO_PERIODO, blocoTreinavel, type Bloco, type ExercicioNoBloco } fro
 import { dataExtensoISO, dataISO, horaTexto } from "@/lib/tempo";
 import { useAgora } from "@/lib/use-agora";
 
-function Exercicio({ e }: { e: ExercicioNoBloco }) {
+function Exercicio({ e, de }: { e: ExercicioNoBloco; de: string }) {
   const [aberto, setAberto] = useState(false);
   const carga = e.series ? `${e.series} x ${e.repeticoes}` : e.repeticoes;
   const dica = e.observacao ?? e.observacoes;
@@ -63,7 +64,14 @@ function Exercicio({ e }: { e: ExercicioNoBloco }) {
           >
             <div className="space-y-3 px-4 pb-4">
               {dica && <p className="t-corpo text-texto2">{dica}</p>}
-              <MidiaPlaceholder mediaUrl={e.mediaUrl} />
+              <Demonstracao slug={e.slug} nome={e.nome} compacta />
+              <Link
+                href={hrefBiblioteca(e.slug, de)}
+                className="flex min-h-12 items-center justify-center gap-2 rounded-full border border-borda bg-vidro-forte text-[0.9375rem] font-semibold text-realce-t"
+              >
+                <BookOpen className="size-5" aria-hidden="true" />
+                Como fazer e erros comuns
+              </Link>
             </div>
           </motion.div>
         )}
@@ -212,7 +220,7 @@ export default function DetalheDiaPage() {
               {b.exercicios.length > 0 && (
                 <ul className="mt-4 space-y-2">
                   {b.exercicios.map((e) => (
-                    <Exercicio key={`${b.id}-${e.slug}`} e={e} />
+                    <Exercicio key={`${b.id}-${e.slug}`} e={e} de={`/semana/${iso}`} />
                   ))}
                 </ul>
               )}

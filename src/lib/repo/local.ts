@@ -1,3 +1,4 @@
+import { normalizarFocos, trocarFocoNaLista } from "@/lib/foco";
 import { DADOS_VAZIOS, type DadosApp } from "@/lib/tipos";
 import type { Repo } from "./tipos";
 
@@ -15,7 +16,8 @@ export function lerLocal(chave: string): DadosApp {
     const bruto = localStorage.getItem(chave);
     if (bruto) {
       const dados = JSON.parse(bruto) as Partial<DadosApp>;
-      return { ...structuredClone(DADOS_VAZIOS), ...dados };
+      const base = { ...structuredClone(DADOS_VAZIOS), ...dados };
+      return { ...base, ...normalizarFocos(dados.focos, base.faseTornozelo) };
     }
   } catch {
     // dados corrompidos ou armazenamento bloqueado: começa do zero
@@ -145,6 +147,14 @@ export function criarLocalRepo(chave: string = CHAVE_LOCAL): Repo {
     },
     async salvarFase(f) {
       gravar({ ...ler(), faseTornozelo: f });
+    },
+    async salvarFoco(f) {
+      const d = ler();
+      gravar({ ...d, focos: upsert(d.focos, f, (a, b) => a.id === b.id) });
+    },
+    async trocarFoco(novo) {
+      const d = ler();
+      gravar({ ...d, focos: trocarFocoNaLista(d.focos, novo) });
     },
     async exportar() {
       return ler();

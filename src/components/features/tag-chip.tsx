@@ -1,4 +1,14 @@
-import { Dumbbell, Footprints, Heart, Moon, PersonStanding, Timer, Users, Zap } from "lucide-react";
+import {
+  Dumbbell,
+  Footprints,
+  Heart,
+  HeartPulse,
+  Moon,
+  PersonStanding,
+  Timer,
+  Users,
+  Zap,
+} from "lucide-react";
 import { IconeBola } from "@/components/ui/icone-bola";
 import { cn } from "@/lib/cn";
 import type { Tag } from "@/lib/seed/plano";
@@ -13,6 +23,7 @@ const cores: Record<Tag, string> = {
   Recuperação: "border-ok-t/70 text-ok-t",
   Folga: "border-borda text-texto2",
   Mobilidade: "border-realce-t/40 text-texto2",
+  Reabilitação: "border-realce-t/60 text-realce-t",
 };
 
 function Icone({ tag }: { tag: Tag }) {
@@ -36,6 +47,8 @@ function Icone({ tag }: { tag: Tag }) {
       return <Moon className={c} aria-hidden="true" />;
     case "Mobilidade":
       return <PersonStanding className={c} aria-hidden="true" />;
+    case "Reabilitação":
+      return <HeartPulse className={c} aria-hidden="true" />;
   }
 }
 

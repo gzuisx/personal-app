@@ -5,6 +5,7 @@ import { expandirSessoesLegadas } from "@/lib/derivados";
 import { gerarDadosDemo, CHAVE_MODO_DEMO } from "@/lib/demo";
 import { criarRepo, criarRepoDemo, type Repo } from "@/lib/repo";
 import { apagarLocal, CHAVE_DEMO, gravarLocal } from "@/lib/repo/local";
+import { novoFoco, trocarFocoNaLista, type LadoFoco, type RegiaoFoco } from "@/lib/foco";
 import type { ConfigSeguranca } from "@/lib/safety";
 import {
   aceitarProposta,
@@ -50,6 +51,8 @@ type Acoes = {
   alternarMarco: (chave: string) => Promise<void>;
   /** só pode ser chamada ao aceitar uma proposta de fase (C5) */
   definirFase: (f: FaseTornozelo) => Promise<void>;
+  /** troca o foco de lesão. Só por ação do Gabriel no Perfil, depois da confirmação. */
+  trocarFoco: (e: { regiao: RegiaoFoco; lado: LadoFoco; notas?: string | null }) => Promise<void>;
   salvarTeste: (t: TesteCampo) => Promise<void>;
   removerTeste: (id: string) => Promise<void>;
   salvarMeta: (m: Meta) => Promise<void>;
@@ -166,7 +169,8 @@ export function DadosProvider({ children }: { children: React.ReactNode }) {
     () => ({
       salvarCheckin: async (c) => {
         // Check-in do dia seguinte a um jogo fica vinculado a ele (24.4, R17).
-        let checkin = c;
+        // a dor do check-in é a do foco de lesão do dia
+        let checkin: Checkin = { ...c, focoRegiao: c.focoRegiao ?? ref.current.foco.regiao };
         if (c.jogoId === undefined || c.jogoId === null) {
           const jogo = ref.current.jogos.find(
             (j) => j.id && dataISO(new Date(j.inicio)) === addDias(c.data, -1) && j.dor !== null,
@@ -258,6 +262,32 @@ export function DadosProvider({ children }: { children: React.ReactNode }) {
           (d) => ({ ...d, faseTornozelo: f }),
           () => repo.salvarFase(f),
         ),
+      trocarFoco: async ({ regiao, lado, notas }) => {
+        const d0 = ref.current;
+        const novo = novoFoco({
+          id: crypto.randomUUID(),
+          regiao,
+          lado,
+          notas,
+          hoje: dataISO(new Date()),
+          faseTornozelo: d0.faseTornozelo,
+        });
+        await aplicar(
+          (d) => ({ ...d, foco: novo, focos: trocarFocoNaLista(d.focos, novo) }),
+          async () => {
+            await repo.trocarFoco(novo);
+            await repo.registrarAuditoria({
+              id: crypto.randomUUID(),
+              evento: "foco_trocado",
+              detalhes: {
+                de: { regiao: d0.foco.regiao, lado: d0.foco.lado, fase: d0.foco.fase },
+                para: { regiao, lado, fase: novo.fase },
+              },
+              criadoEm: new Date().toISOString(),
+            });
+          },
+        );
+      },
       salvarTeste: (t) =>
         aplicar(
           (d) => ({ ...d, testes: substituir(d.testes, t, (a, b) => a.id === b.id) }),
@@ -316,6 +346,7 @@ export function DadosProvider({ children }: { children: React.ReactNode }) {
           hoje: dataISO(new Date()),
           agora: new Date().toISOString(),
           novoId: () => crypto.randomUUID(),
+          regiaoFoco: ref.current.foco.regiao,
           ...estado,
         };
         const r: ResultadoDecisao =
@@ -325,19 +356,30 @@ export function DadosProvider({ children }: { children: React.ReactNode }) {
               ? adiarProposta(p, c)
               : recusarProposta(p, c);
         if (!r.ok) return r;
+        const nf = r.novaFase;
+        const focoAtual = ref.current.foco;
+        // a fase muda no foco ativo; com o tornozelo, também em profiles.fase_tornozelo (leitura compatível)
+        const novoFoco =
+          nf && nf.regiao === focoAtual.regiao
+            ? { ...focoAtual, fase: nf.fase, faseInicio: nf.inicio }
+            : null;
+        const faseTorn = nf && nf.regiao === "tornozelo" ? { fase: nf.fase, inicio: nf.inicio } : null;
         await aplicar(
           (d) => ({
             ...d,
             propostas: substituir(d.propostas, r.proposta, (a, b) => a.id === b.id),
             versoes: r.versao ? [...d.versoes, r.versao] : d.versoes,
             auditoria: [r.auditoria, ...d.auditoria],
-            faseTornozelo: r.novaFase ?? d.faseTornozelo,
+            faseTornozelo: faseTorn ?? d.faseTornozelo,
+            foco: novoFoco ?? d.foco,
+            focos: novoFoco ? substituir(d.focos, novoFoco, (a, b) => a.id === b.id) : d.focos,
           }),
           async () => {
             await repo.salvarProposta(r.proposta);
             if (r.versao) await repo.salvarVersao(r.versao);
             await repo.registrarAuditoria(r.auditoria);
-            if (r.novaFase) await repo.salvarFase(r.novaFase);
+            if (faseTorn) await repo.salvarFase(faseTorn);
+            if (novoFoco) await repo.salvarFoco(novoFoco);
           },
         );
         return { ok: true };

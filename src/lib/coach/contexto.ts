@@ -1,4 +1,5 @@
 // CoachContext (seção 3.2): tudo que o motor "sabe" a cada instante. Telas e regras usam o MESMO contexto.
+import { faseDoFoco } from "../foco";
 import { avaliarSeguranca, diasVerdesSeguidos } from "../safety";
 import { resumirTestes } from "../testes";
 import { diaPlanejado } from "./dia";
@@ -55,8 +56,10 @@ export function buildCoachContext(
     hoje,
     diaSemana: diaSemanaISO(hoje),
     perfil: dados.perfil,
-    fase: dados.faseTornozelo,
-    semanaDaFase: faseGuardada(dados.faseTornozelo, hoje).semanaNaFase,
+    // fase do foco de lesão ativo (com o tornozelo, é a mesma de profiles.fase_tornozelo)
+    fase: dados.foco ? faseDoFoco(dados.foco) : dados.faseTornozelo,
+    foco: dados.foco ?? null,
+    semanaDaFase: faseGuardada(dados.foco ? faseDoFoco(dados.foco) : dados.faseTornozelo, hoje).semanaNaFase,
     diasVerdes: diasVerdesSeguidos(checkins, hoje, config),
     checkins,
     sessoes,

@@ -1,6 +1,12 @@
 // Agenda inteligente (seção 11): exceções do calendário e "só tenho X minutos".
 import { CATALOGO_POR_ID, type ItemCatalogo } from "../seed/catalogo";
-import type { Bloco, DiaPlano, ExercicioNoBloco, TipoExercicio } from "../seed/plano";
+import {
+  ehBlocoDeReabilitacao,
+  type Bloco,
+  type DiaPlano,
+  type ExercicioNoBloco,
+  type TipoExercicio,
+} from "../seed/plano";
 import { horaTexto, jogosNoPeriodo, type ExcecoesDeJogo } from "../tempo";
 import { ROTULO_EXCECAO, type ExcecaoAgenda } from "../tipos";
 
@@ -144,9 +150,9 @@ const tempoDoItem = (series: number, descansoS: number, exec = 40) =>
  */
 export function montarEssencial(blocos: Bloco[], minutos: number): Bloco[] {
   const orcamento = minutos * 60;
-  const tornozelo = blocos.filter((b) => b.tags.includes("Tornozelo") && b.exercicios.length);
+  const tornozelo = blocos.filter((b) => ehBlocoDeReabilitacao(b) && b.exercicios.length);
   const principais = blocos.filter(
-    (b) => !b.tags.includes("Tornozelo") && b.exercicios.length && !b.instrutor && !b.tags.includes("Jogo"),
+    (b) => !ehBlocoDeReabilitacao(b) && b.exercicios.length && !b.instrutor && !b.tags.includes("Jogo"),
   );
   const saida: Bloco[] = [];
   let usado = 0;

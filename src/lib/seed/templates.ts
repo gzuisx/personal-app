@@ -1,7 +1,7 @@
 // Modelos de plano P1 a P7 (seção 8.1). P1 a P4 e P7 mudam o dia de verdade; P5 e P6 ficam descritos
 // e só aparecem como sugestão quando o app tiver dados para recomendá-los.
 import { CATALOGO_POR_ID, exigeAcademia } from "./catalogo";
-import type { Bloco, DiaPlano, ExercicioNoBloco } from "./plano";
+import { ehBlocoDeReabilitacao, type Bloco, type DiaPlano, type ExercicioNoBloco } from "./plano";
 
 export type ChaveTemplate = "P1" | "P2" | "P3" | "P4" | "P5" | "P6" | "P7";
 
@@ -101,7 +101,7 @@ const comSeries = (e: ExercicioNoBloco, n: number): ExercicioNoBloco => ({
   ...e,
   series: String(Math.max(1, n)),
 });
-const ehTornozelo = (b: Bloco) => b.tags.includes("Tornozelo");
+const ehTornozelo = ehBlocoDeReabilitacao;
 
 function leve(e: ExercicioNoBloco) {
   const c = CATALOGO_POR_ID[e.slug];

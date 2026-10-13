@@ -1,6 +1,7 @@
 // Fase do tornozelo (seção 6.3): critérios SUGERIDOS para propor a próxima fase.
 // A fase só muda quando o Gabriel aceita a proposta; o texto sempre pede confirmação com um profissional.
 import type { FaseNum, Jogo, SerieLog, CriterioProposta } from "../tipos";
+import { PROTOCOLOS, faseDoProtocolo, type RegiaoFoco } from "../seed/protocolos";
 import { simetriaDosPes } from "./marcos";
 import type { TesteCampoResumo } from "./tipos";
 
@@ -172,4 +173,44 @@ export function avaliarFase(e: {
   }
 
   return { faseAtual: 4, proxima: null, criterios: [], apto: false };
+}
+
+/**
+ * Critérios de fase do foco de lesão ativo. O tornozelo usa os critérios acima, sem mudança;
+ * as outras regiões usam os critérios do protocolo (seed/protocolos.ts), até a fase 3.
+ */
+export function avaliarFaseDoFoco(e: {
+  regiao: RegiaoFoco;
+  fase: FaseNum;
+  diasVerdes: number;
+  series: SerieLog[];
+  jogos: Jogo[];
+  testes: TesteCampoResumo[];
+  podeProgredir: boolean;
+}): AvaliacaoFase {
+  if (e.regiao === "tornozelo") return avaliarFase(e);
+  const atual = faseDoProtocolo(e.fase);
+  if (atual >= 3) return { faseAtual: e.fase, proxima: null, criterios: [], apto: false };
+  const def = PROTOCOLOS[e.regiao].fases[atual];
+  const criterios: CriterioProposta[] = [
+    criterioVerde(def.diasVerdes, e.diasVerdes),
+    ...def.criterios.map((c) =>
+      criterioSequencia(
+        c.texto,
+        c.sessoes,
+        sequenciaBoa(
+          e.series,
+          c.slugs,
+          c.minSeries,
+          c.minTempoS !== undefined ? comTempo(c.minTempoS) : comReps(c.minReps ?? 1),
+        ),
+      ),
+    ),
+  ];
+  return {
+    faseAtual: atual,
+    proxima: (atual + 1) as 2 | 3,
+    criterios,
+    apto: e.podeProgredir && criterios.every((c) => c.ok),
+  };
 }

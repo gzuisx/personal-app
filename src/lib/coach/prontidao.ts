@@ -1,6 +1,6 @@
 // Prontidão do dia (seção 3.3): pontuação INTERNA de 0 a 100, usada só para escolher o modo do dia.
 // Os pesos são um ponto de partida razoável, não ciência exata: precisam de calibração com dados reais.
-import { nivelDoCheckin, type ConfigSeguranca } from "../safety";
+import { dorDoCheckin, nivelDoCheckin, type ConfigSeguranca } from "../safety";
 import { diffDias } from "../tempo";
 import { SONO_ROTULO, type Checkin, type SonoFaixa } from "../tipos";
 import type { VariacaoCarga } from "./carga";
@@ -51,11 +51,13 @@ export function calcularProntidao(e: EntradaProntidao): Prontidao {
   const deHoje = ultimo.data === e.hoje;
 
   // dor: -4 por ponto (0 a -40)
+  // com outro foco de lesão, vale a pior dor entre o foco e o tornozelo
+  const dor = dorDoCheckin(ultimo);
   componentes.push({
     id: "dor",
-    rotulo: "Dor no tornozelo",
-    pontos: -(ultimo.dor * 4),
-    detalhe: `Dor ${ultimo.dor} de 10`,
+    rotulo: ultimo.dorTornozelo === null || ultimo.dorTornozelo === undefined ? "Dor no tornozelo" : "Dor",
+    pontos: -(dor * 4),
+    detalhe: `Dor ${dor} de 10`,
   });
 
   // sono
@@ -126,7 +128,7 @@ export function calcularProntidao(e: EntradaProntidao): Prontidao {
         ? "o tornozelo cedeu"
         : e.config.inchacoBloqueia && ultimo.inchaco
           ? "houve inchaço"
-          : `a dor chegou a ${ultimo.dor}`;
+          : `a dor chegou a ${dor}`;
     sobrescrita = { motivo, teto: TETO_SOBRESCRITA };
     pontuacao = Math.min(pontuacao, TETO_SOBRESCRITA);
   }

@@ -1,7 +1,16 @@
 // Plano de treino (dados de seed). Fonte: seção 12 da ESPECIFICACAO-APP.txt.
 // Sem importações com alias: o script scripts/gerar-seed-sql.ts também lê este arquivo.
 import { DIAS_SEMANA, JOGOS_SEMANAIS, diaSemanaISO, type JogoSlot } from "../tempo";
+import { CATALOGO_POR_ID, type TipoCatalogo } from "./catalogo";
 import { faseDoPlano, intensidadeVelocidade, type FaseNumero } from "./fase";
+import {
+  MANUTENCAO_TORNOZELO,
+  PROTOCOLOS,
+  faseDoProtocolo,
+  type ItemProtocolo,
+  type LadoFoco,
+  type RegiaoFoco,
+} from "./protocolos";
 
 export type Tag =
   | "Tornozelo"
@@ -12,7 +21,8 @@ export type Tag =
   | "Jogo"
   | "Recuperação"
   | "Folga"
-  | "Mobilidade";
+  | "Mobilidade"
+  | "Reabilitação";
 
 export type TipoExercicio = "tornozelo" | "forca" | "velocidade" | "mobilidade" | "funcional";
 
@@ -191,43 +201,102 @@ export const EXERCICIOS: Record<string, ExercicioBase> = Object.fromEntries(
   ].map((e) => [e.slug, e]),
 );
 
+const TIPO_DO_CATALOGO: Record<TipoCatalogo, TipoExercicio> = {
+  tornozelo: "tornozelo",
+  forca: "forca",
+  potencia: "forca",
+  core: "forca",
+  velocidade: "velocidade",
+  mobilidade: "mobilidade",
+  bola: "funcional",
+  visao: "funcional",
+};
+
+/** Exercício do plano; os que não estão na lista do plano vêm do catálogo (protocolos e trocas). */
+function exercicioBase(slug: string): ExercicioBase {
+  const doPlano = EXERCICIOS[slug];
+  if (doPlano) return doPlano;
+  const c = CATALOGO_POR_ID[slug];
+  if (!c) throw new Error(`Exercício desconhecido no plano: ${slug}`);
+  return {
+    slug,
+    nome: c.nome,
+    grupo: c.grupo,
+    tipo: TIPO_DO_CATALOGO[c.tipo],
+    observacoes: c.cuidado,
+    mediaUrl: null,
+  };
+}
+
 const noBloco = (
   slug: string,
   repeticoes: string,
   series?: string,
   observacao?: string,
 ): ExercicioNoBloco => ({
-  ...EXERCICIOS[slug],
+  ...exercicioBase(slug),
   repeticoes,
   series,
   observacao,
 });
 
+const doProtocolo = (i: ItemProtocolo) => noBloco(i.slug, i.reps, i.series, i.observacao);
+
 // ------------------------------------------------------------ rotinas
 
-/** Rotina de tornozelo da fase. Séries e repetições para a fase 2 e 3 são decisões nossas (a especificação não as define). */
+/**
+ * Rotina de tornozelo da fase (protocolo do tornozelo em seed/protocolos.ts; a fase 4 repete a 3).
+ * Séries e repetições para a fase 2 e 3 são decisões nossas (a especificação não as define).
+ */
 export function rotinaTornozelo(fase: 1 | 2 | 3 | 4): ExercicioNoBloco[] {
-  if (fase === 1) {
-    return [
-      noBloco("eq-um-pe", "30 s", "3"),
-      noBloco("el-fora", "15", "3"),
-      noBloco("el-dentro", "15", "3"),
-      noBloco("el-cima", "15", "3"),
-      noBloco("pant-degrau", "12", "3"),
-      noBloco("joelho-parede", "10", "2"),
-    ];
-  }
-  if (fase === 2) {
-    return [
-      noBloco("pant-um-pe", "10", "3"),
-      noBloco("eq-almofada", "30 s", "3"),
-      noBloco("agach-uma-perna", "10", "3"),
-    ];
-  }
-  return [
-    noBloco("salto-aterrissagem", "8", "3", "Manutenção: 2 a 3 vezes por semana."),
-    noBloco("salto-lateral", "8", "3", "Manutenção: 2 a 3 vezes por semana."),
-  ];
+  return PROTOCOLOS.tornozelo.fases[faseDoProtocolo(fase)].exercicios.map(doProtocolo);
+}
+
+/** Foco de lesão que o plano usa (o ativo). */
+export type FocoDoPlano = { regiao: RegiaoFoco; lado: LadoFoco; fase: FaseNumero };
+
+/** Reabilitação de uma região que não é o tornozelo, com a manutenção curta do tornozelo no fim. */
+export function rotinaReabilitacao(foco: FocoDoPlano): ExercicioNoBloco[] {
+  const fase = PROTOCOLOS[foco.regiao].fases[faseDoProtocolo(foco.fase)];
+  const slugs = new Set(fase.exercicios.map((e) => e.slug));
+  return [...fase.exercicios, ...MANUTENCAO_TORNOZELO.filter((m) => !slugs.has(m.slug))].map(doProtocolo);
+}
+
+/** "posterior de coxa direito", "panturrilha esquerda"... */
+export function nomeDoFoco(regiao: RegiaoFoco, lado: LadoFoco) {
+  const feminino = regiao === "panturrilha";
+  const sufixo = lado === "direito" ? (feminino ? "direita" : "direito") : feminino ? "esquerda" : "esquerdo";
+  return `${PROTOCOLOS[regiao].nome.toLowerCase()} ${sufixo}`;
+}
+
+/** Tira do resto do plano o que a fase do foco não permite e troca pelo substituto mais seguro. */
+export function aplicarRestricoesDoFoco(blocos: Bloco[], foco: FocoDoPlano): Bloco[] {
+  if (foco.regiao === "tornozelo") return blocos;
+  const fase = faseDoProtocolo(foco.fase);
+  const r = PROTOCOLOS[foco.regiao].fases[fase].restricoes;
+  const motivo = `Ajustado pelo foco (${nomeDoFoco(foco.regiao, foco.lado)}, fase ${fase}).`;
+  return blocos.map((b) => {
+    if (b.tags.includes("Reabilitação")) return b;
+    let mudou = false;
+    const exercicios: ExercicioNoBloco[] = [];
+    for (const e of b.exercicios) {
+      const sub = r.substituir[e.slug];
+      if (sub && !r.evitar.includes(sub)) {
+        const c = CATALOGO_POR_ID[sub];
+        const teto = r.velocidade ? ` Intensidade ${r.velocidade}.` : "";
+        exercicios.push(
+          noBloco(sub, c?.reps ?? e.repeticoes, c ? String(c.series) : e.series, `Troca segura.${teto}`),
+        );
+        mudou = true;
+      } else if (r.evitar.includes(e.slug)) {
+        mudou = true;
+      } else {
+        exercicios.push(e);
+      }
+    }
+    if (!mudou) return b;
+    return { ...b, exercicios, observacao: [motivo, r.nota, b.observacao].filter(Boolean).join(" ") };
+  });
 }
 
 /** Ativação do sábado e do pré-jogo: parte de tornozelo do aquecimento. */
@@ -303,10 +372,31 @@ export const BLOCO_LEGADO: Record<string, string[]> = {
   "sex-manha": ["sex-tornozelo", "sex-mobilidade"],
 };
 
-export function diaDoPlano(iso: string, opcoes: { fase?: FaseTornozeloNum } = {}): DiaPlano {
+/**
+ * Dia do plano. Com um foco de lesão que não é o tornozelo, a rotina de tornozelo vira a
+ * reabilitação do foco (com manutenção do tornozelo) e o resto do dia respeita as restrições da fase.
+ */
+export function diaDoPlano(
+  iso: string,
+  opcoes: { fase?: FaseTornozeloNum; foco?: FocoDoPlano | null } = {},
+): DiaPlano {
+  const dia = diaDoPlanoBase(iso, opcoes.fase);
+  const foco = opcoes.foco;
+  if (!foco || foco.regiao === "tornozelo") return dia;
+  const exercicios = rotinaReabilitacao(foco);
+  const titulo = `Reabilitação: ${nomeDoFoco(foco.regiao, foco.lado)}`;
+  const blocos = dia.blocos.map((b): Bloco =>
+    b.id.endsWith("-tornozelo")
+      ? { ...b, titulo, tags: ["Reabilitação"], exercicios, duracaoMin: Math.max(b.duracaoMin, 15) }
+      : b,
+  );
+  return { ...dia, blocos: aplicarRestricoesDoFoco(blocos, foco) };
+}
+
+function diaDoPlanoBase(iso: string, faseOpcao?: FaseTornozeloNum): DiaPlano {
   const dia = diaSemanaISO(iso);
   const { semanaPlano, fase: faseData } = faseDoPlano(iso);
-  const fase = opcoes.fase ?? faseData;
+  const fase = faseOpcao ?? faseData;
   const tornozelo = rotinaTornozelo(fase);
   const jogo = JOGOS_SEMANAIS.find((j) => j.diaSemana === dia) ?? null;
   const base = { iso, diaSemana: dia, nome: NOMES[dia], jogo };
@@ -482,8 +572,13 @@ export const blocoTreinavel = (b: Bloco) => b.periodo !== "jogo" && !b.tags.incl
 export const blocoPrincipal = (b: Bloco) =>
   blocoTreinavel(b) && b.tags.some((t) => t === "Força" || t === "Velocidade" || t === "Funcional");
 
+/** Rotina de tornozelo ou a reabilitação do foco atual (o mesmo lugar no dia). */
+export const ehBlocoDeReabilitacao = (b: Bloco) =>
+  b.tags.includes("Tornozelo") || b.tags.includes("Reabilitação");
+
 /** Bloco de tornozelo (anel TORNOZELO). */
-export const blocoTornozeloTag = (b: Bloco) => blocoTreinavel(b) && b.tags.includes("Tornozelo");
+export const blocoTornozeloTag = (b: Bloco) =>
+  blocoTreinavel(b) && (b.tags.includes("Tornozelo") || b.tags.includes("Reabilitação"));
 
 /** Treinos planejados em uma data (para a taxa de treinos feitos). */
 export function treinosPlanejados(iso: string) {

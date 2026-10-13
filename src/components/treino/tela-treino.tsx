@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
 import {
   AlertTriangle,
+  BookOpen,
   ArrowRightLeft,
   Check,
   ClipboardCheck,
@@ -28,7 +29,10 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { EmptyState } from "@/components/ui/empty-state";
 import { EscalaDor } from "@/components/ui/escala-dor";
 import { GlassCard } from "@/components/ui/glass-card";
-import { MidiaPlaceholder } from "@/components/ui/midia-placeholder";
+import { DetalheExercicio } from "@/components/biblioteca/detalhe-exercicio";
+import { Demonstracao } from "@/components/demonstracao/demonstracao";
+import { itemDaBiblioteca } from "@/lib/biblioteca";
+import { hrefBiblioteca } from "@/lib/rotas";
 import { Segmentado } from "@/components/ui/segmentado";
 import { SkeletonTela } from "@/components/ui/skeleton";
 import { formatarTempo, Timer } from "@/components/ui/timer";
@@ -93,6 +97,8 @@ export function TelaTreino({ blocoId, data, sequencia }: Props) {
   const [doeu, setDoeu] = useState(false);
   const [pular, setPular] = useState(false);
   const [trocar, setTrocar] = useState(false);
+  /** exercício aberto em "Como fazer" (biblioteca dentro do treino, sem sair da tela) */
+  const [comoFazer, setComoFazer] = useState<string | null>(null);
   const [porque, setPorque] = useState(false);
   const [cronometro, setCronometro] = useState(false);
   const [agoraMs, setAgoraMs] = useState(0);
@@ -114,8 +120,9 @@ export function TelaTreino({ blocoId, data, sequencia }: Props) {
         faseTornozelo: dados.faseTornozelo,
         excecoes: dados.excecoes,
         versoes: dados.versoes,
+        foco: dados.foco,
       }),
-    [data, dados.faseTornozelo, dados.excecoes, dados.versoes],
+    [data, dados.faseTornozelo, dados.excecoes, dados.versoes, dados.foco],
   );
   const dia = planejado.dia;
   const coachTodo = useCoach(agora, dados);
@@ -767,7 +774,15 @@ export function TelaTreino({ blocoId, data, sequencia }: Props) {
             <h1 className="t-h1 leading-tight">{item.nome}</h1>
             {item.trocadoDe && <p className="t-pq text-aviso-t">Trocado do plano.</p>}
 
-            <MidiaPlaceholder />
+            <Demonstracao slug={item.slug} nome={item.nome} compacta />
+            <Button
+              variante="secundario"
+              className="w-full"
+              icone={<BookOpen className="size-5" />}
+              onClick={() => setComoFazer(item.slug)}
+            >
+              Como fazer
+            </Button>
 
             <div className="space-y-1">
               {item.comoFazer.map((l) => (
@@ -960,6 +975,29 @@ export function TelaTreino({ blocoId, data, sequencia }: Props) {
         }}
         onCancelar={() => setSair(false)}
       />
+
+      <BottomSheet
+        aberto={!!comoFazer}
+        onFechar={() => setComoFazer(null)}
+        titulo={comoFazer ? (itemDaBiblioteca(comoFazer)?.nome ?? "Como fazer") : "Como fazer"}
+        rodape={
+          comoFazer ? (
+            <Link
+              href={hrefBiblioteca(
+                comoFazer,
+                `/treino/${blocoId}?data=${data}${sequencia ? "&sequencia=1" : ""}`,
+              )}
+              className="flex min-h-12 items-center justify-center rounded-full text-[0.9375rem] font-semibold text-realce-t"
+            >
+              Abrir na biblioteca
+            </Link>
+          ) : null
+        }
+      >
+        {comoFazer && itemDaBiblioteca(comoFazer) && (
+          <DetalheExercicio item={itemDaBiblioteca(comoFazer)!} compacta />
+        )}
+      </BottomSheet>
 
       <DoeuSheet
         aberto={doeu}

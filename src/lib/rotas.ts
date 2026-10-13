@@ -15,3 +15,13 @@ export const hrefSequencia = (iso: string, primeiroBlocoId: string) =>
 
 export const hrefDoDia = (iso: string) => `/semana/${iso}`;
 export const hrefDoJogo = (data: string) => `/jogo/${data}`;
+
+/** Biblioteca de exercícios; `de` é para onde o "Voltar" leva. */
+export const hrefBiblioteca = (slug?: string, de?: string) =>
+  `/biblioteca${slug ? `/${slug}` : ""}${de ? `?de=${encodeURIComponent(de)}` : ""}`;
+
+/** Só aceita voltar para um endereço do próprio app (evita redirecionar para fora). */
+export function voltarSeguro(de: string | null | undefined, padrao: string) {
+  if (!de || !de.startsWith("/") || de.startsWith("//") || de.includes("\\")) return padrao;
+  return de;
+}

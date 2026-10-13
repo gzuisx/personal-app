@@ -1,7 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { BellOff, Check, ChevronRight, ClipboardCheck, Lightbulb, Play, Smartphone } from "lucide-react";
+import {
+  BellOff,
+  BookOpen,
+  Check,
+  ChevronRight,
+  ClipboardCheck,
+  Lightbulb,
+  Play,
+  Smartphone,
+} from "lucide-react";
 import { useDados } from "@/components/dados-provider";
 import { AneisDoDia } from "@/components/features/aneis-do-dia";
 import { CheckinSheet } from "@/components/features/checkin-sheet";
@@ -28,6 +37,7 @@ import { excecoesParaJogos } from "@/lib/coach/agenda";
 import { diaPlanejado } from "@/lib/coach/dia";
 import { useCoach, useEscolhaDoDia } from "@/lib/coach/use-coach";
 import { checkinDoDia } from "@/lib/derivados";
+import { rotulosDoFoco } from "@/lib/foco";
 import { proximaMelhorAcao, proximoBlocoPendente } from "@/lib/hoje";
 import { jogoEmFoco } from "@/lib/jogo";
 import { hrefDoBloco } from "@/lib/rotas";
@@ -175,7 +185,7 @@ export default function HojePage() {
         </SemaforoCard>
       ) : (
         <GlassCard indice={0} variante="destaque">
-          <h2 className="t-h2">Como está seu tornozelo?</h2>
+          <h2 className="t-h2">{rotulosDoFoco(dados.foco).pergunta}</h2>
           <p className="t-corpo mt-1 text-texto2">Registre como você está hoje. Leva 30 segundos.</p>
           {semaforo.cor !== "neutro" && (
             <p className="t-pq mt-2 text-texto2">
@@ -289,6 +299,19 @@ export default function HojePage() {
           <ChevronRight className="mt-0.5 size-5 shrink-0 text-texto3" aria-hidden="true" />
         </p>
         <p className="t-pq mt-1 pl-8 text-realce-t">Ver mais</p>
+      </GlassCard>
+
+      <GlassCard variante="leve" indice={7} href="/biblioteca?de=/hoje" aria-label="Biblioteca de exercícios">
+        <p className="t-corpo flex gap-3">
+          <BookOpen className="mt-0.5 size-5 shrink-0 text-realce-t" aria-hidden="true" />
+          <span className="flex-1">
+            <span className="t-h3 block">Biblioteca de exercícios</span>
+            <span className="t-pq block text-texto2">
+              Demonstrações de 30 s, como fazer e erros comuns. Foco atual: {rotulosDoFoco(dados.foco).nome}.
+            </span>
+          </span>
+          <ChevronRight className="mt-0.5 size-5 shrink-0 text-texto3" aria-hidden="true" />
+        </p>
       </GlassCard>
 
       <BottomSheet aberto={dicaAberta} onFechar={() => setDicaAberta(false)} titulo="Dica do dia">

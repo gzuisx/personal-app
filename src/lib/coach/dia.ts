@@ -1,4 +1,5 @@
 // Dia do plano já com a fase guardada, o modelo de plano ativo e as exceções de agenda aplicadas (um só lugar para as telas).
+import { focoDoPlano } from "../foco";
 import { diaDoPlano } from "../seed/plano";
 import { aplicarTemplate } from "../seed/templates";
 import type { DadosApp, PlanoVersao } from "../tipos";
@@ -14,9 +15,12 @@ export function versaoDoDia(iso: string, versoes: PlanoVersao[]): PlanoVersao | 
 
 export function diaPlanejado(
   iso: string,
-  dados: Pick<DadosApp, "faseTornozelo" | "excecoes"> & Partial<Pick<DadosApp, "versoes">>,
+  dados: Pick<DadosApp, "faseTornozelo" | "excecoes"> & Partial<Pick<DadosApp, "versoes" | "foco">>,
 ): DiaComExcecoes {
-  const base = diaDoPlano(iso, { fase: dados.faseTornozelo.fase });
+  const base = diaDoPlano(iso, {
+    fase: dados.faseTornozelo.fase,
+    foco: dados.foco ? focoDoPlano(dados.foco) : null,
+  });
   const versao = versaoDoDia(iso, dados.versoes ?? []);
   const comModelo = versao ? aplicarTemplate(versao.chaveTemplate, base) : base;
   const r = aplicarExcecoesAoDia(comModelo, dados.excecoes);

@@ -36,6 +36,7 @@ import {
   type StatusJogo,
 } from "@/lib/tipos";
 import type { EsforcoSerie, EstadoTreino } from "@/lib/treino/motor";
+import { normalizarFocos, type FocoLesao, type LadoFoco, type RegiaoFoco } from "@/lib/foco";
 import type { Repo } from "./tipos";
 
 function erro(contexto: string, e: { message: string } | null) {
@@ -66,9 +67,36 @@ function restricaoDaLinha(r: LinhaRestricao): Restricao {
   };
 }
 
+const ehUuid = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
 export function criarSupabaseRepo(): Repo {
   const supabase = createClient();
   let uid: string | null = null;
+  let temTabelaFoco = false;
+
+  /** Com o tornozelo como foco grava como antes; com outro foco, a dor do foco vai para dor_foco (0009). */
+  function colunasDeDor(c: Checkin) {
+    const outroFoco = !!c.focoRegiao && c.focoRegiao !== "tornozelo";
+    if (outroFoco) {
+      return { dor_tornozelo: c.dorTornozelo ?? null, dor_foco: c.dor, foco_regiao: c.focoRegiao };
+    }
+    return temTabelaFoco
+      ? { dor_tornozelo: c.dor, dor_foco: null, foco_regiao: "tornozelo" }
+      : { dor_tornozelo: c.dor };
+  }
+
+  function linhaDoFoco(user_id: string, f: FocoLesao) {
+    return {
+      user_id,
+      regiao: f.regiao,
+      lado: f.lado,
+      inicio: f.inicio,
+      fase: f.fase,
+      fase_inicio: f.faseInicio,
+      ativo: f.ativo,
+      notas: f.notas,
+    };
+  }
 
   async function userId() {
     if (uid) return uid;
@@ -99,6 +127,7 @@ export function criarSupabaseRepo(): Repo {
       testR,
       metaR,
       diarR,
+      focoR,
     ] = await Promise.all([
       supabase.from("profiles").select("nome, dados, fase_tornozelo, fase_inicio").maybeSingle(),
       supabase
@@ -107,9 +136,8 @@ export function criarSupabaseRepo(): Repo {
         .eq("ativa", true),
       supabase
         .from("checkins")
-        .select(
-          "data, dor_tornozelo, inchaco, falhou, energia, sono_faixa, gatilho, notas, regioes, movimentos, duracao_dor, posterior_apertou, jogo_id",
-        )
+        // "*" para funcionar antes e depois da migração 0009 (dor_foco e foco_regiao)
+        .select("*")
         .gte("data", desdeISO)
         .order("data"),
       supabase
@@ -173,6 +201,10 @@ export function criarSupabaseRepo(): Repo {
           "jogo_data, finalizacoes, gols, assistencias, arrancadas, olhadas, movimentacao, condicao, bom, melhorar",
         )
         .order("jogo_data"),
+      supabase
+        .from("injury_focus")
+        .select("id, regiao, lado, inicio, fase, fase_inicio, ativo, notas")
+        .order("inicio"),
     ]);
 
     erro("perfil", perfilR.error);
@@ -194,6 +226,8 @@ export function criarSupabaseRepo(): Repo {
     erro("testes de campo", testR.error);
     erro("metas", metaR.error);
     erro("diário do centroavante", diarR.error);
+    // sem a migração 0009 a tabela ainda não existe: o app segue com o tornozelo como foco
+    temTabelaFoco = !focoR.error;
 
     const dados = (perfilR.data?.dados ?? {}) as Partial<Perfil>;
     const doBanco = (restR.data ?? []).map((r) => restricaoDaLinha(r as LinhaRestricao));
@@ -217,15 +251,34 @@ export function criarSupabaseRepo(): Repo {
       auto: (d.auto as string | null) ?? undefined,
     }));
 
+    const faseTornozelo: FaseTornozelo = {
+      fase: ((perfilR.data?.fase_tornozelo as number | null) ?? 1) as FaseNum,
+      inicio: (perfilR.data?.fase_inicio as string | null) ?? INICIO_PLANO,
+    };
+    const focos: FocoLesao[] = (focoR.error ? [] : (focoR.data ?? [])).map((r) => ({
+      id: r.id as string,
+      regiao: r.regiao as RegiaoFoco,
+      lado: r.lado as LadoFoco,
+      inicio: r.inicio as string,
+      fase: Number(r.fase ?? 1) as FaseNum,
+      faseInicio: (r.fase_inicio as string | null) ?? (r.inicio as string),
+      ativo: !!r.ativo,
+      notas: (r.notas as string | null) ?? null,
+    }));
+
     return {
       perfil,
-      faseTornozelo: {
-        fase: ((perfilR.data?.fase_tornozelo as number | null) ?? 1) as FaseNum,
-        inicio: (perfilR.data?.fase_inicio as string | null) ?? INICIO_PLANO,
-      },
+      faseTornozelo,
+      ...normalizarFocos(focos, faseTornozelo),
       checkins: (checkinsR.data ?? []).map((r) => ({
         data: r.data as string,
-        dor: (r.dor_tornozelo as number | null) ?? 0,
+        // com outro foco, "dor" é a da região do foco e o tornozelo vem à parte (manutenção)
+        dor: (r.dor_foco as number | null | undefined) ?? (r.dor_tornozelo as number | null) ?? 0,
+        dorTornozelo:
+          r.dor_foco === null || r.dor_foco === undefined
+            ? null
+            : ((r.dor_tornozelo as number | null) ?? null),
+        focoRegiao: (r.foco_regiao as string | null | undefined) ?? null,
         inchaco: !!r.inchaco,
         falhou: !!r.falhou,
         energia: (r.energia as number | null) ?? null,
@@ -389,7 +442,7 @@ export function criarSupabaseRepo(): Repo {
         {
           user_id,
           data: c.data,
-          dor_tornozelo: c.dor,
+          ...colunasDeDor(c),
           inchaco: c.inchaco,
           falhou: c.falhou,
           energia: c.energia,
@@ -718,6 +771,34 @@ export function criarSupabaseRepo(): Repo {
         .from("profiles")
         .upsert({ user_id, fase_tornozelo: f.fase, fase_inicio: f.inicio }, { onConflict: "user_id" });
       erro("salvar fase do tornozelo", error);
+    },
+
+    async salvarFoco(f: FocoLesao) {
+      const user_id = await userId();
+      if (ehUuid(f.id)) {
+        const { error } = await supabase.from("injury_focus").update(linhaDoFoco(user_id, f)).eq("id", f.id);
+        erro("salvar foco de lesão", error);
+        return;
+      }
+      // foco padrão ainda sem linha no banco: cria (no máximo um ativo, garantido pelo índice único)
+      const { error } = await supabase.from("injury_focus").insert(linhaDoFoco(user_id, f));
+      erro("salvar foco de lesão", error);
+    },
+
+    async trocarFoco(novo: FocoLesao) {
+      const user_id = await userId();
+      // o atual vira inativo (fica no histórico); nada é apagado
+      const { error: e1 } = await supabase
+        .from("injury_focus")
+        .update({ ativo: false })
+        .eq("user_id", user_id)
+        .eq("ativo", true);
+      erro("encerrar foco atual", e1);
+      const linha = ehUuid(novo.id)
+        ? { id: novo.id, ...linhaDoFoco(user_id, novo) }
+        : linhaDoFoco(user_id, novo);
+      const { error: e2 } = await supabase.from("injury_focus").insert(linha);
+      erro("gravar foco novo", e2);
     },
 
     async exportar() {

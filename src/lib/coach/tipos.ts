@@ -1,4 +1,5 @@
 // Tipos do motor do coach (seção 3). O motor é feito de funções puras: mesmos dados, mesma decisão.
+import type { FocoLesao } from "../foco";
 import type { ConfigSeguranca, ResultadoSeguranca } from "../safety";
 import type { DiaPlano } from "../seed/plano";
 import type { ResultadoSemaforo } from "../semaforo";
@@ -54,7 +55,10 @@ export type CoachContext = {
   hoje: string;
   diaSemana: number;
   perfil: Perfil;
+  /** fase do foco de lesão ativo */
   fase: FaseTornozelo;
+  /** foco de lesão ativo (null em contextos antigos de teste = tornozelo direito) */
+  foco?: FocoLesao | null;
   semanaDaFase: number;
   diasVerdes: number;
   /** últimos 28 dias */
