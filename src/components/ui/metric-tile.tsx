@@ -40,7 +40,7 @@ export function MetricTile({
       )}
     >
       <div className="flex items-center gap-1.5 text-texto2">
-        <span className="text-realce" aria-hidden="true">
+        <span className="text-realce-t" aria-hidden="true">
           {icone}
         </span>
         <span className="t-rotulo">{rotulo}</span>
@@ -60,7 +60,7 @@ export function MetricTile({
             </>
           )}
           {!vazio && tendencia && (
-            <Seta className="ml-1 size-4 self-center text-realce" aria-label={`tendência: ${tendencia}`} />
+            <Seta className="ml-1 size-4 self-center text-realce-t" aria-label={`tendência: ${tendencia}`} />
           )}
         </p>
         <p className="t-pq mt-1 text-texto2">{vazio ? "sem registro" : legenda}</p>

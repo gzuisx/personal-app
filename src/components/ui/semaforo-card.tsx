@@ -48,7 +48,7 @@ export function SemaforoCard({ cor, motivo, aviso, children, indice }: Props) {
         <div className="min-w-0">
           <h2 className="t-h2">Tornozelo: {v.titulo}</h2>
           <p className="t-corpo text-texto2">{motivo}</p>
-          {aviso && <p className="t-pq mt-1 text-aviso">{aviso}</p>}
+          {aviso && <p className="t-pq mt-1 text-aviso-t">{aviso}</p>}
         </div>
       </div>
       {children && <div className="mt-4">{children}</div>}

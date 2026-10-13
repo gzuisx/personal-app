@@ -75,7 +75,7 @@ export function FormularioLogin() {
           />
         </label>
         {erro && (
-          <p role="alert" className="t-corpo text-perigo">
+          <p role="alert" className="t-corpo text-perigo-t">
             {erro}
           </p>
         )}
@@ -108,7 +108,7 @@ export function FormularioLogin() {
         className={`${campo} text-center tracking-[0.3em]`}
       />
       {erro && (
-        <p role="alert" className="t-corpo text-perigo">
+        <p role="alert" className="t-corpo text-perigo-t">
           {erro}
         </p>
       )}

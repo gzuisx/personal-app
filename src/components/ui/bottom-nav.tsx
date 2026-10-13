@@ -42,13 +42,15 @@ export function BottomNav() {
                   {ativa && (
                     <motion.span
                       layoutId="nav-ativo"
-                      className="absolute inset-0 rounded-full bg-white"
+                      className="absolute inset-0 rounded-full"
+                      style={{ background: "var(--nav-circle)" }}
                       transition={{ type: "spring", stiffness: 400, damping: 30 }}
                     />
                   )}
                   <Icone
-                    className={cn("relative size-6", ativa ? "text-primario" : "text-texto2")}
+                    className={cn("relative size-6", !ativa && "text-texto2")}
                     strokeWidth={2}
+                    style={ativa ? { color: "var(--nav-icon)" } : undefined}
                     aria-hidden="true"
                   />
                 </span>

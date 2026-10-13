@@ -21,6 +21,12 @@
   --danger: #ff5a5f;
   --on-status: #03102e;
   --focus-ring: #4db8ff;
+  --accent-text: #4db8ff;
+  --success-text: #2ecc71;
+  --warning-text: #f5c542;
+  --danger-text: #ff5a5f;
+  --nav-circle: #ffffff;
+  --nav-icon: var(--primary);
   color-scheme: dark;
 }
 
@@ -38,6 +44,12 @@
   --text-3: #5d6d93;
   --primary: #1a5fe6;
   --focus-ring: #1a5fe6;
+  --accent-text: #0b6fb8;
+  --success-text: #15803d;
+  --warning-text: #8a5a00;
+  --danger-text: #c62828;
+  --nav-circle: #1a5fe6;
+  --nav-icon: #ffffff;
   color-scheme: light;
 }
 
@@ -78,6 +90,10 @@
   --color-aviso: var(--warning);
   --color-perigo: var(--danger);
   --color-sobre: var(--on-status);
+  --color-realce-t: var(--accent-text);
+  --color-ok-t: var(--success-text);
+  --color-aviso-t: var(--warning-text);
+  --color-perigo-t: var(--danger-text);
   --font-sans: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
   --shadow-cartao: 0 8px 24px rgba(0, 0, 0, 0.35);
   --shadow-brilho: 0 0 24px rgba(31, 107, 255, 0.45);

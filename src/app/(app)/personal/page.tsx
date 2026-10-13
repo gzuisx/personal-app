@@ -17,7 +17,7 @@ export default function PersonalPage() {
       <div className="space-y-4">
         <GlassCard indice={0} className="flex flex-col items-center gap-3 py-6 text-center">
           <IlustracaoVazia />
-          <div className="flex items-center gap-2 text-realce">
+          <div className="flex items-center gap-2 text-realce-t">
             <Sparkles className="size-5" aria-hidden="true" />
             <h2 className="t-h2 text-texto">Seu personal com IA</h2>
           </div>

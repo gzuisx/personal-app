@@ -26,9 +26,9 @@ export function Banner({ variante = "info", children, onDispensar, className }: 
       <Icone
         className={cn(
           "mt-0.5 size-5 shrink-0",
-          variante === "info" && "text-realce",
-          variante === "aviso" && "text-aviso",
-          variante === "alerta" && "text-perigo",
+          variante === "info" && "text-realce-t",
+          variante === "aviso" && "text-aviso-t",
+          variante === "alerta" && "text-perigo-t",
         )}
         aria-hidden="true"
       />
